@@ -172,3 +172,18 @@ stage_hints: [classify, spec, breakdown, acceptance]
 - 估算技术(Planning Poker、T-shirt sizing):<https://www.mountaingoatsoftware.com/agile/planning-poker>
 - INVEST 原则(用户故事质量):<https://en.wikipedia.org/wiki/INVEST_(mnemonic)>
 - 验收标准模板(Given/When/Then):<https://www.agilealliance.org/glossary/acceptance/>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **需求要可证伪**:用 Given/When/Then 把“做完”写成可断言句子。
+- **INVEST 切分**:每个故事独立、可测、小到能在一个迭代完成。
+- **不确定性显式化**:估算带区间与假设,而非单点承诺。
+
+**诚实边界:**
+
+- 估算是概率不是承诺;范围/优先级最终是产品决策。
+- 本 skill 规范“怎么写需求”,不替你做需求取舍。

@@ -114,3 +114,18 @@ AdaptiveScaffold(
 - Material 3 layout:<https://m3.material.io/foundations/layout>
 - Pointer / input 适配:<https://docs.flutter.dev/ui/interactivity>
 - Flutter desktop 提示:<https://docs.flutter.dev/platform-integration/desktop>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **平台差异收敛到边界**:core/UI 平台无关,差异藏在 adapter(见 mindset 模型 6)。
+- **响应式按断点不按设备**:用 Material 3 断点,而非 isPhone/isTablet 硬判。
+- **输入是多元的**:同时设计触摸 / 鼠标 / 键盘 / 手势。
+
+**诚实边界:**
+
+- 后台/窗口/文件系统等能力天然平台特异,无法完全抽象。
+- 不替代各平台的真机/真窗口实测。

@@ -308,9 +308,11 @@
 | Flutter 官方 Agent Skills | <https://github.com/flutter/skills> |
 | 官方 skill 示例(reducing-app-size) | <https://github.com/flutter/skills/blob/main/skills/flutter-reducing-app-size/SKILL.md> |
 
-## 13. 思维蒸馏方法论(flutter-engineer-mindset)
+## 13. 思维蒸馏方法论(flutter-engineer-mindset / flutter-skill-distillation)
 
 `flutter-engineer-mindset` 用"女娲 · Skill 造人术"的五层认知操作系统(怎么说话 / 怎么想 / 怎么判断 / 什么不做 / 知道局限)与三重验证(跨领域出现 / 有预测力 / 有排他性)提炼资深 Flutter 工程师的心智模型与决策启发式;其中每条工程主张仍落到官方文档出处。
+
+`flutter-skill-distillation` 把该蒸馏法**本地化为可复用的 meta-skill**:定义 Phase 1 采集 → Phase 2 三重验证 → Phase 3 构建(五层 + 本项目 front-matter)→ Phase 4 质量门禁,使项目具备"持续造 / 更新 mindset skill"的成长性。此外,19 个领域 skill 均补有精简的"心智模型(镜片)+ 诚实边界"层,并由 `tests/test_distillation_and_lenses.py` 守护结构不退化。
 
 | 主题 | 链接 |
 |---|---|

@@ -95,3 +95,18 @@ class LoginState with _$LoginState {
 - Riverpod 官方文档:<https://riverpod.dev>
 - BLoC 官方文档:<https://bloclibrary.dev>
 - Effective Dart — Style:<https://dart.dev/effective-dart/style>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **状态=UI 的真相源**:UI=f(state),改状态而非改 widget(见 mindset 模型 3)。
+- **状态有归属与作用域**:就近持有,跨域才上提;一仓库一套方案。
+- **副作用与状态分离**:异步/IO 收敛在明确层,UI 只声明依赖。
+
+**诚实边界:**
+
+- 没有“最好”的方案,Riverpod/BLoC 取决于团队与规模;本 skill 给取舍维度,非定论。
+- 不替你设计领域状态模型本身。

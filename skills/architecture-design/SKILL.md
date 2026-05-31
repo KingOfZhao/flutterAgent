@@ -99,3 +99,18 @@ final authRepoProvider = Provider<AuthRepository>(
 - Very Good Ventures Flutter 工程模板:<https://github.com/VeryGoodOpenSource/very_good_core>
 - `freezed`(密封类 + immutable model):<https://pub.dev/packages/freezed>
 - `fpdart`(`Either<L,R>` / `Option`,函数式错误模型):<https://pub.dev/packages/fpdart>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **依赖指向内层**:presentation→domain←data,domain 不依赖框架/IO/具体三方包。
+- **错误是值不是异常**:用 `Either`/`Result` 让失败显式、可测,而不是到处 try-catch。
+- **边界即契约**:跨层只经接口(repository/usecase),换实现不动调用方。
+
+**诚实边界:**
+
+- 这是组织代码的骨架规范,不替你做具体业务建模与领域划分。
+- 小项目过度分层会徒增成本;按规模裁剪,不是层越多越好。

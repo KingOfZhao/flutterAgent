@@ -287,3 +287,18 @@ Web 端新增 iOS 26 Safari 自动填充支持,提升表单类页面的移动端
 - Flutter Navigator 2.0 解析: <https://docs.flutter.dev/ui/navigation#using-the-router>
 - auto_route package: <https://pub.dev/packages/auto_route>
 - Flutter PopScope (WillPopScope replacement): <https://api.flutter.dev/flutter/widgets/PopScope-class.html>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **路由是声明式状态**:URL/路由表是真相源,别命令式堆栈乱 push。
+- **深链/守卫从一开始设计**:鉴权重定向、未登录回跳是路由职责。
+- **类型安全优先**:用 go_router_builder 让路由参数编译期可查。
+
+**诚实边界:**
+
+- 复杂嵌套/保活场景边界多,需按真实导航图实测回退行为。
+- 不替你做信息架构(哪些是页面、层级如何)。

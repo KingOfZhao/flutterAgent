@@ -651,3 +651,18 @@ Future<Uint8List> decodeAndResize(Uint8List rawBytes, int targetWidth) async {
 - leak_tracker: <https://pub.dev/packages/leak_tracker>
 - Flutter Don't Fear the Garbage Collector: <https://medium.com/flutter/flutter-dont-fear-the-garbage-collector-d69b3ff1ca30>
 - ResizeImage API: <https://api.flutter.dev/flutter/painting/ResizeImage-class.html>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **凡 create 必 dispose**:controller/stream/animation 的释放是契约。
+- **资源有重量**:大图/视频按需加载、及时释放、限制并发。
+- **泄漏是累积的**:用 leak_tracker / DevTools Memory 早查早治。
+
+**诚实边界:**
+
+- 泄漏定位需运行时剖析,静态规范无法替代 DevTools 实测。
+- GC 行为不可精确预测,关注趋势而非单点数字。

@@ -523,3 +523,18 @@ Dio createDio({required bool isProduction}) {
 - flutter_secure_storage: <https://pub.dev/packages/flutter_secure_storage>
 - retrofit (Dio 代码生成): <https://pub.dev/packages/retrofit>
 - chopper (HTTP 代码生成): <https://pub.dev/packages/chopper>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **横切关注走拦截器链**:鉴权/刷新/日志/重试集中,不散落调用点。
+- **网络必然失败**:取消/超时/重试/离线队列是默认设计,不是补丁。
+- **契约先行**:DTO+序列化与 UI 模型解耦,服务端变更不击穿 UI。
+
+**诚实边界:**
+
+- 后端契约/鉴权细节依具体 API,本 skill 给结构,非具体协议。
+- 弱网/丢包行为需真实网络环境实测。

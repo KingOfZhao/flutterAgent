@@ -419,3 +419,18 @@ class _ChartScreenState extends State<ChartScreen>
 - Impeller 渲染引擎(默认开启):<https://docs.flutter.dev/perf/impeller>
 - Widget Preview: <https://docs.flutter.dev/tools/widget-previewer>
 - 大列表案例 / scroll perf 文章:<https://medium.com/flutter-community/listview-performance-tips-c93476d2e60a>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **先定预算再优化**:把帧率/启动/包体写进 acceptance,可证伪。
+- **测量驱动**:profile 模式 + DevTools 定位瓶颈,绝不臆测(见 mindset 模型 4)。
+- **重建/重绘是主要成本**:const、`ListView.builder`、`RepaintBoundary` 三板斧。
+
+**诚实边界:**
+
+- 性能高度依设备/数据规模,结论需在目标机型实测,非纸面保证。
+- 微优化前先确认确有瓶颈,避免过早优化。

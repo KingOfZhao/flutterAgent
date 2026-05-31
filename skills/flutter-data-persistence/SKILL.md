@@ -272,3 +272,18 @@ test('TodoRepository returns cached data when offline', () async {
 - flutter_cache_manager: <https://pub.dev/packages/flutter_cache_manager>
 - Offline cookbook (Google web.dev): <https://web.dev/offline-cookbook/>
 - Repository pattern: <https://martinfowler.com/eaaCatalog/repository.html>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **按数据形态选存储**:KV(prefs)/敏感(secure)/关系型(drift/sqflite)各有其位。
+- **离线优先把本地当真相源**:UI 读本地,网络只负责同步。
+- **Schema 会演化**:迁移是一等公民,从第一版就规划版本与升级路径。
+
+**诚实边界:**
+
+- 不替你做数据建模与冲突合并策略(那依业务语义)。
+- 加密存储依赖平台 keystore/keychain,安全性以平台为准。

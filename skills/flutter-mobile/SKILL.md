@@ -131,3 +131,18 @@ integration_test/
   - Wonderous (gskinner):<https://github.com/gskinnerTeam/flutter-wonderous-app>
   - Reflectly:<https://github.com/oleksandrkirichenko/clock-challenge>(布局/动画参考)
   - Cake Wallet (含钱包逻辑):<https://github.com/cake-tech/cake_wallet>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **移动能力即约束**:权限/生命周期/后台/省电/深链在设计期就纳入。
+- **平台特性走通道**:业务逻辑保持 Dart 侧平台无关。
+- **包体与启动是第一印象**:从一开始预算(见 flutter-performance)。
+
+**诚实边界:**
+
+- iOS/Android 权限与商店策略各异且常变,以官方与商店政策为准。
+- 不替代真机(尤其低端机/老系统)实测。

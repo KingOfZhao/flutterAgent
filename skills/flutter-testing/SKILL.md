@@ -136,3 +136,18 @@ testWidgets('LoginPage shows error on bad creds', (tester) async {
 - Very Good Ventures `very_good_workflows` (CI 模板):<https://github.com/VeryGoodOpenSource/very_good_workflows>
 - 覆盖率工具 `lcov` / `genhtml`:<https://github.com/linux-test-project/lcov>
 - 官方 Sample test 写法参照:<https://github.com/flutter/samples>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **测试金字塔**:多单元、适量 widget、少而关键的集成,按成本/价值分配。
+- **测行为不测实现**:断言用户可见结果与契约,别绑死内部结构。
+- **可测性是设计产物**:依赖注入 / 纯函数让代码天然好测。
+
+**诚实边界:**
+
+- 覆盖率是信号不是目标;高覆盖 ≠ 无 bug。
+- 不替代探索性测试与真机/真用户验证。

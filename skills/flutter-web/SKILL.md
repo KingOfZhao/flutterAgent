@@ -362,3 +362,18 @@ location / {
 - Google Fonts: <https://pub.dev/packages/google_fonts>
 - url_strategy: <https://pub.dev/packages/url_strategy>
 - Lighthouse: <https://developer.chrome.com/docs/lighthouse>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **Web 不是免费跨端**:渲染器(CanvasKit/WASM)、首屏、SEO 是 Web 特有取舍。
+- **base-href/路由策略决定可部署性**:构建期就定 PathUrlStrategy 与 base。
+- **首屏与字体是体验门槛**:控制初始包与字体加载。
+
+**诚实边界:**
+
+- SEO/可访问性在 canvas 渲染下受限,内容型站点需评估 HTML 渲染路径。
+- 各浏览器/设备差异需真实环境实测。

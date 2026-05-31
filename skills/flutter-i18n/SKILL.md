@@ -166,3 +166,18 @@ Text(AppLocalizations.of(context)!.appTitle)
 | **Crowdin** | 原生 | <https://crowdin.com> |
 | **POEditor** | 原生 | <https://poeditor.com> |
 | VS Code 扩展 | `Flutter Intl` (by Localizely) | marketplace 内搜 `localizely.flutter-intl` |
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **文案是资源不是字面量**:一切用户可见串走 ARB + gen-l10n。
+- **国际化是结构问题**:复数/性别/日期/数字用 ICU,不靠字符串拼接。
+- **RTL/字体是一等约束**:从布局阶段就考虑镜像与字形覆盖。
+
+**诚实边界:**
+
+- 翻译质量与文化适配需人工/专业本地化,工具只管管线。
+- 字体的语言覆盖需按目标市场验证。

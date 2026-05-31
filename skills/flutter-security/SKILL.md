@@ -117,3 +117,18 @@ flutter build ipa --release --obfuscate --split-debug-info=./symbols/ios
 - 不要相信客户端发的任何字段没经过校验
 - 不要使用未审计的「破解版」依赖(pub-cache 必须从 pub.dev)
 - 不要禁用 SSL 证书校验(就算只在 debug 也不行,易被忘记)
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **不信任客户端**:任何客户端输入/字段在服务端都要再校验。
+- **敏感数据有归属**:密钥/令牌进 secure storage,绝不硬编码或明文。
+- **传输默认加密+校验**:TLS/证书校验不可在任何环境关闭。
+
+**诚实边界:**
+
+- 客户端无法保管真正的秘密;高价值逻辑/密钥应在服务端。
+- 合规(GDPR/隐私)需法务参与,本 skill 给工程红线,非法律意见。

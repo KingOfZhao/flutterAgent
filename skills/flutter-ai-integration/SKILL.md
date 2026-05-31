@@ -284,3 +284,18 @@ Agentic Hot Reload:
 - LiteRT-LM: <https://ai.google.dev/edge/litert>
 - Gemma 模型: <https://ai.google.dev/gemma>
 - MCP (Model Context Protocol): <https://modelcontextprotocol.io>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **先定推理位置**:端侧(隐私/离线/省成本)vs 云端(能力/算力),再选方案。
+- **模型是不确定组件**:输出要校验/兜底,UI 要可降级,别假设永远成功。
+- **把 AI 当外部依赖**:Schema 化输入输出,prompt 不散落 UI 层。
+
+**诚实边界:**
+
+- AI 生态/SDK 迭代极快,具体 API 以官方文档为准;本 skill 给选型镜片,非 API 手册。
+- 不替你做模型效果评估与隐私/合规审查。

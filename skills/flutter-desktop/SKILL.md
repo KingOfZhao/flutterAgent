@@ -109,3 +109,18 @@ Ubuntu 母公司 **Canonical 正式成为 Flutter 桌面端的首席维护者和
 - 跨端参考应用:Wonderous <https://github.com/gskinnerTeam/flutter-wonderous-app>;Rive Desktop;Bluesky desktop
 - Microsoft 推荐的 MSIX 打包:<https://pub.dev/packages/msix>
 - Apple Notarization:<https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution>
+
+## 心智模型与诚实边界
+
+> 配合 `flutter-engineer-mindset`(通用思维底座)与 `flutter-skill-distillation`(女娲蒸馏法)使用。
+
+**镜片(怎么想):**
+
+- **桌面不是大手机**:窗口/多窗/菜单/托盘/文件系统/键鼠是一等需求。
+- **平台集成走插件/通道**:UI 仍保持平台无关。
+- **打包=签名+公证+分发**:从一开始规划(见 flutter-build-and-release)。
+
+**诚实边界:**
+
+- 各 OS(Win/macOS/Linux)能力与打包差异大,以各自官方为准。
+- 不替代在真实三系统上的窗口/权限实测。
