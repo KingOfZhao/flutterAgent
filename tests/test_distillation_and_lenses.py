@@ -48,6 +48,25 @@ DOMAIN_SKILLS = [
 LENS_HEADER = "## 心智模型与诚实边界"
 BOUNDARY_MARKER = "诚实边界"
 
+# Expert "cognitive OS" skills distilled with the nuwa five-layer method.
+# Each must keep the five layers, credit the method, and stay honest about
+# being a public-info lens (not the person).
+EXPERT_SKILLS = [
+    "remi-rousselet-mindset",
+    "felix-angelov-mindset",
+    "tim-sneath-mindset",
+    "andrea-bizzotto-mindset",
+    "filip-hracek-mindset",
+]
+
+EXPERT_LAYERS = (
+    "## 核心心智模型",
+    "## 决策启发式",
+    "## 表达 DNA",
+    "## 价值观与反模式",
+    "## 诚实边界",
+)
+
 
 @pytest.fixture(scope="module")
 def registry() -> SkillRegistry:
@@ -103,3 +122,39 @@ def test_distillation_documented(registry: SkillRegistry) -> None:
     references = (root / "REFERENCES.md").read_text(encoding="utf-8")
     assert DISTILLATION_SKILL in readme, "distillation skill not in README.md"
     assert DISTILLATION_SKILL in references, "distillation skill not in REFERENCES.md"
+
+
+@pytest.mark.parametrize("skill_id", EXPERT_SKILLS)
+def test_expert_mindset_skill_structure(registry: SkillRegistry, skill_id: str) -> None:
+    """Each distilled expert skill follows the nuwa five-layer structure."""
+    skill = registry.get(skill_id)
+    assert skill is not None, f"{skill_id} should load"
+    assert skill.body.strip() and skill.tags and skill.applies_when
+    assert set(skill.stage_hints) <= VALID_STAGES, (
+        f"{skill_id} unknown stage_hints: {set(skill.stage_hints) - VALID_STAGES}"
+    )
+    for layer in EXPERT_LAYERS:
+        assert layer in skill.body, f"{skill_id} missing nuwa layer: {layer!r}"
+    # Anti-hallucination: must be an honest, sourced lens — not the real person.
+    assert "诚实边界" in skill.body, f"{skill_id} must declare honest boundaries"
+    assert "镜片" in skill.body or "不代表" in skill.body or "非本人" in skill.body, (
+        f"{skill_id} must clarify it is a public-info lens, not the person"
+    )
+    assert "nuwa-skill" in skill.body, f"{skill_id} must credit the nuwa method"
+    assert "http" in skill.body, f"{skill_id} must cite sources"
+
+
+def test_expert_skills_in_distillation_roster(registry: SkillRegistry) -> None:
+    """The meta-skill roster must list every distilled expert (single source)."""
+    roster = registry.get(DISTILLATION_SKILL).body
+    for skill_id in EXPERT_SKILLS:
+        assert skill_id in roster, f"{skill_id} missing from distillation roster"
+
+
+def test_expert_skills_documented() -> None:
+    root = Path(get_settings().skills_path).resolve().parent
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    references = (root / "REFERENCES.md").read_text(encoding="utf-8")
+    for skill_id in EXPERT_SKILLS:
+        assert skill_id in readme, f"{skill_id} not in README.md"
+        assert skill_id in references, f"{skill_id} not in REFERENCES.md"

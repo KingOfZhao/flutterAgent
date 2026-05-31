@@ -312,7 +312,19 @@
 
 `flutter-engineer-mindset` 用"女娲 · Skill 造人术"的五层认知操作系统(怎么说话 / 怎么想 / 怎么判断 / 什么不做 / 知道局限)与三重验证(跨领域出现 / 有预测力 / 有排他性)提炼资深 Flutter 工程师的心智模型与决策启发式;其中每条工程主张仍落到官方文档出处。
 
-`flutter-skill-distillation` 把该蒸馏法**本地化为可复用的 meta-skill**:定义 Phase 1 采集 → Phase 2 三重验证 → Phase 3 构建(五层 + 本项目 front-matter)→ Phase 4 质量门禁,使项目具备"持续造 / 更新 mindset skill"的成长性。此外,19 个领域 skill 均补有精简的"心智模型(镜片)+ 诚实边界"层,并由 `tests/test_distillation_and_lenses.py` 守护结构不退化。
+`flutter-skill-distillation` 把该蒸馏法**本地化为可复用的 meta-skill**:定义 Phase 1 采集 → Phase 2 三重验证 → Phase 3 构建(五层 + 本项目 front-matter)→ Phase 4 质量门禁,并提供"蒸馏指定专家(按需)"入口与花名册,使项目具备"持续造 / 更新 mindset skill"的成长性。此外,19 个领域 skill 均补有精简的"心智模型(镜片)+ 诚实边界"层,并由 `tests/test_distillation_and_lenses.py` 守护结构不退化。
+
+### 13.1 已蒸馏专家 mindset(基于公开资料的"思维镜片",非本人)
+
+> 反幻觉:每位专家的心智模型只取**有公开出处**的观点;`诚实边界` 明示"是镜片不是本人 + 时点快照(调研截止 2025-05)"。
+
+| skill | 对象 | 关键出处 |
+|---|---|---|
+| `remi-rousselet-mindset` | Remi Rousselet(Riverpod/freezed) | <https://riverpod.dev/docs/from_provider/motivation> · <https://github.com/rrousselGit/riverpod> · <https://pub.dev/packages/freezed> |
+| `felix-angelov-mindset` | Felix Angelov(Bloc/Mason) | <https://bloclibrary.dev/architecture/> · <https://github.com/felangel/bloc> · <https://verygood.ventures/blog/bloc-from-first-commit> |
+| `tim-sneath-mindset` | Tim Sneath(前 Flutter/Dart 产品负责人) | <https://www.youtube.com/watch?v=kpcjBD1XDwU> · <https://blog.flutter.dev/racing-forward-at-i-o-2023-with-flutter-and-dart-df2a8fa841ab> |
+| `andrea-bizzotto-mindset` | Andrea Bizzotto(Code With Andrea) | <https://codewithandrea.com/articles/flutter-app-architecture-riverpod-introduction/> · <http://bizz84.github.io/2019/05/21/wabs-practical-architecture-flutter-apps.html> |
+| `filip-hracek-mindset` | Filip Hracek(前 Flutter DevRel) | <https://www.youtube.com/watch?v=d_m5csmrf7I> · <https://www.youtube.com/watch?v=RS36gBEp8OI> · <https://filiph.net/> |
 
 | 主题 | 链接 |
 |---|---|

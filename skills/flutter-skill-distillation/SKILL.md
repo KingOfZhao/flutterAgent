@@ -127,7 +127,30 @@ stage_hints: [architecture]  # 按真实相关阶段填
 ## 参考 / References    # 一手/二手来源 + 关键引用
 ```
 
-参照实现:`flutter-engineer-mindset`(本项目第一个用此法蒸馏的 skill)。
+参照实现:`flutter-engineer-mindset`(通用底座),以及下面花名册里的专家 mindset skill。
+
+## 蒸馏指定专家(按需,一等能力)
+
+当用户说「蒸馏 XX」时,这是标准入口:
+
+1. 定身份:是**人物**(框架作者/布道者)还是**主题/实践**(性能、架构…)。
+2. 跑 Phase 1–4(见上),人物务必覆盖其**开源源码 / 演讲 / 文章 / 争议**。
+3. 落地为 `skills/<name>-mindset/SKILL.md`,id = `<name>-mindset`,五层齐全 + 出处齐全。
+4. 在下面花名册登记一行;在 `README.md` / `REFERENCES.md` 同步;为它加一条测试(`tests/test_distillation_and_lenses.py` 的 EXPERT 列表)。
+5. 自检:`pytest` 绿 + `/healthz` skill 数 +1。
+
+> 反幻觉红线:人物 mindset 只蒸馏**有公开出处**的"思维方式",并在`诚实边界`声明"这是镜片不是本人 + 时点快照"。无出处不写。
+
+### 已蒸馏花名册
+
+| 类型 | skill id | 对象 | 一句话镜片 |
+|---|---|---|---|
+| 通用底座 | `flutter-engineer-mindset` | 资深 Flutter 工程师 | 约束链 / UI=f(state) / 两条线程 / 状态归属 / 平台在边界 |
+| 框架专家 | `remi-rousselet-mindset` | Remi Rousselet(Riverpod) | 错误前移编译期;异步三态一体;状态是可组合缓存 |
+| 框架专家 | `felix-angelov-mindset` | Felix Angelov(Bloc) | event→state 单向;分层单一职责;可测试是设计目标 |
+| 框架专家 | `tim-sneath-mindset` | Tim Sneath(前产品负责人) | 四支柱;一套代码处处一流体验;DX 即产品 |
+| 实践专家 | `andrea-bizzotto-mindset` | Andrea Bizzotto(Code With Andrea) | 没有银弹但有分层骨架;组合;单向数据流 |
+| 实践专家 | `filip-hracek-mindset` | Filip Hracek(前 DevRel) | 实用主义;状态管理是连续谱;能讲清才是好方案 |
 
 ## 成长性约定(可读、快速、可演进)
 
