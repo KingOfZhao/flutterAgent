@@ -1,0 +1,291 @@
+# flutter-agent
+
+一个本地运行的 **Flutter 需求精炼器**。所有工程主张都能在 [`REFERENCES.md`](./REFERENCES.md) 里找到官方文档 / pub.dev / 行业标准的出处。
+
+- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范(默认 **19 个 skill**,均附官方出处)。
+- 把用户的一句话需求,经多阶段流水线(分类 → 规格 → 架构 → 任务拆解 → 验收 → 汇总 PRD),交给 任何 OpenAI 兼容模型去精炼(默认 DeepSeek v4 pro;可接 `deepseek-chat` / `deepseek-reasoner` / `gpt-4o` / Ollama 本地)。
+- **反幻觉层**:架构阶段产出的所有第三方包会在 pub.dev API 上被验证,不存在 / 已废弃 / 版本超前的包会被标警并在 PRD 顶部贴 warning。
+- **成本透明**:按 DeepSeek / OpenAI 公布价目实时估算 USD,累计到每个 stage 、整个运行以及 run history list。
+- **幂等缓存**:同一需求 + 同一 skills + 同一参数 → 内容寻址 SHA-256 命中 `logs/runs.jsonl`,跳过上游调用返回原始运行。
+- 流水线带 **JSON 自修复**(脟数据一次 `temperature=0` 重试)、**指数退避重试**(429 / 5xx 带 jitter)、**token 用量累计**、**运行历史落盘**。
+- 通过 **FastAPI** 在本地暴露:
+  - 标准 **OpenAPI 3.x** 文档(`/docs` 与 `/openapi.json`),可被任意 OpenAPI 客户端 / Swagger Codegen 调用;
+  - **OpenAI 兼容** 接口 `/v1/chat/completions`,**支持 `stream=true` SSE**,直接被 OpenAI SDK / LangChain / IDE 插件接入;
+  - 运行审计 `/v1/runs` 与 `/v1/runs/{id}`,任何调用过的需求都可重读；
+  - **聚合指标** `/v1/metrics`：总运行次数、累计 token / 成本、各阶段成功率、高频 skill；
+  - **结构化日志**：`LOG_FORMAT=json` 可输出 JSON Lines，便于接入 Datadog / Loki / CloudWatch。
+
+## 目录结构
+
+```
+flutterAgent/
+├── README.md
+├── requirements.txt
+├── .env.example
+├── run.sh                       # 一键启动 (venv + uvicorn)
+├── scripts/
+│   ├── refine_cli.py            # 命令行直接调用精炼流水线
+│   └── export_openapi.py        # 导出 openapi.json 到磁盘
+├── skills/                      # Markdown 形式的 skill / spec(19 个)
+│   ├── task-refinement/SKILL.md
+│   ├── architecture-design/SKILL.md
+│   ├── state-management/SKILL.md
+│   ├── flutter-mobile/SKILL.md
+│   ├── flutter-desktop/SKILL.md
+│   ├── flutter-cross-platform/SKILL.md
+│   ├── flutter-testing/SKILL.md
+│   ├── flutter-performance/SKILL.md
+│   ├── flutter-accessibility/SKILL.md       # 新增,WCAG/Apple HIG/Android a11y
+│   ├── flutter-i18n/SKILL.md                # 新增,intl + ARB + gen-l10n
+│   ├── flutter-ci-cd/SKILL.md               # 新增,flavors + fastlane + GH Actions
+│   ├── flutter-security/SKILL.md            # OWASP MASVS + pinning + Play Integrity
+│   ├── flutter-animation/SKILL.md           # 新增,动画系统 + Hero + Lottie/Rive + 性能
+│   ├── flutter-navigation/SKILL.md          # go_router + deep link + 嵌套导航 + Tab 保活
+│   ├── flutter-data-persistence/SKILL.md    # drift/sqflite/hive + 离线优先 + 迁移
+│   ├── flutter-ai-integration/SKILL.md      # 新增,Genkit/GenUI/flutter_gemma/Firebase AI/MCP
+│   ├── flutter-resource-lifecycle/SKILL.md   # 新增,大图/视频/多Controller 生命周期管理
+│   ├── flutter-web/SKILL.md                  # 新增,CanvasKit/WASM/PWA/SEO/字体/部署
+│   └── flutter-network/SKILL.md              # 新增,Dio拦截器/Token刷新/WebSocket/离线队列
+├── logs/                        # runs.jsonl 自动写入(gitignored)
+├── REFERENCES.md                # 全部官方/开源出处汇总
+├── src/flutter_agent/
+│   ├── main.py                  # FastAPI app
+│   ├── config.py                # 环境变量配置
+│   ├── schemas.py               # Pydantic 数据模型(RefineResponse / CostBreakdown / PackageValidation …)
+│   ├── skill_loader.py          # 解析 SKILL.md(支持 YAML front-matter)
+│   ├── deepseek_client.py       # OpenAI 兼容客户端 (retry + stream)
+│   ├── pipeline.py              # 多阶段精炼流水线 (JSON 修复 + cost + cache + pub 验证)
+│   ├── skill_ranker.py          # 智能 skill 选择: 关键词匹配 + token 预算裁剪
+│   ├── stage_schemas.py         # 各阶段 JSON 输出期望 schema (松校验)
+│   ├── log_setup.py             # text / JSON 结构化日志配置
+│   ├── pricing.py               # 模型 USD 价目表 + 成本估算
+│   ├── pub_validator.py         # pub.dev 包名/版本/废弃校验
+│   ├── cache.py                 # 内容寻址缓存(SHA-256 over runs.jsonl)
+│   ├── run_store.py             # 运行历史 JSONL 持久化
+│   ├── deps.py                  # FastAPI DI 工厂
+│   └── routes/
+│       ├── refine.py            # POST /v1/refine
+│       ├── skills.py            # /v1/skills + reload
+│       ├── runs.py              # GET /v1/runs[/{id}]
+│       ├── openai_compat.py     # POST /v1/chat/completions  (含 SSE)
+│       └── metrics.py           # GET /v1/metrics  聚合统计
+└── tests/                       # 80 测试用例 (全 pass)
+    ├── test_smoke.py            # 端到端 smoke(无 API key)
+    ├── test_pricing.py          # 成本估算单测
+    ├── test_cache.py            # 缓存键 + JSONL 索引单测
+    ├── test_pub_validator.py    # pub.dev mock 测试
+    ├── test_retry.py            # 429/503 重试 + 400 不重试 monkeypatch
+    ├── test_skill_ranker.py     # 关键词匹配 + token budget 裁剪
+    ├── test_stage_schemas.py    # 阶段输出 schema 校验
+    └── test_pipeline_integration.py  # 全流水线集成测试 (mock LLM)
+```
+
+## 快速开始
+
+```bash
+# 1. 克隆 / 进入目录
+cd flutterAgent
+
+# 2. 编辑环境变量
+cp .env.example .env
+# 在 .env 里填入 DEEPSEEK_API_KEY、DEEPSEEK_BASE_URL、DEEPSEEK_MODEL
+
+# 3. 启动(自动建 venv、装依赖、起服务)
+bash run.sh
+```
+
+启动后访问:
+
+- Swagger UI:   <http://127.0.0.1:8765/docs>
+- ReDoc:        <http://127.0.0.1:8765/redoc>
+- OpenAPI JSON: <http://127.0.0.1:8765/openapi.json>
+
+## 调用方式
+
+### 1. 用 curl 直接调用精炼接口
+
+```bash
+curl -X POST http://127.0.0.1:8765/v1/refine \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "requirement": "做一个跨端的待办清单 App,支持本地存储和云同步",
+    "platforms": ["mobile", "desktop"],
+    "skills": ["flutter-cross-platform", "task-refinement", "state-management"]
+  }'
+```
+
+返回结构化 JSON(规格 / 架构 / 任务树 / 验收标准 / 风险) + Markdown PRD + `validations[]`(pub.dev 校验结果) + `cost`(USD 估算)。
+
+主要 flags:
+- `use_cache: true` — 命中内容寻址缓存时跳过上游调用。
+- `validate_packages: true` (默认) — 在 architecture 阶段后用 pub.dev API 验证每个推荐包。
+
+### 2. 用 OpenAI SDK 调用(OpenAI 兼容,支持流式)
+
+```python
+from openai import OpenAI
+client = OpenAI(base_url="http://127.0.0.1:8765/v1", api_key="local")
+
+# 阻塞模式
+resp = client.chat.completions.create(
+    model="flutter-agent",
+    messages=[{"role": "user", "content": "做一个 PC 端的串口调试助手"}],
+)
+print(resp.choices[0].message.content)
+print("usage:", resp.usage)
+
+# SSE 流式
+stream = client.chat.completions.create(
+    model="flutter-agent",
+    messages=[{"role": "user", "content": "做一个跨端待办 App"}],
+    stream=True,
+)
+for chunk in stream:
+    delta = chunk.choices[0].delta.content or ""
+    print(delta, end="", flush=True)
+```
+
+> 把 `model` 换成 `deepseek-v4-pro` 等具体模型名,会绕过流水线直接透传到上游 — 同一个端口,既是「PRD 工厂」也是普通 chat 代理。
+
+### 3. 命令行直接跑
+
+```bash
+# 普通调用
+python scripts/refine_cli.py "做一个跨端的待办清单 App" \
+    --platforms mobile,desktop --out out/todo-spec.md
+
+# 把每个阶段的产物分别落盘 (out_dir/classify.json, spec.json, …, prd.md)
+python scripts/refine_cli.py "做一个串口助手" -p desktop --out-dir out/serial/
+
+# 只想看会发出哪些 prompt,不真正调上游
+python scripts/refine_cli.py "做一个跨端 App" --dry-run
+```
+
+### 4. 由其他工具按 OpenAPI 自动生成 SDK
+
+```bash
+# 任何 openapi-generator-cli 即可
+openapi-generator-cli generate \
+  -i http://127.0.0.1:8765/openapi.json \
+  -g typescript-fetch -o ./gen-sdk
+```
+
+## Skill 文件格式
+
+每个 skill 是一个目录,内含一个 `SKILL.md`,顶部带 YAML front-matter:
+
+```markdown
+---
+id: flutter-mobile
+name: Flutter Mobile (iOS / Android) 工程规范
+version: 1.0.0
+platforms: [mobile]
+tags: [flutter, mobile, android, ios]
+applies_when: "需求目标平台包含 Android 或 iOS"
+---
+
+# Flutter Mobile 工程规范
+
+## 目录结构
+...
+
+## 强制约束
+...
+
+## 输出要求
+...
+```
+
+加载器会扫描 `skills/**/SKILL.md`,front-matter 进入 metadata,正文进入 system prompt。
+
+## 配置项(.env)
+
+| 变量 | 说明 | 默认 |
+|---|---|---|
+| `DEEPSEEK_API_KEY` | API key | 必填 |
+| `DEEPSEEK_BASE_URL` | OpenAI 兼容 base url | `https://api.deepseek.com/v1` |
+| `DEEPSEEK_MODEL` | 主模型 | `deepseek-v4-pro` |
+| `DEEPSEEK_PLANNER_MODEL` | 规划阶段模型 | 同上 |
+| `LOCAL_API_KEY` | 本地 API 鉴权 token,空则关闭 | (空) |
+| `HOST` / `PORT` | 监听地址 | `127.0.0.1` / `8765` |
+| `SKILLS_DIR` | skills 目录 | `skills` |
+
+## 流水线阶段
+
+```
+requirement
+  └── [cache lookup]               — 命中则返回 cached=true,不动上游
+  └── stage 1  classify              (识别目标平台 + 自适应选 skills)
+       └── stage 2  spec               (用户故事 / 功能点 / 数据模型 / 接口)
+            └── stage 3  architecture   (模块划分 / 状态管理 / 依赖选型)
+                 └── [pub.dev validation]  — 对 architecture.third_party 逐个查 latest / discontinued
+                 └── stage 4  breakdown   (Epic → Story → Task,带工时和验收)
+                      └── stage 5  acceptance (测试用例 + 风险清单)
+                           └── stage 6  markdown   (汇总人类阅读的 PRD,顶部 prepend 依赖告警)
+  └── [cost & cache index]         — 写入 runs.jsonl + 增量索引 cache key
+```
+
+每一阶段把上一阶段的 JSON 输出 + 选中的 SKILL.md 作为 system prompt 喂给上游模型。
+
+### 稳健性与工程机制
+
+- **指数退避重试**:网络 / 408 / 425 / 429 / 5xx 自动重试,默认 3 次,base 0.6s + jitter。
+- **JSON 自修复**:非 markdown 阶段若解析失败,自动用 `temperature=0` + JSON repair prompt 重调,`StageResult.repaired=true` 留痕。
+- **幂等缓存**:`sha256(requirement ⋄ sorted(skill_ids) ⋄ stages ⋄ temperature ⋄ max_tokens ⋄ extra_context ⋄ model)`,命中不动上游。需求请求带 `use_cache: true` 才启用;默认 off,避免意外复用。
+- **pub.dev 校验**:`architecture.third_party` 中每个 `{package, version}` 被 `GET https://pub.dev/api/packages/<name>` 验证;`exists=false` / `is_discontinued` / `constraint_ok=false` 会在 markdown 顶部加 warning块。关闭:请求带 `validate_packages: false`。
+- **成本估算**:依据 [DeepSeek pricing](https://api-docs.deepseek.com/quick_start/pricing) 与 [OpenAI pricing](https://openai.com/api/pricing/),在 `src/flutter_agent/pricing.py` 里维护;可用 `PRICING_CONFIG=/path/to/pricing.json` 覆盖。运行结果包含 `cost.total_cost_usd`。
+- **运行历史**:全量运行追加 `logs/runs.jsonl`,`GET /v1/runs?limit=N` 列表,`GET /v1/runs/{id}` 取详情。
+- **流式**:`/v1/chat/completions` 支持 `stream=true`(SSE);agent 模式先跑完流水线再分块吐出最终 PRD。
+
+### 诚实声明(不回避)
+
+- **DEEPSEEK_MODEL=`deepseek-v4-pro`**:作为占位,在本仓库不被验证是实际可调型号;请根据你的账号换为 `deepseek-chat` / `deepseek-reasoner` / `gpt-4o` 等。估价默认按 V3 chat 价。
+- **估价是 worst-case**:上游返回的 cache-hit 折扣未被计入(`prompt_tokens` 里不区分 cached / fresh),原因是 OpenAI 兼容接口不必然返回 cache_hit 字段。
+- **pub.dev constraint 检查是轻量版**:只检 `^x.y.z` 与 pinned;纯范围 / git / path 依赖返回 `constraint_ok=null` 表示未评估。需要 full SemVer solver 请接 `pub_semver`。
+- **所有 skill 里的「推荐」都是工程选型**,不是官方指定。Flutter 团队对 state mgmt / DI / 网络库保持中立;具体理由见 `REFERENCES.md`。
+
+### 全部端点
+
+| 方法 | 路径 | 用途 |
+|---|---|---|
+| `POST` | `/v1/refine` | 强类型流水线,返回 `RefineResponse`(含 `cost` / `validations` / `cache_key`) |
+| `POST` | `/v1/chat/completions` | OpenAI 兼容;agent / passthrough 双模;支持 SSE |
+| `GET` | `/v1/skills` | 列出已加载 skill |
+| `GET` | `/v1/skills/{id}` | 取单个 skill(含 markdown body) |
+| `POST` | `/v1/skills/reload` | 热重载磁盘上的 SKILL.md |
+| `GET` | `/v1/runs?limit=N` | 列出最近 N 次运行(每项带 `cost` + `bad_packages`) |
+| `GET` | `/v1/runs/{id}` | 取某次运行的完整 `RefineResponse` |
+| `GET` | `/v1/metrics` | 聚合统计(总 runs、tokens、cost、阶段成功率、高频 skill) |
+| `GET` | `/healthz` | 健康检查 |
+| `GET` | `/openapi.json` | OpenAPI 3.x 规范 |
+| `GET` | `/docs` / `/redoc` | Swagger UI / ReDoc |
+
+## 所有 Skills
+
+| ID | 主题 | 依据主要源 |
+|---|---|---|
+| `task-refinement` | 需求精炼流水线的元 SOP | Atlassian / BDD / INVEST |
+| `architecture-design` | Clean Architecture / feature-first | docs.flutter.dev/app-architecture |
+| `state-management` | Riverpod vs BLoC 选型 | docs.flutter.dev/data-and-backend/state-mgmt |
+| `flutter-mobile` | iOS / Android 工程规范 | flutter.dev + pub.dev |
+| `flutter-desktop` | Windows / macOS / Linux | docs.flutter.dev/platform-integration/desktop |
+| `flutter-cross-platform` | 跨端适配 / `flutter_adaptive_scaffold` | docs.flutter.dev/ui/adaptive-responsive + M3 |
+| `flutter-testing` | 测试金字塔 / `flutter_test` / `mocktail` | docs.flutter.dev/testing |
+| `flutter-performance` | 帧预算 / Impeller / `--analyze-size` | docs.flutter.dev/perf |
+| `flutter-accessibility` | WCAG AA / Semantics / a11y guideline | docs.flutter.dev/ui/.../accessibility |
+| `flutter-i18n` | `flutter_localizations` + ARB + gen-l10n | docs.flutter.dev/ui/.../internationalization |
+| `flutter-ci-cd` | flavors / fastlane / GitHub Actions / 隐私清单 | docs.flutter.dev/deployment |
+| `flutter-security` | OWASP MASVS / pinning / Play Integrity / GDPR | flutter.dev + OWASP + Apple/Google |
+| `flutter-animation` | 隐式/显式动画 / Hero / Lottie / Rive / 性能 | docs.flutter.dev/ui/animations + M3 motion |
+| `flutter-navigation` | go_router / deep link / 嵌套导航 / Tab 保活 | docs.flutter.dev/ui/navigation |
+| `flutter-data-persistence` | drift / sqflite / hive_ce / 离线优先 / 迁移 | docs.flutter.dev/cookbook/persistence + drift.simonbinder.eu |
+| `flutter-ai-integration` | Genkit Dart / GenUI / flutter_gemma / Firebase AI / Agentic Hot Reload | pub.dev + github.com/flutter/skills |
+| `flutter-resource-lifecycle` | 大图内存 / 视频 Controller 切换 / 多 TextController / dispose / leak_tracker | docs.flutter.dev/tools/devtools/memory + perf |
+| `flutter-web` | CanvasKit / SkWasm / PWA / SEO / 字体加载 / --base-href / CORS | docs.flutter.dev/deployment/web + renderers |
+| `flutter-network` | Dio 拦截器链 / Token 刷新竞态 / WebSocket 重连 / 离线队列 / GraphQL / gRPC | docs.flutter.dev/networking + pub.dev/dio |
+
+完整出处列表见 [`REFERENCES.md`](./REFERENCES.md)。
+
+## 许可
+
+MIT.

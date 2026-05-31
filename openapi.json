@@ -1,0 +1,1361 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "flutter-agent",
+    "summary": "Local Flutter requirement refinement service: turns one-liners into spec / architecture / task breakdowns using DeepSeek (or any OpenAI-compatible model) plus Markdown skill files.",
+    "description": "Two ways to call:\n\n* **Canonical**: `POST /v1/refine` returns a strongly-typed `RefineResponse` (classify / spec / architecture / breakdown / acceptance + final markdown PRD).\n* **OpenAI-compatible**: `POST /v1/chat/completions` accepts the standard OpenAI chat format. Use `model=\"flutter-agent\"` to run the refinement pipeline, or any other model name to passthrough to the upstream provider.",
+    "contact": {
+      "name": "flutter-agent",
+      "url": "http://127.0.0.1:8765/docs"
+    },
+    "license": {
+      "name": "MIT"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Healthz",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/skills": {
+      "get": {
+        "tags": [
+          "skills"
+        ],
+        "summary": "List all loaded skills",
+        "operationId": "list_skills_v1_skills_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SkillSummary"
+                  },
+                  "title": "Response List Skills V1 Skills Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/skills/{skill_id}": {
+      "get": {
+        "tags": [
+          "skills"
+        ],
+        "summary": "Get a single skill (incl. full markdown body)",
+        "operationId": "get_skill_v1_skills__skill_id__get",
+        "parameters": [
+          {
+            "name": "skill_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Skill Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/skills/reload": {
+      "post": {
+        "tags": [
+          "skills"
+        ],
+        "summary": "Hot-reload skill markdown files from disk",
+        "operationId": "reload_skills_v1_skills_reload_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Reload Skills V1 Skills Reload Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/refine": {
+      "post": {
+        "tags": [
+          "refine"
+        ],
+        "summary": "Refine a Flutter requirement into spec / architecture / tasks",
+        "description": "Run the multi-stage refinement pipeline against the configured upstream.",
+        "operationId": "refine_v1_refine_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefineRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefineResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream model error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/runs": {
+      "get": {
+        "tags": [
+          "runs"
+        ],
+        "summary": "List recent refinement runs (newest first).",
+        "operationId": "list_runs_v1_runs_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RunSummary"
+                  },
+                  "title": "Response List Runs V1 Runs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/runs/{run_id}": {
+      "get": {
+        "tags": [
+          "runs"
+        ],
+        "summary": "Fetch the full RefineResponse for a given run id.",
+        "operationId": "get_run_v1_runs__run_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Run V1 Runs  Run Id  Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/chat/completions": {
+      "post": {
+        "tags": [
+          "openai-compat"
+        ],
+        "summary": "OpenAI-compatible chat completion (supports stream=true SSE)",
+        "operationId": "chat_completions_v1_chat_completions_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatCompletionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Either application/json (ChatCompletionResponse) or text/event-stream (OpenAI SSE deltas).",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/event-stream": {}
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChatCompletionRequest": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "Model alias. 'flutter-agent' runs the refinement pipeline.",
+            "default": "flutter-agent"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "type": "array",
+            "title": "Messages"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
+          },
+          "stream": {
+            "type": "boolean",
+            "title": "Stream",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "messages"
+        ],
+        "title": "ChatCompletionRequest"
+      },
+      "ChatMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "system",
+              "user",
+              "assistant",
+              "tool"
+            ],
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ChatMessage"
+      },
+      "CostBreakdown": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "pricing_source": {
+            "type": "string",
+            "title": "Pricing Source",
+            "description": "Which key in the pricing table matched ('*' = fallback)."
+          },
+          "input_cost_usd": {
+            "type": "number",
+            "title": "Input Cost Usd",
+            "default": 0.0
+          },
+          "output_cost_usd": {
+            "type": "number",
+            "title": "Output Cost Usd",
+            "default": 0.0
+          },
+          "total_cost_usd": {
+            "type": "number",
+            "title": "Total Cost Usd",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "model",
+          "pricing_source"
+        ],
+        "title": "CostBreakdown",
+        "description": "USD cost estimate (worst-case, no cache-hit discount).\n\nSourced from `flutter_agent.pricing.MODEL_PRICING`; override via the\n``PRICING_CONFIG`` env var."
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "type": "string",
+            "title": "Error"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "default": "ok"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "skills_loaded": {
+            "type": "integer",
+            "title": "Skills Loaded"
+          },
+          "upstream_base_url": {
+            "type": "string",
+            "title": "Upstream Base Url"
+          },
+          "upstream_model": {
+            "type": "string",
+            "title": "Upstream Model"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "skills_loaded",
+          "upstream_base_url",
+          "upstream_model"
+        ],
+        "title": "HealthResponse"
+      },
+      "PackageValidation": {
+        "properties": {
+          "package": {
+            "type": "string",
+            "title": "Package"
+          },
+          "declared_version": {
+            "type": "string",
+            "title": "Declared Version",
+            "default": ""
+          },
+          "exists": {
+            "type": "boolean",
+            "title": "Exists"
+          },
+          "latest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest"
+          },
+          "is_discontinued": {
+            "type": "boolean",
+            "title": "Is Discontinued",
+            "default": false
+          },
+          "constraint_ok": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Constraint Ok",
+            "description": "True/False if the constraint could be checked; null when unparseable."
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "package",
+          "exists"
+        ],
+        "title": "PackageValidation",
+        "description": "Result of looking up a recommended package on pub.dev."
+      },
+      "Platform": {
+        "type": "string",
+        "enum": [
+          "mobile",
+          "desktop",
+          "web",
+          "auto"
+        ],
+        "title": "Platform"
+      },
+      "RefineRequest": {
+        "properties": {
+          "requirement": {
+            "type": "string",
+            "minLength": 2,
+            "title": "Requirement",
+            "description": "The raw user requirement (one liner or paragraph)."
+          },
+          "platforms": {
+            "items": {
+              "$ref": "#/components/schemas/Platform"
+            },
+            "type": "array",
+            "title": "Platforms",
+            "description": "Target platforms. Use ['auto'] to let the model decide."
+          },
+          "skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skills",
+            "description": "Override skill selection. If null, the classify stage decides. Pass skill ids, e.g. ['flutter-mobile','task-refinement']."
+          },
+          "stages": {
+            "items": {
+              "$ref": "#/components/schemas/Stage"
+            },
+            "type": "array",
+            "title": "Stages",
+            "description": "Which pipeline stages to run, in order."
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 2.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature",
+            "description": "Override sampling temperature."
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 32000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens",
+            "description": "Override per-call max tokens."
+          },
+          "extra_context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Context",
+            "description": "Free-form extra context to append after the user requirement."
+          },
+          "use_cache": {
+            "type": "boolean",
+            "title": "Use Cache",
+            "description": "If true, reuse the most recent run with an identical input (requirement+skills+stages+temperature+max_tokens+model). Cache hits are returned with cached=true and skip the upstream call.",
+            "default": false
+          },
+          "validate_packages": {
+            "type": "boolean",
+            "title": "Validate Packages",
+            "description": "If true, every entry in architecture.third_party is checked against pub.dev to catch hallucinated package names.",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "requirement"
+        ],
+        "title": "RefineRequest",
+        "description": "User-facing request for the /v1/refine endpoint."
+      },
+      "RefineResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique run id, also written to logs/runs.jsonl."
+          },
+          "created_at": {
+            "type": "integer",
+            "title": "Created At",
+            "description": "Epoch seconds when the run finished."
+          },
+          "cache_key": {
+            "type": "string",
+            "title": "Cache Key",
+            "description": "SHA-256 of the deterministic inputs; key used by the run cache.",
+            "default": ""
+          },
+          "cached": {
+            "type": "boolean",
+            "title": "Cached",
+            "description": "True if this response was served from the run cache.",
+            "default": false
+          },
+          "requirement": {
+            "type": "string",
+            "title": "Requirement"
+          },
+          "selected_skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Skills"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/TokenUsage",
+            "description": "Aggregated upstream token usage across all stages."
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CostBreakdown"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Aggregated USD cost estimate across all stages."
+          },
+          "stages": {
+            "items": {
+              "$ref": "#/components/schemas/StageResult"
+            },
+            "type": "array",
+            "title": "Stages"
+          },
+          "classify": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classify"
+          },
+          "spec": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spec"
+          },
+          "architecture": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Architecture"
+          },
+          "breakdown": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breakdown"
+          },
+          "acceptance": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acceptance"
+          },
+          "markdown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Markdown",
+            "description": "Final human-readable PRD in Markdown."
+          },
+          "validations": {
+            "items": {
+              "$ref": "#/components/schemas/PackageValidation"
+            },
+            "type": "array",
+            "title": "Validations",
+            "description": "pub.dev validation results for architecture.third_party packages."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "requirement",
+          "selected_skills",
+          "stages"
+        ],
+        "title": "RefineResponse"
+      },
+      "RunSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "integer",
+            "title": "Created At"
+          },
+          "cached": {
+            "type": "boolean",
+            "title": "Cached",
+            "default": false
+          },
+          "cache_key": {
+            "type": "string",
+            "title": "Cache Key",
+            "default": ""
+          },
+          "requirement": {
+            "type": "string",
+            "title": "Requirement"
+          },
+          "selected_skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Skills"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/TokenUsage"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CostBreakdown"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "elapsed_ms_total": {
+            "type": "integer",
+            "title": "Elapsed Ms Total"
+          },
+          "stages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Stages"
+          },
+          "bad_packages": {
+            "type": "integer",
+            "title": "Bad Packages",
+            "description": "How many recommended packages failed pub.dev validation.",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "requirement",
+          "selected_skills",
+          "usage",
+          "elapsed_ms_total",
+          "stages"
+        ],
+        "title": "RunSummary",
+        "description": "Compact view of a past refinement run, returned by GET /v1/runs."
+      },
+      "SkillDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique skill id, matches directory name."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "default": "1.0.0"
+          },
+          "platforms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Platforms"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "applies_when": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applies When"
+          },
+          "stage_hints": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Stage Hints"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body",
+            "description": "Markdown body (everything after front-matter)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "path",
+          "body"
+        ],
+        "title": "SkillDetail"
+      },
+      "SkillSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique skill id, matches directory name."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "default": "1.0.0"
+          },
+          "platforms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Platforms"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "applies_when": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applies When"
+          },
+          "stage_hints": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Stage Hints"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "path"
+        ],
+        "title": "SkillSummary",
+        "description": "Skill metadata + path on disk; body is omitted to keep listings light."
+      },
+      "Stage": {
+        "type": "string",
+        "enum": [
+          "classify",
+          "spec",
+          "architecture",
+          "breakdown",
+          "acceptance",
+          "markdown"
+        ],
+        "title": "Stage"
+      },
+      "StageResult": {
+        "properties": {
+          "stage": {
+            "$ref": "#/components/schemas/Stage"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "elapsed_ms": {
+            "type": "integer",
+            "title": "Elapsed Ms"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts",
+            "description": "How many upstream calls this stage took (>1 means JSON repair was triggered).",
+            "default": 1
+          },
+          "repaired": {
+            "type": "boolean",
+            "title": "Repaired",
+            "description": "True if the stage's JSON was rescued by a repair retry.",
+            "default": false
+          },
+          "usage": {
+            "$ref": "#/components/schemas/TokenUsage"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CostBreakdown"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "USD cost estimate for this stage."
+          },
+          "raw_output": {
+            "type": "string",
+            "title": "Raw Output",
+            "description": "Raw model text for this stage."
+          },
+          "parsed": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parsed",
+            "description": "Best-effort JSON parse of raw_output. Null if not JSON."
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage",
+          "model",
+          "elapsed_ms",
+          "raw_output"
+        ],
+        "title": "StageResult"
+      },
+      "TokenUsage": {
+        "properties": {
+          "prompt_tokens": {
+            "type": "integer",
+            "title": "Prompt Tokens",
+            "default": 0
+          },
+          "completion_tokens": {
+            "type": "integer",
+            "title": "Completion Tokens",
+            "default": 0
+          },
+          "total_tokens": {
+            "type": "integer",
+            "title": "Total Tokens",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "TokenUsage"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
