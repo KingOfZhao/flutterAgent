@@ -264,6 +264,50 @@
 |---|---|
 | Conventional Commits | <https://www.conventionalcommits.org/> |
 
+## 12. 环境 / 打包 / 性能(官方 skill 格式)
+
+以下三个 skill 采用 [flutter/skills](https://github.com/flutter/skills) 的官方结构(Contents / Core Concepts / Workflow + Task Progress / Conditional Logic / Examples / Troubleshooting),并保留本项目加载器所需的 front-matter 字段。
+
+### 12.1 环境(flutter-environment-setup)
+
+| 主题 | 链接 |
+|---|---|
+| 安装指南 | <https://docs.flutter.dev/get-started/install> |
+| Linux 桌面构建依赖 | <https://docs.flutter.dev/platform-integration/linux/building> |
+| Windows 桌面构建依赖 | <https://docs.flutter.dev/platform-integration/windows/building> |
+| macOS 工具链 | <https://docs.flutter.dev/platform-integration/macos/building> |
+| fvm(版本管理) | <https://fvm.app> |
+| CI setup-action | <https://github.com/subosito/flutter-action> |
+
+### 12.2 打包 / 发布(flutter-build-and-release)
+
+| 主题 | 链接 |
+|---|---|
+| Android 发布 | <https://docs.flutter.dev/deployment/android> |
+| iOS 发布 | <https://docs.flutter.dev/deployment/ios> |
+| macOS / Windows / Linux 发布 | <https://docs.flutter.dev/deployment/macos> |
+| Web 发布 | <https://docs.flutter.dev/deployment/web> |
+| flavors(多环境) | <https://docs.flutter.dev/deployment/flavors> |
+| 代码混淆与符号 | <https://docs.flutter.dev/deployment/obfuscate> |
+
+### 12.3 性能剖析(flutter-performance-profiling)
+
+| 主题 | 链接 |
+|---|---|
+| 性能总览 | <https://docs.flutter.dev/perf> |
+| 性能最佳实践 | <https://docs.flutter.dev/perf/best-practices> |
+| DevTools Performance | <https://docs.flutter.dev/tools/devtools/performance> |
+| 渲染性能 | <https://docs.flutter.dev/perf/rendering-performance> |
+| Impeller | <https://docs.flutter.dev/perf/impeller> |
+| 应用体积 | <https://docs.flutter.dev/perf/app-size> |
+
+### 12.4 官方 skill 格式来源
+
+| 主题 | 链接 |
+|---|---|
+| Flutter 官方 Agent Skills | <https://github.com/flutter/skills> |
+| 官方 skill 示例(reducing-app-size) | <https://github.com/flutter/skills/blob/main/skills/flutter-reducing-app-size/SKILL.md> |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。
