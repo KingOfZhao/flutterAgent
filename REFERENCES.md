@@ -308,6 +308,20 @@
 | Flutter 官方 Agent Skills | <https://github.com/flutter/skills> |
 | 官方 skill 示例(reducing-app-size) | <https://github.com/flutter/skills/blob/main/skills/flutter-reducing-app-size/SKILL.md> |
 
+## 13. 思维蒸馏方法论(flutter-engineer-mindset)
+
+`flutter-engineer-mindset` 用"女娲 · Skill 造人术"的五层认知操作系统(怎么说话 / 怎么想 / 怎么判断 / 什么不做 / 知道局限)与三重验证(跨领域出现 / 有预测力 / 有排他性)提炼资深 Flutter 工程师的心智模型与决策启发式;其中每条工程主张仍落到官方文档出处。
+
+| 主题 | 链接 |
+|---|---|
+| 女娲 · Skill 造人术(蒸馏方法论 / 五层框架) | <https://github.com/alchaincyf/nuwa-skill> |
+| 女娲 skill 模板(心智模型 / 决策启发式 / 表达 DNA / 诚实边界结构) | <https://github.com/alchaincyf/nuwa-skill/blob/main/references/skill-template.md> |
+| 盒约束布局(模型 1 出处) | <https://docs.flutter.dev/ui/layout/constraints> |
+| 声明式 UI(模型 3 出处) | <https://docs.flutter.dev/data-and-backend/state-mgmt/declarative> |
+| 状态管理选项(模型 5 出处) | <https://docs.flutter.dev/data-and-backend/state-mgmt/options> |
+| 渲染性能 / 两条线程(模型 4 出处) | <https://docs.flutter.dev/perf/rendering-performance> |
+| 自适应与跨端(模型 6 出处) | <https://docs.flutter.dev/ui/adaptive-responsive> |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。

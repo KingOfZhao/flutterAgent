@@ -2,7 +2,7 @@
 
 一个本地运行的 **Flutter 需求精炼器**。所有工程主张都能在 [`REFERENCES.md`](./REFERENCES.md) 里找到官方文档 / pub.dev / 行业标准的出处。
 
-- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **27 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构)。
+- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **28 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构,并用 [女娲 Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的五层蒸馏法提炼资深工程师“思维操作系统”)。
 - 把用户的一句话需求,经多阶段流水线(分类 → 规格 → 架构 → 任务拆解 → 验收 → 汇总 PRD),交给 任何 OpenAI 兼容模型去精炼(默认 DeepSeek v4 pro;可接 `deepseek-chat` / `deepseek-reasoner` / `gpt-4o` / Ollama 本地)。
 - **反幻觉层**:架构阶段产出的所有第三方包会在 pub.dev API 上被验证,不存在 / 已废弃 / 版本超前的包会被标警并在 PRD 顶部贴 warning。
 - **成本透明**:按 DeepSeek / OpenAI 公布价目实时估算 USD,累计到每个 stage 、整个运行以及 run history list。
@@ -26,7 +26,7 @@ flutterAgent/
 ├── scripts/
 │   ├── refine_cli.py            # 命令行直接调用精炼流水线
 │   └── export_openapi.py        # 导出 openapi.json 到磁盘
-├── skills/                      # Markdown 形式的 skill / spec(27 个)
+├── skills/                      # Markdown 形式的 skill / spec(28 个)
 │   ├── task-refinement/SKILL.md
 │   ├── architecture-design/SKILL.md
 │   ├── state-management/SKILL.md
@@ -53,7 +53,8 @@ flutterAgent/
 │   ├── flutter-documentation/SKILL.md        # 文档 SOP: dartdoc/README/CHANGELOG/ADR
 │   ├── flutter-environment-setup/SKILL.md    # 环境: SDK/工具链/doctor/fvm(官方 skill 格式)
 │   ├── flutter-build-and-release/SKILL.md    # 打包: APK/AAB/IPA/桌面/Web + 签名/混淆(官方 skill 格式)
-│   └── flutter-performance-profiling/SKILL.md # 性能: profile/DevTools/jank/内存/体积(官方 skill 格式)
+│   ├── flutter-performance-profiling/SKILL.md # 性能: profile/DevTools/jank/内存/体积(官方 skill 格式)
+│   └── flutter-engineer-mindset/SKILL.md     # 思维底座: 心智模型/决策启发式(女娲五层蒸馏)
 ├── logs/                        # runs.jsonl 自动写入(gitignored)
 ├── REFERENCES.md                # 全部官方/开源出处汇总
 ├── src/flutter_agent/
@@ -299,6 +300,7 @@ requirement
 | `flutter-environment-setup` | 环境:SDK / 平台工具链 / `flutter doctor` / fvm | docs.flutter.dev/get-started/install + fvm.app |
 | `flutter-build-and-release` | 打包:APK/AAB/IPA/桌面/Web + 签名 / flavors / 混淆 | docs.flutter.dev/deployment + obfuscate |
 | `flutter-performance-profiling` | 性能:profile 模式 / DevTools / jank / 内存 / 体积 | docs.flutter.dev/perf + tools/devtools |
+| `flutter-engineer-mindset` | 思维底座:7 心智模型 + 8 决策启发式 + 反模式 + 诚实边界 | docs.flutter.dev + nuwa-skill 五层蒸馏 |
 
 > 标「官方 skill 格式」的 skill 采用 [flutter/skills](https://github.com/flutter/skills) 的结构(`Contents / Core Concepts / Workflow + Task Progress / Conditional Logic / Examples / Troubleshooting`),同时保留本项目加载器所需的 front-matter 字段。
 

@@ -38,6 +38,12 @@ OFFICIAL_FORMAT_SKILLS = {
 # Section headers that mark the official skill structure.
 OFFICIAL_SECTIONS = ("## Contents", "## Core Concepts", "**Task Progress:**")
 
+# The cognitive-OS skill distilled with the 女娲/nuwa five-layer methodology
+# (https://github.com/alchaincyf/nuwa-skill): mental models / heuristics /
+# expression DNA / anti-patterns / honest boundaries.
+MINDSET_SKILL = "flutter-engineer-mindset"
+MINDSET_SECTIONS = ("## 核心心智模型", "## 决策启发式", "## 表达 DNA", "## 价值观与反模式", "## 诚实边界")
+
 
 @pytest.fixture(scope="module")
 def registry() -> SkillRegistry:
@@ -103,9 +109,37 @@ def test_framework_skills_referenced_in_docs() -> None:
     root = Path(get_settings().skills_path).resolve().parent
     readme = (root / "README.md").read_text(encoding="utf-8")
     references = (root / "REFERENCES.md").read_text(encoding="utf-8")
-    for skill_id in (*FRAMEWORK_SKILLS, *OFFICIAL_FORMAT_SKILLS):
+    for skill_id in (*FRAMEWORK_SKILLS, *OFFICIAL_FORMAT_SKILLS, MINDSET_SKILL):
         assert skill_id in readme, f"{skill_id} not documented in README.md"
         assert skill_id in references, f"{skill_id} not documented in REFERENCES.md"
+
+
+def test_mindset_skill_loads_and_follows_nuwa_structure(registry: SkillRegistry) -> None:
+    """The cognitive-OS skill must load and expose the 女娲 five-layer structure."""
+    skill = registry.get(MINDSET_SKILL)
+    assert skill is not None, f"{MINDSET_SKILL} should load"
+    assert skill.body.strip(), f"{MINDSET_SKILL} has empty body"
+    assert skill.platforms and skill.tags and skill.applies_when, (
+        f"{MINDSET_SKILL} missing functional front-matter"
+    )
+    assert set(skill.stage_hints) <= VALID_STAGES, (
+        f"{MINDSET_SKILL} has unknown stage_hints: {set(skill.stage_hints) - VALID_STAGES}"
+    )
+    for marker in MINDSET_SECTIONS:
+        assert marker in skill.body, f"{MINDSET_SKILL} missing nuwa layer: {marker!r}"
+    # Honest-boundary layer is what makes a distilled skill trustworthy.
+    assert "诚实边界" in skill.body, f"{MINDSET_SKILL} must declare honest boundaries"
+    assert "nuwa-skill" in skill.body, f"{MINDSET_SKILL} must credit the nuwa methodology"
+    assert "http" in skill.body, f"{MINDSET_SKILL} must cite official sources"
+
+
+def test_orchestrator_references_mindset(registry: SkillRegistry) -> None:
+    """The workflow orchestrator should anchor on the mindset skill (思维底座)."""
+    orch = registry.get("flutter-engineering-workflow")
+    assert orch is not None
+    assert MINDSET_SKILL in orch.body, (
+        f"orchestrator should reference '{MINDSET_SKILL}' as its thinking foundation"
+    )
 
 
 @pytest.mark.parametrize("skill_id", sorted(OFFICIAL_FORMAT_SKILLS))
