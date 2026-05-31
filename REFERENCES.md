@@ -211,6 +211,59 @@
 - **JSON repair pattern**:OpenAI / Anthropic 官方建议在 JSON-mode 不可用时附加 `temperature=0` 修复二次调用;`src/flutter_agent/pipeline.py` 的 `_invoke_stage` 即遵循该模式。
 - **SSE 流式协议**:遵循 OpenAI Chat Completions API 流式协议;`src/flutter_agent/routes/openai_compat.py` 输出 `data: {...}` / `data: [DONE]`。
 
+## 11. 工程交付闭环框架(fix / feature / verify / docs / deliver)
+
+支撑 `flutter-engineering-workflow`、`flutter-feature-development`、`flutter-debugging`、`flutter-verification`、`flutter-documentation` 五个 skill 的官方/标准出处。
+
+### 11.1 修复 / 调试(flutter-debugging)
+
+| 主题 | 链接 |
+|---|---|
+| Flutter 调试总览 | <https://docs.flutter.dev/testing/debugging> |
+| DevTools 总览 | <https://docs.flutter.dev/tools/devtools/overview> |
+| DevTools — Performance | <https://docs.flutter.dev/tools/devtools/performance> |
+| DevTools — Memory | <https://docs.flutter.dev/tools/devtools/memory> |
+| `dart:developer` `log()` | <https://api.flutter.dev/flutter/dart-developer/log.html> |
+| `git bisect` | <https://git-scm.com/docs/git-bisect> |
+
+### 11.2 新增功能(flutter-feature-development)
+
+| 主题 | 链接 |
+|---|---|
+| Flutter 应用架构指南 | <https://docs.flutter.dev/app-architecture> |
+| 状态管理选项 | <https://docs.flutter.dev/data-and-backend/state-mgmt/options> |
+| `go_router` | <https://pub.dev/packages/go_router> |
+| 国际化 | <https://docs.flutter.dev/ui/accessibility-and-internationalization/internationalization> |
+
+### 11.3 自测门禁(flutter-verification)
+
+| 主题 | 链接 |
+|---|---|
+| Flutter 测试总览 | <https://docs.flutter.dev/testing/overview> |
+| 集成测试 | <https://docs.flutter.dev/testing/integration-tests> |
+| golden 测试 `matchesGoldenFile` | <https://api.flutter.dev/flutter/flutter_test/matchesGoldenFile.html> |
+| `dart format` | <https://dart.dev/tools/dart-format> |
+| `dart analyze` | <https://dart.dev/tools/dart-analyze> |
+| `flutter pub outdated` | <https://dart.dev/tools/pub/cmd/pub-outdated> |
+| 包体积分析 | <https://docs.flutter.dev/perf/app-size> |
+
+### 11.4 文档(flutter-documentation)
+
+| 主题 | 链接 |
+|---|---|
+| Effective Dart — Documentation | <https://dart.dev/effective-dart/documentation> |
+| `dart doc` 工具 | <https://dart.dev/tools/dart-doc> |
+| dartdoc 写法指南 | <https://dart.dev/tools/doc-comments> |
+| Keep a Changelog | <https://keepachangelog.com/> |
+| Semantic Versioning | <https://semver.org/> |
+| ADR(Architecture Decision Records) | <https://github.com/joelparkerhenderson/architecture-decision-record> |
+
+### 11.5 交付规范(flutter-engineering-workflow)
+
+| 主题 | 链接 |
+|---|---|
+| Conventional Commits | <https://www.conventionalcommits.org/> |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。

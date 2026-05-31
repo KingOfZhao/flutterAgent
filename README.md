@@ -2,7 +2,7 @@
 
 一个本地运行的 **Flutter 需求精炼器**。所有工程主张都能在 [`REFERENCES.md`](./REFERENCES.md) 里找到官方文档 / pub.dev / 行业标准的出处。
 
-- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范(默认 **19 个 skill**,均附官方出处)。
+- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架(默认 **24 个 skill**,均附官方出处)。
 - 把用户的一句话需求,经多阶段流水线(分类 → 规格 → 架构 → 任务拆解 → 验收 → 汇总 PRD),交给 任何 OpenAI 兼容模型去精炼(默认 DeepSeek v4 pro;可接 `deepseek-chat` / `deepseek-reasoner` / `gpt-4o` / Ollama 本地)。
 - **反幻觉层**:架构阶段产出的所有第三方包会在 pub.dev API 上被验证,不存在 / 已废弃 / 版本超前的包会被标警并在 PRD 顶部贴 warning。
 - **成本透明**:按 DeepSeek / OpenAI 公布价目实时估算 USD,累计到每个 stage 、整个运行以及 run history list。
@@ -26,7 +26,7 @@ flutterAgent/
 ├── scripts/
 │   ├── refine_cli.py            # 命令行直接调用精炼流水线
 │   └── export_openapi.py        # 导出 openapi.json 到磁盘
-├── skills/                      # Markdown 形式的 skill / spec(19 个)
+├── skills/                      # Markdown 形式的 skill / spec(24 个)
 │   ├── task-refinement/SKILL.md
 │   ├── architecture-design/SKILL.md
 │   ├── state-management/SKILL.md
@@ -45,7 +45,12 @@ flutterAgent/
 │   ├── flutter-ai-integration/SKILL.md      # 新增,Genkit/GenUI/flutter_gemma/Firebase AI/MCP
 │   ├── flutter-resource-lifecycle/SKILL.md   # 新增,大图/视频/多Controller 生命周期管理
 │   ├── flutter-web/SKILL.md                  # 新增,CanvasKit/WASM/PWA/SEO/字体/部署
-│   └── flutter-network/SKILL.md              # 新增,Dio拦截器/Token刷新/WebSocket/离线队列
+│   ├── flutter-network/SKILL.md              # 新增,Dio拦截器/Token刷新/WebSocket/离线队列
+│   ├── flutter-engineering-workflow/SKILL.md # 工程交付总框架: 理解→修复/新增→自测→文档→交付
+│   ├── flutter-feature-development/SKILL.md  # 新增功能 SOP: 垂直切片→契约先行→接线→灰度
+│   ├── flutter-debugging/SKILL.md            # 修复 SOP: 复现→定位→最小改动→防回归
+│   ├── flutter-verification/SKILL.md         # 自测门禁: format→analyze→test→build
+│   └── flutter-documentation/SKILL.md        # 文档 SOP: dartdoc/README/CHANGELOG/ADR
 ├── logs/                        # runs.jsonl 自动写入(gitignored)
 ├── REFERENCES.md                # 全部官方/开源出处汇总
 ├── src/flutter_agent/
@@ -283,6 +288,11 @@ requirement
 | `flutter-resource-lifecycle` | 大图内存 / 视频 Controller 切换 / 多 TextController / dispose / leak_tracker | docs.flutter.dev/tools/devtools/memory + perf |
 | `flutter-web` | CanvasKit / SkWasm / PWA / SEO / 字体加载 / --base-href / CORS | docs.flutter.dev/deployment/web + renderers |
 | `flutter-network` | Dio 拦截器链 / Token 刷新竞态 / WebSocket 重连 / 离线队列 / GraphQL / gRPC | docs.flutter.dev/networking + pub.dev/dio |
+| `flutter-engineering-workflow` | 工程交付总框架:理解→修复/新增→自测→文档→交付 | docs.flutter.dev/testing + Conventional Commits |
+| `flutter-feature-development` | 新增功能 SOP:垂直切片 / 契约先行 / 接线 / 灰度 | docs.flutter.dev/app-architecture |
+| `flutter-debugging` | 修复 SOP:复现→定位根因→最小改动→防回归 | docs.flutter.dev/testing/debugging + DevTools |
+| `flutter-verification` | 自测门禁:format → analyze → test → build | dart.dev/tools + docs.flutter.dev/testing |
+| `flutter-documentation` | 文档 SOP:dartdoc / README / CHANGELOG / ADR | dart.dev/effective-dart/documentation + Keep a Changelog |
 
 完整出处列表见 [`REFERENCES.md`](./REFERENCES.md)。
 
