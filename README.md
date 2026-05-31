@@ -275,6 +275,51 @@ requirement
 | `GET` | `/openapi.json` | OpenAPI 3.x 规范 |
 | `GET` | `/docs` / `/redoc` | Swagger UI / ReDoc |
 
+## 蒸馏方法(女娲五层造 skill 法)
+
+本项目用 [女娲 · Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的方法论,把"一位专家 / 一个主题怎么**想**"蒸馏成可加载的 **mindset skill**——蒸馏的是 *HOW they think*(认知操作系统),不是 *WHAT they said*(语录)。方法本身被封装进 `flutter-skill-distillation`,所以项目能**持续自我成长**:说一句"蒸馏 XX"就能按统一规范产出。
+
+### 五层认知操作系统
+
+每个 mindset skill 必须写齐五层:
+
+| 层 | 回答的问题 | 在 SKILL.md 里的标题 |
+|---|---|---|
+| 怎么想 | 用什么**心智模型**看世界 | `## 核心心智模型`(3–7 个,各带 一句话 / 依据 / 应用 / 局限) |
+| 怎么判断 | 用什么**决策启发式** | `## 决策启发式`(5–10 条,各带 应用场景 / 案例) |
+| 怎么说话 | **表达 DNA** | `## 表达 DNA` |
+| 什么不做 | **反模式 / 价值观底线** | `## 价值观与反模式` |
+| 知道局限 | **诚实边界** | `## 诚实边界`(做不到什么 + 调研截止日期) |
+
+### 三重验证(决定一个观点能否被收录为"心智模型")
+
+1. **跨领域**:在 2+ 个不同场景出现过,不是随口一说。
+2. **有预测力**:能据此推断该专家对一个**新问题**的立场。
+3. **有排他性**:不是所有聪明人都会这么想(有区分度)。
+
+### 蒸馏一位指定专家(Phase 1–4)
+
+1. **Phase 1 采集**:对人物,覆盖其开源源码 / 演讲 / 文章 / 争议;对主题,覆盖官方文档 + 权威实践 + 反面案例。
+2. **Phase 2 提炼**:候选观点过三重验证,不过则降级或丢弃。
+3. **Phase 3 构建**:填入五层 + 本项目加载器所需 front-matter(`id` = 目录名 = `<name>-mindset`,`platforms` ⊆ {all,mobile,desktop,web},`stage_hints` ⊆ {classify,spec,architecture,breakdown,acceptance,markdown}),落地 `skills/<name>-mindset/SKILL.md`。
+4. **Phase 4 验证**:用 3 个该专家公开回答过的问题测方向一致;用 1 个他没讨论过的问题测"适度不确定"(防过拟合)。
+5. **登记 + 自检**:在 `flutter-skill-distillation` 花名册、`README.md`、`REFERENCES.md` 同步,并在 `tests/test_distillation_and_lenses.py` 的 `EXPERT_SKILLS` 加一行;`pytest` 绿 + `/healthz` skill 数 +1。
+
+> **反幻觉红线**:人物 mindset 只蒸馏**有公开出处**的"思维方式",`诚实边界` 必须声明"这是镜片不是本人 + 时点快照"。无出处不写。
+
+### 已蒸馏花名册
+
+| 类型 | skill | 对象 | 一句话镜片 |
+|---|---|---|---|
+| 通用底座 | `flutter-engineer-mindset` | 资深 Flutter 工程师 | 约束链 / UI=f(state) / 两条线程 / 状态归属 / 平台在边界 |
+| 框架专家 | `remi-rousselet-mindset` | Remi Rousselet(Riverpod) | 错误前移编译期;异步三态一体;状态是可组合缓存 |
+| 框架专家 | `felix-angelov-mindset` | Felix Angelov(Bloc) | event→state 单向;分层单一职责;可测试是设计目标 |
+| 框架专家 | `tim-sneath-mindset` | Tim Sneath(前产品负责人) | 四支柱;一套代码处处一流体验;DX 即产品 |
+| 实践专家 | `andrea-bizzotto-mindset` | Andrea Bizzotto(Code With Andrea) | 没有银弹但有分层骨架;组合;单向数据流 |
+| 实践专家 | `filip-hracek-mindset` | Filip Hracek(前 DevRel) | 实用主义;状态管理是连续谱;能讲清才是好方案 |
+
+此外,19 个领域 skill 均补有精简的"心智模型(镜片)+ 诚实边界"层,与上述底座交叉链接。方法论与全部出处见 [`REFERENCES.md` §13](./REFERENCES.md)。
+
 ## 所有 Skills
 
 | ID | 主题 | 依据主要源 |

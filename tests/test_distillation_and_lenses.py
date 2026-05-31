@@ -122,6 +122,10 @@ def test_distillation_documented(registry: SkillRegistry) -> None:
     references = (root / "REFERENCES.md").read_text(encoding="utf-8")
     assert DISTILLATION_SKILL in readme, "distillation skill not in README.md"
     assert DISTILLATION_SKILL in references, "distillation skill not in REFERENCES.md"
+    # README 必须有"蒸馏方法"章节,讲清五层 + 三重验证 + Phase 1–4
+    assert "## 蒸馏方法" in readme, "distillation method section missing from README.md"
+    for marker in ("五层", "三重验证", "Phase 1", "已蒸馏花名册"):
+        assert marker in readme, f"distillation method README missing '{marker}'"
 
 
 @pytest.mark.parametrize("skill_id", EXPERT_SKILLS)
