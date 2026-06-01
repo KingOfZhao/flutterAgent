@@ -21,13 +21,17 @@ from typing import Any, Dict, List, Optional
 
 from .cache import RunCache, make_cache_key
 from .config import Settings
-from .consistency import (
-    check_acceptance_consistency,
-    check_implementation_consistency,
-)
+from .consistency import check_acceptance_consistency
 from .deepseek_client import DeepSeekClient, UpstreamError
 from .pricing import estimate_cost
 from .pub_validator import PubValidator
+from .reporting import append_audit_section, prepend_validation_warnings
+from .review_loop import (
+    _augment_review_with_consistency,
+    _format_review_feedback,
+    _review_is_blocking,
+    _summarize_review_pass,
+)
 from .run_store import RunStore
 from .schemas import (
     CostBreakdown,
@@ -300,125 +304,6 @@ def _try_parse_json(text: str) -> Optional[Dict[str, Any]]:
 def _platforms_to_strs(platforms: List[Platform]) -> List[str]:
     out = [p.value for p in platforms if p != Platform.auto]
     return out or ["mobile", "desktop"]  # safe default
-
-
-_SEVERITY_RANK = {"blocker": 3, "major": 2, "minor": 1, "nit": 0}
-
-
-def _blocking_severities(threshold: str) -> set:
-    """Severities at or above the configured threshold count as blocking."""
-    t = _SEVERITY_RANK.get(str(threshold).lower(), 2)
-    return {s for s, r in _SEVERITY_RANK.items() if r >= t}
-
-
-def _review_is_blocking(
-    review: Optional[Dict[str, Any]], threshold: str = "major"
-) -> bool:
-    """A review blocks the implementation when it says so, or when any finding
-    is at/above the configured severity threshold. Defensive against loose
-    fields."""
-    if not isinstance(review, dict):
-        return False
-    if review.get("blocking") is True:
-        return True
-    blocking = _blocking_severities(threshold)
-    findings = review.get("findings")
-    if isinstance(findings, list):
-        for f in findings:
-            if isinstance(f, dict) and str(f.get("severity", "")).lower() in blocking:
-                return True
-    return False
-
-
-def _augment_review_with_consistency(prior: Dict[Stage, Dict[str, Any]]) -> int:
-    """Merge deterministic structural findings into prior[review].findings.
-
-    Returns the number of static findings added. Idempotent per review output:
-    each fresh review starts without static findings, so re-reviews re-derive
-    them from the (possibly updated) implementation."""
-    review = prior.get(Stage.review)
-    if not isinstance(review, dict):
-        return 0
-    static = check_implementation_consistency(
-        prior.get(Stage.implementation),
-        prior.get(Stage.breakdown),
-        prior.get(Stage.architecture),
-    )
-    if not static:
-        return 0
-    findings = review.get("findings")
-    if not isinstance(findings, list):
-        findings = []
-    existing = {
-        (f.get("path"), f.get("issue"))
-        for f in findings
-        if isinstance(f, dict)
-    }
-    added = 0
-    for f in static:
-        if (f["path"], f["issue"]) not in existing:
-            findings.append(f)
-            added += 1
-    review["findings"] = findings
-    return added
-
-
-def _summarize_review_pass(
-    review: Optional[Dict[str, Any]], iteration: int, threshold: str = "major"
-) -> ReviewPass:
-    """Compact audit entry for one review evaluation."""
-    by_severity: Dict[str, int] = {}
-    by_source: Dict[str, int] = {}
-    total = 0
-    summary = None
-    if isinstance(review, dict):
-        s = review.get("summary")
-        if isinstance(s, str) and s.strip():
-            summary = s.strip()
-        findings = review.get("findings")
-        if isinstance(findings, list):
-            for f in findings:
-                if not isinstance(f, dict):
-                    continue
-                total += 1
-                sev = str(f.get("severity", "unknown")).lower()
-                by_severity[sev] = by_severity.get(sev, 0) + 1
-                src = str(f.get("source", "llm")).lower()
-                by_source[src] = by_source.get(src, 0) + 1
-    return ReviewPass(
-        iteration=iteration,
-        blocking=_review_is_blocking(review, threshold),
-        findings=total,
-        by_severity=by_severity,
-        by_source=by_source,
-        summary=summary,
-    )
-
-
-def _format_review_feedback(review: Dict[str, Any], threshold: str = "major") -> str:
-    """Turn review findings into a concrete fix list fed back to implementation."""
-    blocking = _blocking_severities(threshold)
-    lines: List[str] = []
-    summary = review.get("summary")
-    if isinstance(summary, str) and summary.strip():
-        lines.append(f"评审总评: {summary.strip()}")
-    findings = review.get("findings")
-    if isinstance(findings, list):
-        for i, f in enumerate(findings, 1):
-            if not isinstance(f, dict):
-                continue
-            sev = str(f.get("severity", "?"))
-            if sev.lower() not in blocking:
-                continue
-            path = f.get("path", "<general>")
-            issue = f.get("issue", "")
-            sug = f.get("suggestion", "")
-            lines.append(f"{i}. [{sev}] {path}: {issue} → 修复建议: {sug}")
-    lines.append(
-        f"请在保留原有文件结构的前提下,仅针对上述 {'/'.join(sorted(blocking))} 级别问题修订骨架,"
-        "输出完整的 implementation JSON(不要省略未改动的文件)。"
-    )
-    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -797,61 +682,10 @@ class RefinementPipeline:
             total_cost_usd=round(input_total + output_total, 6),
         )
 
-    @staticmethod
-    def _prepend_validation_warnings(
-        markdown: Optional[str], validations: List[PackageValidation]
-    ) -> Optional[str]:
-        if not markdown:
-            return markdown
-        bad = [v for v in validations if not v.exists or v.constraint_ok is False or v.is_discontinued]
-        if not bad:
-            return markdown
-        lines = [
-            "> ⚠️ **依赖校验告警** — 以下包未能在 pub.dev 验证通过,合入代码前请复核:",
-        ]
-        for v in bad:
-            tag = "❌" if not v.exists else ("⚠️" if v.is_discontinued else "❓")
-            lines.append(
-                f"> - {tag} `{v.package}` (声明 {v.declared_version or '—'}, "
-                f"pub.dev latest={v.latest or 'n/a'}) — {v.reason or 'see validations'}"
-            )
-        return "\n".join(lines) + "\n\n" + markdown
-
-    @staticmethod
-    def _append_audit_section(
-        markdown: Optional[str],
-        review_history: List[ReviewPass],
-        acceptance_gaps: List[Dict[str, Any]],
-    ) -> Optional[str]:
-        """Append a deterministic audit block (closed-loop passes + acceptance
-        gaps) to the PRD so the mechanical checks are always visible, even if
-        the model's markdown omits them."""
-        if not markdown or (not review_history and not acceptance_gaps):
-            return markdown
-        lines = ["", "---", "", "## 闭环与自检审计(自动生成)", ""]
-        if review_history:
-            lines.append("### 评审闭环")
-            lines.append("")
-            lines.append("| 轮次 | findings | blocker/major/minor | 来源(llm/static) | blocking |")
-            lines.append("| --- | --- | --- | --- | --- |")
-            for p in review_history:
-                sev = "/".join(str(p.by_severity.get(k, 0)) for k in ("blocker", "major", "minor"))
-                src = f"{p.by_source.get('llm', 0)}/{p.by_source.get('static', 0)}"
-                lines.append(
-                    f"| {p.iteration} | {p.findings} | {sev} | {src} | {'是' if p.blocking else '否'} |"
-                )
-            lines.append("")
-        if acceptance_gaps:
-            lines.append("### 验收交叉校验缺口")
-            lines.append("")
-            lines.append("| 对象 | 严重度 | 问题 |")
-            lines.append("| --- | --- | --- |")
-            for g in acceptance_gaps:
-                lines.append(
-                    f"| {g.get('path', '?')} | {g.get('severity', '?')} | {g.get('issue', '')} |"
-                )
-            lines.append("")
-        return markdown + "\n".join(lines)
+    # Thin wrappers kept for call-site/test ergonomics; logic lives in
+    # ``reporting`` so the markdown decorations stay model-independent.
+    _prepend_validation_warnings = staticmethod(prepend_validation_warnings)
+    _append_audit_section = staticmethod(append_audit_section)
 
     def _build_system_prompt(self, stage: Stage, skills: List[SkillDetail]) -> str:
         available = ", ".join(sorted(s.id for s in self._registry.list())) or "(empty)"
