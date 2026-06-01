@@ -75,6 +75,45 @@ def test_directory_tree_skipped_when_absent():
     assert findings == []
 
 
+def test_duplicate_file_paths_is_major():
+    impl = _impl(
+        files=[{"path": "lib/a.dart"}, {"path": "lib/a.dart"}],
+        test_stubs=[{"covers": "lib/a.dart"}],
+    )
+    findings = check_implementation_consistency(impl, {}, {})
+    dupes = [f for f in findings if "重复" in f["issue"]]
+    assert len(dupes) == 1
+    assert dupes[0]["severity"] == "major"
+
+
+def test_test_stub_covering_missing_file_is_minor():
+    impl = _impl(
+        files=[{"path": "lib/a.dart"}],
+        test_stubs=[{"covers": "lib/a.dart"}, {"covers": "lib/ghost.dart"}],
+    )
+    findings = check_implementation_consistency(impl, {}, {})
+    ghosts = [f for f in findings if f["path"] == "lib/ghost.dart"]
+    assert len(ghosts) == 1
+    assert ghosts[0]["severity"] == "minor"
+    assert ghosts[0]["category"] == "testability"
+
+
+def test_dangling_internal_dependency_is_minor():
+    impl = _impl(
+        files=[
+            {"path": "lib/a.dart", "depends_on": ["lib/missing.dart", "package:flutter/material.dart"]},
+        ],
+        test_stubs=[{"covers": "lib/a.dart"}],
+    )
+    findings = check_implementation_consistency(impl, {}, {})
+    dangling = [f for f in findings if "depends_on" in f["issue"]]
+    assert len(dangling) == 1
+    assert dangling[0]["path"] == "lib/a.dart"
+    assert dangling[0]["severity"] == "minor"
+    # package: imports are never flagged
+    assert all("package:" not in f["issue"] for f in findings)
+
+
 def test_defensive_against_garbage_input():
     assert check_implementation_consistency(None, None, None) == []
     assert check_implementation_consistency("oops", [], 5) == []

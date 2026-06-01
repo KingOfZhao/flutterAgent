@@ -132,6 +132,56 @@ def check_implementation_consistency(
                 "source": "static",
             })
 
+    # 3b. Duplicate file paths.
+    seen: set[str] = set()
+    for p in file_paths:
+        if p in seen:
+            findings.append({
+                "path": p,
+                "severity": "major",
+                "category": "architecture",
+                "issue": "同一文件路径在 implementation.files 中重复出现",
+                "suggestion": "合并为单个 file 条目,避免下游写入冲突",
+                "source": "static",
+            })
+        seen.add(p)
+
+    # 3c. Test stub covering a file that has no skeleton.
+    for p in sorted(covered):
+        if p.startswith("lib/") and p not in fileset:
+            findings.append({
+                "path": p,
+                "severity": "minor",
+                "category": "testability",
+                "issue": "test_stubs.covers 指向的源文件没有对应骨架",
+                "suggestion": "补该文件的 file 骨架,或修正 covers 指向",
+                "source": "static",
+            })
+
+    # 3d. Internal (lib/) dependency that points at a missing skeleton.
+    files = implementation.get("files")
+    if isinstance(files, list):
+        for f in files:
+            if not isinstance(f, dict):
+                continue
+            deps = f.get("depends_on")
+            if not isinstance(deps, list):
+                continue
+            owner = f.get("path") if isinstance(f.get("path"), str) else "<general>"
+            for dep in deps:
+                if not isinstance(dep, str):
+                    continue
+                d = dep.strip()
+                if d.startswith("lib/") and d not in fileset:
+                    findings.append({
+                        "path": owner,
+                        "severity": "minor",
+                        "category": "architecture",
+                        "issue": f"depends_on 引用了不存在的内部文件: {d}",
+                        "suggestion": "为被依赖文件补骨架,或修正依赖路径",
+                        "source": "static",
+                    })
+
     # 3. File paths should live inside architecture.directory_tree.
     if isinstance(architecture, dict):
         tree_paths = _collect_tree_paths(architecture)
