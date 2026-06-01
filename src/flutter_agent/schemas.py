@@ -126,6 +126,17 @@ class RefineRequest(BaseModel):
             "against pub.dev to catch hallucinated package names."
         ),
     )
+    review_max_iterations: int = Field(
+        default=1,
+        ge=0,
+        le=3,
+        description=(
+            "Closed loop: when the review stage flags blocking findings "
+            "(severity blocker/major or blocking=true), re-run implementation "
+            "with the findings as feedback and re-review, up to this many extra "
+            "passes. 0 disables the loop (review stays advisory)."
+        ),
+    )
 
 
 class TokenUsage(BaseModel):
@@ -228,6 +239,14 @@ class RefineResponse(BaseModel):
     breakdown: Optional[Dict[str, Any]] = None
     implementation: Optional[Dict[str, Any]] = None
     review: Optional[Dict[str, Any]] = None
+    review_iterations: int = Field(
+        default=0,
+        description=(
+            "Number of extra implementation→review passes the closed loop ran "
+            "because the review flagged blocking findings. 0 = first review "
+            "passed or the loop was disabled."
+        ),
+    )
     acceptance: Optional[Dict[str, Any]] = None
     markdown: Optional[str] = Field(
         default=None, description="Final human-readable PRD in Markdown."

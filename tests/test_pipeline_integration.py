@@ -341,6 +341,167 @@ def test_review_skills_declare_review_stage_hint(registry):
         assert "review" in sk.stage_hints, f"{sid} should hint the review stage"
 
 
+# ---------------------------------------------------------------------------
+# Closed loop: review blocking -> re-implement -> re-review
+# ---------------------------------------------------------------------------
+
+def test_review_is_blocking_helper():
+    from flutter_agent.pipeline import _review_is_blocking
+
+    assert _review_is_blocking({"blocking": True}) is True
+    assert _review_is_blocking({"findings": [{"severity": "blocker", "issue": "x"}]}) is True
+    assert _review_is_blocking({"findings": [{"severity": "major", "issue": "x"}]}) is True
+    assert _review_is_blocking({"findings": [{"severity": "minor", "issue": "x"}]}) is False
+    assert _review_is_blocking({"blocking": False, "findings": []}) is False
+    assert _review_is_blocking(None) is False
+    assert _review_is_blocking("oops") is False
+
+
+def test_format_review_feedback_only_blocking():
+    from flutter_agent.pipeline import _format_review_feedback
+
+    fb = _format_review_feedback({
+        "summary": "需修",
+        "findings": [
+            {"severity": "blocker", "path": "lib/a.dart", "issue": "崩溃", "suggestion": "判空"},
+            {"severity": "minor", "path": "lib/b.dart", "issue": "命名", "suggestion": "改名"},
+        ],
+    })
+    assert "lib/a.dart" in fb
+    assert "lib/b.dart" not in fb  # minor is filtered out of the feedback
+    assert "完整的 implementation JSON" in fb
+
+
+_BLOCKING_REVIEW = json.dumps({
+    "summary": "存在阻断问题",
+    "findings": [
+        {
+            "path": "lib/features/product/product_list_page.dart",
+            "severity": "major",
+            "category": "error-handling",
+            "issue": "登录失败未建模,直接抛裸异常",
+            "suggestion": "返回 Result<User>",
+        }
+    ],
+    "checklist": [{"item": "失败路径已建模", "status": "fail"}],
+    "blocking": True,
+})
+
+
+class _LoopMockClient:
+    """Mock that detects the stage from the user prompt; the FIRST review is
+    blocking, every later review is clean — so the closed loop runs exactly
+    once before settling."""
+
+    _STAGES = ["classify", "spec", "architecture", "breakdown",
+               "implementation", "review", "acceptance", "markdown"]
+
+    def __init__(self):
+        self.review_calls = 0
+        self.impl_calls = 0
+        self.impl_feedback_seen = 0
+
+    def _detect_stage(self, messages) -> str:
+        user = messages[-1]["content"]
+        for st in self._STAGES:
+            if f"当前阶段({st})" in user:
+                return st
+        return "markdown"
+
+    async def chat(self, messages, *, model=None, temperature=None, max_tokens=None, response_format=None):
+        stage = self._detect_stage(messages)
+        if stage == "implementation":
+            self.impl_calls += 1
+            if "评审反馈" in messages[-1]["content"]:
+                self.impl_feedback_seen += 1
+            text = _MOCK_IMPLEMENTATION
+        elif stage == "review":
+            self.review_calls += 1
+            text = _BLOCKING_REVIEW if self.review_calls == 1 else _MOCK_REVIEW
+        else:
+            text = _STAGE_RESPONSES.get(stage, "{}")
+        return {
+            "choices": [{"message": {"content": text}}],
+            "usage": {"prompt_tokens": 500, "completion_tokens": 300, "total_tokens": 800},
+        }
+
+    @staticmethod
+    def extract_text(completion):
+        return completion["choices"][0]["message"]["content"] or ""
+
+    @staticmethod
+    def extract_usage(completion):
+        u = completion.get("usage", {})
+        return {
+            "prompt_tokens": int(u.get("prompt_tokens", 0)),
+            "completion_tokens": int(u.get("completion_tokens", 0)),
+            "total_tokens": int(u.get("total_tokens", 0)),
+        }
+
+
+@pytest.mark.asyncio
+async def test_review_loop_reimplements_when_blocking(settings, registry):
+    """A blocking first review triggers one extra implementation+review pass."""
+    client = _LoopMockClient()
+    pipeline = RefinementPipeline(settings=settings, client=client, registry=registry)
+
+    req = RefineRequest(
+        requirement="电商产品列表 + 详情深链",
+        platforms=[Platform.mobile],
+        stages=[
+            Stage.classify, Stage.spec, Stage.architecture, Stage.breakdown,
+            Stage.implementation, Stage.review, Stage.acceptance, Stage.markdown,
+        ],
+        review_max_iterations=1,
+        validate_packages=False,
+    )
+
+    response = await pipeline.run(req)
+
+    # One re-fix pass happened, and the loop fed findings back to implementation.
+    assert response.review_iterations == 1
+    assert client.impl_calls == 2          # original + 1 re-implement
+    assert client.review_calls == 2        # original + 1 re-review
+    assert client.impl_feedback_seen == 1  # the re-implement saw the feedback
+
+    # Final review is the clean (non-blocking) one.
+    assert response.review is not None
+    assert response.review.get("blocking") is False
+
+    # Stage results include the two extra stages (8 default + 2 loop = 10).
+    stage_names = [sr.stage.value for sr in response.stages]
+    assert stage_names.count("implementation") == 2
+    assert stage_names.count("review") == 2
+    assert len(response.stages) == 10
+
+
+@pytest.mark.asyncio
+async def test_review_loop_disabled_when_max_iterations_zero(settings, registry):
+    """review_max_iterations=0 keeps review advisory: no re-implementation."""
+    client = _LoopMockClient()
+    pipeline = RefinementPipeline(settings=settings, client=client, registry=registry)
+
+    req = RefineRequest(
+        requirement="电商产品列表 + 详情深链",
+        platforms=[Platform.mobile],
+        stages=[
+            Stage.classify, Stage.spec, Stage.architecture, Stage.breakdown,
+            Stage.implementation, Stage.review, Stage.acceptance, Stage.markdown,
+        ],
+        review_max_iterations=0,
+        validate_packages=False,
+    )
+
+    response = await pipeline.run(req)
+
+    assert response.review_iterations == 0
+    assert client.impl_calls == 1
+    assert client.review_calls == 1
+    assert response.review is not None
+    assert response.review.get("blocking") is True  # blocking finding surfaced, not fixed
+    assert len(response.stages) == 8
+
+
 @pytest.mark.asyncio
 async def test_pipeline_cache_hit(settings, registry, tmp_path):
     """Run twice with same input, second should be cached."""

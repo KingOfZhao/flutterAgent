@@ -297,6 +297,49 @@ def _platforms_to_strs(platforms: List[Platform]) -> List[str]:
     return out or ["mobile", "desktop"]  # safe default
 
 
+_BLOCKING_SEVERITIES = {"blocker", "major"}
+
+
+def _review_is_blocking(review: Optional[Dict[str, Any]]) -> bool:
+    """A review blocks the implementation when it says so, or when any finding
+    is severity blocker/major. Defensive against loose/missing fields."""
+    if not isinstance(review, dict):
+        return False
+    if review.get("blocking") is True:
+        return True
+    findings = review.get("findings")
+    if isinstance(findings, list):
+        for f in findings:
+            if isinstance(f, dict) and str(f.get("severity", "")).lower() in _BLOCKING_SEVERITIES:
+                return True
+    return False
+
+
+def _format_review_feedback(review: Dict[str, Any]) -> str:
+    """Turn review findings into a concrete fix list fed back to implementation."""
+    lines: List[str] = []
+    summary = review.get("summary")
+    if isinstance(summary, str) and summary.strip():
+        lines.append(f"评审总评: {summary.strip()}")
+    findings = review.get("findings")
+    if isinstance(findings, list):
+        for i, f in enumerate(findings, 1):
+            if not isinstance(f, dict):
+                continue
+            sev = str(f.get("severity", "?"))
+            if sev.lower() not in _BLOCKING_SEVERITIES:
+                continue
+            path = f.get("path", "<general>")
+            issue = f.get("issue", "")
+            sug = f.get("suggestion", "")
+            lines.append(f"{i}. [{sev}] {path}: {issue} → 修复建议: {sug}")
+    lines.append(
+        "请在保留原有文件结构的前提下,仅针对上述 blocker/major 问题修订骨架,"
+        "输出完整的 implementation JSON(不要省略未改动的文件)。"
+    )
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Pipeline
 # ---------------------------------------------------------------------------
@@ -369,6 +412,7 @@ class RefinementPipeline:
         prior: Dict[Stage, Dict[str, Any]] = {}
         markdown_out: Optional[str] = None
         total_usage = TokenUsage()
+        review_iterations = 0
 
         for stage in req.stages:
             stage_result = await self._run_stage(
@@ -404,6 +448,44 @@ class RefinementPipeline:
                             selected_ids = [s.id for s in picked]
                             logger.info("classify refined skills -> %s", selected_ids)
 
+                # Closed loop: if the review blocks, re-implement with the
+                # findings as feedback and re-review, bounded by the request.
+                elif stage == Stage.review and Stage.implementation in req.stages:
+                    while (
+                        review_iterations < req.review_max_iterations
+                        and _review_is_blocking(prior.get(Stage.review))
+                    ):
+                        feedback = _format_review_feedback(prior[Stage.review])
+                        logger.info(
+                            "review blocking -> re-implement pass %d/%d",
+                            review_iterations + 1,
+                            req.review_max_iterations,
+                        )
+                        impl_again = await self._run_stage(
+                            stage=Stage.implementation,
+                            req=req,
+                            skills=picked,
+                            prior=prior,
+                            feedback=feedback,
+                        )
+                        stage_results.append(impl_again)
+                        total_usage.add(impl_again.usage)
+                        if impl_again.parsed is not None:
+                            prior[Stage.implementation] = impl_again.parsed
+
+                        review_again = await self._run_stage(
+                            stage=Stage.review,
+                            req=req,
+                            skills=picked,
+                            prior=prior,
+                        )
+                        stage_results.append(review_again)
+                        total_usage.add(review_again.usage)
+                        if review_again.parsed is not None:
+                            prior[Stage.review] = review_again.parsed
+
+                        review_iterations += 1
+
         # ---- pub.dev package validation ---------------------------------
         validations: List[PackageValidation] = []
         if req.validate_packages and self._pub_validator is not None:
@@ -433,6 +515,7 @@ class RefinementPipeline:
             breakdown=prior.get(Stage.breakdown),
             implementation=prior.get(Stage.implementation),
             review=prior.get(Stage.review),
+            review_iterations=review_iterations,
             acceptance=prior.get(Stage.acceptance),
             markdown=self._prepend_validation_warnings(markdown_out, validations),
             validations=validations,
@@ -489,9 +572,10 @@ class RefinementPipeline:
         req: RefineRequest,
         skills: List[SkillDetail],
         prior: Dict[Stage, Dict[str, Any]],
+        feedback: Optional[str] = None,
     ) -> StageResult:
         sys_prompt = self._build_system_prompt(stage, skills)
-        user_prompt = self._build_user_prompt(stage, req, prior)
+        user_prompt = self._build_user_prompt(stage, req, prior, feedback=feedback)
         model = (
             self._settings.planner_model
             if stage == Stage.classify
@@ -655,6 +739,7 @@ class RefinementPipeline:
         stage: Stage,
         req: RefineRequest,
         prior: Dict[Stage, Dict[str, Any]],
+        feedback: Optional[str] = None,
     ) -> str:
         chunks: List[str] = []
         chunks.append("## 用户原始需求")
@@ -662,6 +747,9 @@ class RefinementPipeline:
         if req.extra_context:
             chunks.append("\n## 额外上下文")
             chunks.append(req.extra_context.strip())
+        if feedback:
+            chunks.append("\n## 评审反馈(必须逐条修复后重新产出)")
+            chunks.append(feedback.strip())
 
         platforms = _platforms_to_strs(req.platforms)
         chunks.append("\n## 目标平台")
