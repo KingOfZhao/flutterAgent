@@ -43,6 +43,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from flutter_agent.config import get_settings  # noqa: E402
+from flutter_agent.deepseek_client import DeepSeekClient  # noqa: E402
 from flutter_agent.ingestion import (  # noqa: E402
     DEFAULT_QUERIES,
     ArxivSource,
@@ -51,6 +52,7 @@ from flutter_agent.ingestion import (  # noqa: E402
     SeenStore,
     candidate_skill_id,
     candidate_to_skill_scaffold,
+    distill_candidate,
 )
 
 app = typer.Typer(add_completion=False, help="Ingest open-source dev signals.")
@@ -78,6 +80,14 @@ def discover(
     json_out: Optional[Path] = typer.Option(None, "--json", help="Write digest JSON."),
     scaffold_dir: Optional[Path] = typer.Option(
         None, "--scaffold-dir", help="Write a SKILL.md scaffold per new candidate."
+    ),
+    distill: bool = typer.Option(
+        False,
+        "--distill",
+        help="Fill each scaffold into a mature skill via the model (COSTS TOKENS).",
+    ),
+    max_distill: int = typer.Option(
+        5, "--max-distill", help="Cap model-distilled skills per run (token guard)."
     ),
     timeout: float = typer.Option(15.0, "--timeout"),
 ) -> None:
@@ -112,8 +122,22 @@ def discover(
     console.print(f"[dim]sources: {ok}[/dim]")
 
     if scaffold_dir is not None:
-        written = _write_scaffolds(rows, scaffold_dir, only_new)
-        console.print(f"[green]scaffolded {written} skill(s) -> {scaffold_dir}[/green]")
+        if distill:
+            if not settings.deepseek_api_key:
+                raise typer.BadParameter(
+                    "--distill needs DEEPSEEK_API_KEY (the distill step costs tokens)"
+                )
+            written = asyncio.run(
+                _distill_and_write(rows, scaffold_dir, only_new, max_distill, settings)
+            )
+            console.print(
+                f"[green]distilled {written} skill(s) via model -> {scaffold_dir}[/green]"
+            )
+        else:
+            written = _write_scaffolds(rows, scaffold_dir, only_new)
+            console.print(
+                f"[green]scaffolded {written} skill(s) -> {scaffold_dir}[/green]"
+            )
 
     if json_out is not None:
         json_out.parent.mkdir(parents=True, exist_ok=True)
@@ -141,6 +165,31 @@ def _write_scaffolds(rows, scaffold_dir: Path, only_new: bool) -> int:
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(candidate_to_skill_scaffold(c), encoding="utf-8")
         written += 1
+    return written
+
+
+async def _distill_and_write(
+    rows, scaffold_dir: Path, only_new: bool, max_distill: int, settings
+) -> int:
+    """Distill (model-fill) up to ``max_distill`` candidates into skills."""
+    client = DeepSeekClient(settings)
+    written = 0
+    try:
+        for c in rows:
+            if written >= max_distill:
+                break
+            if only_new and not c.is_new:
+                continue
+            sid = candidate_skill_id(c)
+            dest = scaffold_dir / sid / "SKILL.md"
+            if dest.exists():
+                continue  # never clobber an existing (possibly filled) skill
+            markdown = await distill_candidate(client, c, model=settings.deepseek_model)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(markdown, encoding="utf-8")
+            written += 1
+    finally:
+        await client.aclose()
     return written
 
 

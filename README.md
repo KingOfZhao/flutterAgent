@@ -394,7 +394,7 @@ requirement
 
 让 skill 库能持续从开源生态学习——抓取**开发/代码方向**的开源信号,而不是把一切塞进来。
 
-- **来源(自行查询公开 API)**:Hugging Face Hub 模型、arXiv 论文。纯 HTTP,关键词过滤到 code/agent/flutter/dart 等开发主题。
+- **来源(自行查询公开 API)**:Hugging Face Hub 模型、arXiv 论文。纯 HTTP,关键词过滤到 code/agent/flutter/dart 等开发主题;对 429/5xx 有退避重试,单源失败不影响其余(arXiv 对云 IP 限流较严,失败会标 `sources: arxiv=FAIL` 并继续)。
 - **只报新增**:`data/ingestion_seen.json` 记录已见条目,每次运行只高亮新出现的(`is_new`)。
 - **脚手架而非成品**:命中可一键生成**带出处**的 `SKILL.md` 草稿(front-matter + 来源 + 五层 TODO),供后续按 `flutter-skill-distillation` 填充。
 - **诚实边界**:抓取+脚手架**不花模型 token**;把草稿蒸馏成成熟 skill 的"认知内容"那一步**需要一次模型运行(算力/token)**。"持续"需把命令挂到定时任务,服务本身不会自动后台轮询。
@@ -409,6 +409,10 @@ python scripts/ingest_cli.py discover -q "code agent" -q "dart" \
 
 # 把新增条目生成草稿到 skills/(草稿目录已 gitignore,需人工填充+登记后才纳入)
 python scripts/ingest_cli.py discover --only-new --scaffold-dir skills
+
+# 一键调底层模型把草稿填成成熟 skill(★会花 token,需 DEEPSEEK_API_KEY;--max-distill 限流)
+python scripts/ingest_cli.py discover --only-new --scaffold-dir skills \
+    --distill --max-distill 3
 
 # 持续(cron 每天一次,落每日 digest)
 # 0 7 * * *  cd /path/to/flutterAgent && .venv/bin/python scripts/ingest_cli.py \

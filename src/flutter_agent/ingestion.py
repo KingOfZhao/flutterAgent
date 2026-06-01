@@ -20,13 +20,15 @@ Design choices (so this is testable and honest):
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+import random
 import re
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 from pydantic import BaseModel, Field
@@ -36,6 +38,53 @@ logger = logging.getLogger(__name__)
 _HF_MODELS_URL = "https://huggingface.co/api/models"
 _ARXIV_URL = "http://export.arxiv.org/api/query"
 _ARXIV_NS = {"atom": "http://www.w3.org/2005/Atom"}
+# arXiv asks API clients to identify themselves and throttles anonymous bursts
+# harder; a descriptive UA reduces (does not eliminate) 429s from shared IPs.
+_USER_AGENT = "flutterAgent-ingestion/0.1 (+https://github.com/KingOfZhao/flutterAgent)"
+
+# Status codes worth retrying (arXiv loves to 429; HF can 5xx under load).
+_RETRY_STATUS = {429, 500, 502, 503, 504}
+
+
+async def _get_with_retry(
+    client: httpx.AsyncClient,
+    url: str,
+    *,
+    params: Optional[Dict[str, str]] = None,
+    headers: Optional[Dict[str, str]] = None,
+    retries: int = 3,
+    backoff_base: float = 0.6,
+) -> httpx.Response:
+    """GET with bounded exponential backoff on 429/5xx/transport errors.
+
+    Raises the last ``httpx`` error if all attempts are exhausted, so callers
+    can keep their existing ``except httpx.HTTPError`` handling.
+    """
+    last_exc: Optional[httpx.HTTPError] = None
+    for attempt in range(1, max(1, retries) + 1):
+        try:
+            resp = await client.get(url, params=params, headers=headers)
+        except httpx.HTTPError as exc:
+            last_exc = exc
+        else:
+            if resp.status_code in _RETRY_STATUS:
+                last_exc = httpx.HTTPStatusError(
+                    f"{resp.status_code} from {url}",
+                    request=resp.request,
+                    response=resp,
+                )
+            else:
+                resp.raise_for_status()
+                return resp
+        if attempt < retries:
+            delay = backoff_base * (2 ** (attempt - 1)) + random.uniform(0, 0.25)
+            logger.warning(
+                "GET %s attempt %d/%d failed (%s); retrying in %.2fs",
+                url, attempt, retries, last_exc, delay,
+            )
+            await asyncio.sleep(delay)
+    assert last_exc is not None
+    raise last_exc
 
 # Signals that a candidate is about software development / coding, not a random
 # image/audio model or an unrelated paper. Matched case-insensitively against
@@ -217,8 +266,12 @@ class SeenStore:
 class HuggingFaceSource:
     name = "huggingface"
 
-    def __init__(self, client: httpx.AsyncClient):
+    def __init__(
+        self, client: httpx.AsyncClient, retries: int = 3, backoff_base: float = 0.6
+    ):
         self._client = client
+        self._retries = retries
+        self._backoff_base = backoff_base
 
     async def fetch(self, query: str, limit: int) -> List[IngestionCandidate]:
         params = {
@@ -227,18 +280,28 @@ class HuggingFaceSource:
             "direction": "-1",
             "limit": str(limit),
         }
-        resp = await self._client.get(
-            _HF_MODELS_URL, params=params, headers={"Accept": "application/json"}
+        resp = await _get_with_retry(
+            self._client,
+            _HF_MODELS_URL,
+            params=params,
+            headers={"Accept": "application/json"},
+            retries=self._retries,
+            backoff_base=self._backoff_base,
         )
-        resp.raise_for_status()
         return parse_hf_models(resp.json())
 
 
 class ArxivSource:
     name = "arxiv"
 
-    def __init__(self, client: httpx.AsyncClient):
+    def __init__(
+        self, client: httpx.AsyncClient, retries: int = 4, backoff_base: float = 1.0
+    ):
+        # arXiv rate-limits aggressively, so it gets one extra attempt and a
+        # longer base delay than Hugging Face by default.
         self._client = client
+        self._retries = retries
+        self._backoff_base = backoff_base
 
     async def fetch(self, query: str, limit: int) -> List[IngestionCandidate]:
         params = {
@@ -247,8 +310,14 @@ class ArxivSource:
             "sortOrder": "descending",
             "max_results": str(limit),
         }
-        resp = await self._client.get(_ARXIV_URL, params=params)
-        resp.raise_for_status()
+        resp = await _get_with_retry(
+            self._client,
+            _ARXIV_URL,
+            params=params,
+            headers={"User-Agent": _USER_AGENT},
+            retries=self._retries,
+            backoff_base=self._backoff_base,
+        )
         return parse_arxiv_atom(resp.text)
 
 
@@ -373,6 +442,68 @@ TODO(模型填充)
 - 本条目由公开资料蒸馏,是**方法/能力镜片**,不代表官方背书。
 - 抓取自动化,采用前需人工核对来源时效与许可证。
 """
+
+
+# ---------------------------------------------------------------------------
+# Optional: fill a scaffold into a mature skill via the model (costs tokens).
+# ---------------------------------------------------------------------------
+
+DISTILL_SYSTEM = (
+    "你是一名严谨的知识蒸馏师,按『女娲五层造 skill 法』把一个开源条目"
+    "(模型或论文)的脚手架填充为成熟的 Flutter/Dart 开发 SKILL.md。要求:\n"
+    "1) 保留原 front-matter 的 id;把 name 去掉『【待蒸馏】』前缀;version 设为 0.1.0;"
+    "metadata.status 改为 distilled。\n"
+    "2) 必须**原样保留**『## 来源』整段(平台/链接/日期),这是反幻觉红线。\n"
+    "3) 用真实可迁移的内容填满五层(怎么想/怎么判断/怎么说话/什么不做/知道局限),"
+    "每层简洁、具体、可执行;不要写『TODO』。\n"
+    "4) **不得编造**超出给定摘要与常识的事实;不确定就在『知道局限』里诚实声明,"
+    "并写明这是『能力镜片,非官方背书,基于抓取日期的时点快照』。\n"
+    "5) 只输出完整的 SKILL.md(以 `---` front-matter 开头),不要任何额外解释或代码围栏。"
+)
+
+
+def _strip_code_fence(text: str) -> str:
+    """Drop a leading/trailing ```markdown fence if the model added one."""
+    t = text.strip()
+    if t.startswith("```"):
+        lines = t.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        t = "\n".join(lines).strip()
+    return t
+
+
+async def distill_candidate(
+    client: Any, c: IngestionCandidate, *, model: Optional[str] = None
+) -> str:
+    """Fill a candidate's scaffold into a mature SKILL.md using ``client``.
+
+    ``client`` is duck-typed to a ``DeepSeekClient``: it must expose
+    ``async chat(messages, *, model=..., temperature=..., max_tokens=...)``
+    returning an OpenAI-shaped completion, and a static ``extract_text``.
+    This call **costs model tokens**; callers gate it behind an explicit flag.
+    Falls back to the deterministic scaffold if the model returns nothing.
+    """
+    scaffold = candidate_to_skill_scaffold(c)
+    user = (
+        "以下是待填充的脚手架,请按系统要求蒸馏为成熟 SKILL.md:\n\n"
+        f"{scaffold}\n\n"
+        f"补充上下文 —— 标题: {c.title}\n标签: {', '.join(c.tags[:12])}\n"
+        f"摘要: {c.summary or '(无)'}"
+    )
+    completion = await client.chat(
+        [
+            {"role": "system", "content": DISTILL_SYSTEM},
+            {"role": "user", "content": user},
+        ],
+        model=model,
+        temperature=0.2,
+        max_tokens=2048,
+    )
+    text = _strip_code_fence(client.extract_text(completion) or "")
+    return text if text.startswith("---") else scaffold
 
 
 # ---------------------------------------------------------------------------

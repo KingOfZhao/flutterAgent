@@ -18,8 +18,11 @@ from flutter_agent.ingestion import (  # noqa: E402
     IngestionCandidate,
     Ingestor,
     SeenStore,
+    _get_with_retry,
+    _strip_code_fence,
     candidate_skill_id,
     candidate_to_skill_scaffold,
+    distill_candidate,
     is_relevant,
     parse_arxiv_atom,
     parse_hf_models,
@@ -203,3 +206,97 @@ def test_scaffold_has_sources_layers_and_honesty() -> None:
     for layer in ("怎么想", "怎么判断", "怎么说话", "什么不做", "知道局限"):
         assert layer in md
     assert "诚实边界" in md
+
+
+# ---- retry / backoff (no real sleeps thanks to backoff_base=0) -----------
+
+def _counting_client(responses):
+    """MockTransport that returns ``responses`` in order, repeating the last."""
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        i = min(calls["n"], len(responses) - 1)
+        calls["n"] += 1
+        return responses[i]
+
+    return httpx.AsyncClient(transport=httpx.MockTransport(handler)), calls
+
+
+def test_get_with_retry_recovers_after_429() -> None:
+    client, calls = _counting_client(
+        [httpx.Response(429), httpx.Response(429), httpx.Response(200, text="ok")]
+    )
+
+    async def go():
+        return await _get_with_retry(
+            client, "https://x/y", retries=3, backoff_base=0.0
+        )
+
+    resp = asyncio.run(go())
+    assert resp.status_code == 200
+    assert calls["n"] == 3  # two retries then success
+
+
+def test_get_with_retry_exhausts_and_raises() -> None:
+    client, calls = _counting_client([httpx.Response(429)])
+
+    async def go():
+        return await _get_with_retry(
+            client, "https://x/y", retries=2, backoff_base=0.0
+        )
+
+    try:
+        asyncio.run(go())
+        raised = False
+    except httpx.HTTPStatusError:
+        raised = True
+    assert raised and calls["n"] == 2
+
+
+def test_arxiv_source_retries_then_succeeds() -> None:
+    client, calls = _counting_client(
+        [httpx.Response(429), httpx.Response(200, text=_ARXIV_XML)]
+    )
+    src = ArxivSource(client, retries=3, backoff_base=0.0)
+    cands = asyncio.run(src.fetch("code", 5))
+    assert calls["n"] == 2
+    assert cands[0].ref == "2501.01234v1"
+
+
+# ---- distill (model-backed, fully mocked — no tokens spent) --------------
+
+class _FakeChatClient:
+    def __init__(self, content: str):
+        self._content = content
+        self.calls = 0
+
+    async def chat(self, messages, *, model=None, temperature=None, max_tokens=None):
+        self.calls += 1
+        self.last_messages = messages
+        return {"choices": [{"message": {"content": self._content}}]}
+
+    @staticmethod
+    def extract_text(completion) -> str:
+        return completion["choices"][0]["message"]["content"]
+
+
+def test_strip_code_fence() -> None:
+    assert _strip_code_fence("```markdown\n---\nid: x\n---\n```") == "---\nid: x\n---"
+    assert _strip_code_fence("---\nid: x\n---") == "---\nid: x\n---"
+
+
+def test_distill_candidate_returns_model_markdown() -> None:
+    c = parse_arxiv_atom(_ARXIV_XML)[0]
+    filled = "---\nid: flutter-watch-paper-2501-01234v1\n---\n# done"
+    client = _FakeChatClient(filled)
+    out = asyncio.run(distill_candidate(client, c, model="m"))
+    assert out == filled
+    assert client.calls == 1
+
+
+def test_distill_candidate_falls_back_to_scaffold_on_junk() -> None:
+    c = parse_arxiv_atom(_ARXIV_XML)[0]
+    client = _FakeChatClient("sorry I cannot help")  # not a SKILL.md
+    out = asyncio.run(distill_candidate(client, c, model="m"))
+    assert out.startswith("---")  # fell back to deterministic scaffold
+    assert "draft-scaffold" in out
