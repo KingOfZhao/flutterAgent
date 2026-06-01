@@ -46,13 +46,11 @@ from flutter_agent.config import get_settings  # noqa: E402
 from flutter_agent.deepseek_client import DeepSeekClient  # noqa: E402
 from flutter_agent.ingestion import (  # noqa: E402
     DEFAULT_QUERIES,
-    ArxivSource,
-    HuggingFaceSource,
     Ingestor,
     SeenStore,
-    candidate_skill_id,
-    candidate_to_skill_scaffold,
-    distill_candidate,
+    build_sources,
+    distill_and_write,
+    write_scaffolds,
 )
 
 app = typer.Typer(add_completion=False, help="Ingest open-source dev signals.")
@@ -134,7 +132,7 @@ def discover(
                 f"[green]distilled {written} skill(s) via model -> {scaffold_dir}[/green]"
             )
         else:
-            written = _write_scaffolds(rows, scaffold_dir, only_new)
+            written = write_scaffolds(rows, scaffold_dir, only_new=only_new)
             console.print(
                 f"[green]scaffolded {written} skill(s) -> {scaffold_dir}[/green]"
             )
@@ -153,53 +151,27 @@ def discover(
         console.print("[dim]--no-commit: seen-store unchanged[/dim]")
 
 
-def _write_scaffolds(rows, scaffold_dir: Path, only_new: bool) -> int:
-    written = 0
-    for c in rows:
-        if only_new and not c.is_new:
-            continue
-        sid = candidate_skill_id(c)
-        dest = scaffold_dir / sid / "SKILL.md"
-        if dest.exists():
-            continue  # never clobber an existing (possibly filled) skill
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(candidate_to_skill_scaffold(c), encoding="utf-8")
-        written += 1
-    return written
-
-
 async def _distill_and_write(
     rows, scaffold_dir: Path, only_new: bool, max_distill: int, settings
 ) -> int:
     """Distill (model-fill) up to ``max_distill`` candidates into skills."""
     client = DeepSeekClient(settings)
-    written = 0
     try:
-        for c in rows:
-            if written >= max_distill:
-                break
-            if only_new and not c.is_new:
-                continue
-            sid = candidate_skill_id(c)
-            dest = scaffold_dir / sid / "SKILL.md"
-            if dest.exists():
-                continue  # never clobber an existing (possibly filled) skill
-            markdown = await distill_candidate(client, c, model=settings.deepseek_model)
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.write_text(markdown, encoding="utf-8")
-            written += 1
+        return await distill_and_write(
+            client,
+            rows,
+            scaffold_dir,
+            only_new=only_new,
+            max_distill=max_distill,
+            model=settings.deepseek_model,
+        )
     finally:
         await client.aclose()
-    return written
 
 
 async def _run(queries, wanted, limit, seen, timeout):
     async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
-        srcs = []
-        if "hf" in wanted or "huggingface" in wanted:
-            srcs.append(HuggingFaceSource(client))
-        if "arxiv" in wanted:
-            srcs.append(ArxivSource(client))
+        srcs = build_sources(client, wanted)
         if not srcs:
             raise typer.BadParameter("no valid sources; use hf and/or arxiv")
         return await Ingestor(srcs, seen=seen).discover(queries, limit_per_query=limit)

@@ -7,12 +7,14 @@ request so individual routes stay testable.
 from __future__ import annotations
 
 import secrets
-from typing import Optional
+from typing import AsyncIterator, Callable, Optional
 
+import httpx
 from fastapi import Depends, Header, HTTPException, Request, status
 
 from .config import Settings
 from .deepseek_client import DeepSeekClient
+from .ingestion import Ingestor, SeenStore, build_sources
 from .pipeline import RefinementPipeline
 from .run_store import RunStore
 from .skill_loader import SkillRegistry
@@ -36,6 +38,22 @@ def get_pipeline(request: Request) -> RefinementPipeline:
 
 def get_run_store(request: Request) -> RunStore:
     return request.app.state.run_store
+
+
+async def get_make_ingestor(
+    settings: Settings = Depends(get_settings),
+) -> AsyncIterator[Callable[[set, Optional[SeenStore]], Ingestor]]:
+    """Yield a factory that builds an ``Ingestor`` over a per-request httpx client.
+
+    The httpx client is opened here and closed when the request finishes, so
+    routes never leak connections. Tests override this dependency to inject a
+    fake source and avoid the network entirely.
+    """
+    async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+        def make(wanted: set, seen: Optional[SeenStore]) -> Ingestor:
+            return Ingestor(build_sources(client, wanted), seen=seen)
+
+        yield make
 
 
 def require_api_key(

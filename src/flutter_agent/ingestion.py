@@ -321,6 +321,21 @@ class ArxivSource:
         return parse_arxiv_atom(resp.text)
 
 
+def build_sources(client: httpx.AsyncClient, wanted: set) -> List[object]:
+    """Build the requested source adapters around a shared httpx client.
+
+    ``wanted`` is a set of lowercase names; accepts ``hf``/``huggingface`` and
+    ``arxiv``. Unknown names are ignored; an empty result means the caller
+    asked for nothing valid.
+    """
+    srcs: List[object] = []
+    if "hf" in wanted or "huggingface" in wanted:
+        srcs.append(HuggingFaceSource(client))
+    if "arxiv" in wanted:
+        srcs.append(ArxivSource(client))
+    return srcs
+
+
 class Ingestor:
     """Run a watch-list of queries across sources and dedup the results."""
 
@@ -504,6 +519,67 @@ async def distill_candidate(
     )
     text = _strip_code_fence(client.extract_text(completion) or "")
     return text if text.startswith("---") else scaffold
+
+
+# ---------------------------------------------------------------------------
+# Persist scaffolds / distilled skills to disk (shared by CLI and HTTP route).
+# ---------------------------------------------------------------------------
+
+def write_scaffolds(
+    candidates: List[IngestionCandidate],
+    scaffold_dir: Path,
+    *,
+    only_new: bool = False,
+) -> int:
+    """Write a deterministic SKILL.md scaffold per candidate (0 tokens).
+
+    Never clobbers an existing ``<id>/SKILL.md`` (a possibly-filled skill).
+    Returns how many files were written.
+    """
+    scaffold_dir = Path(scaffold_dir)
+    written = 0
+    for c in candidates:
+        if only_new and not c.is_new:
+            continue
+        dest = scaffold_dir / candidate_skill_id(c) / "SKILL.md"
+        if dest.exists():
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(candidate_to_skill_scaffold(c), encoding="utf-8")
+        written += 1
+    return written
+
+
+async def distill_and_write(
+    client: Any,
+    candidates: List[IngestionCandidate],
+    scaffold_dir: Path,
+    *,
+    only_new: bool = False,
+    max_distill: int = 5,
+    model: Optional[str] = None,
+) -> int:
+    """Model-fill up to ``max_distill`` candidates into skills (COSTS TOKENS).
+
+    ``client`` is a live, duck-typed ``DeepSeekClient`` owned by the caller —
+    this function does **not** close it. Never clobbers an existing skill.
+    Returns how many files were written.
+    """
+    scaffold_dir = Path(scaffold_dir)
+    written = 0
+    for c in candidates:
+        if written >= max_distill:
+            break
+        if only_new and not c.is_new:
+            continue
+        dest = scaffold_dir / candidate_skill_id(c) / "SKILL.md"
+        if dest.exists():
+            continue
+        markdown = await distill_candidate(client, c, model=model)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(markdown, encoding="utf-8")
+        written += 1
+    return written
 
 
 # ---------------------------------------------------------------------------

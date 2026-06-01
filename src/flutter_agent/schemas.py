@@ -399,3 +399,77 @@ class MetricsResponse(BaseModel):
 class ErrorResponse(BaseModel):
     error: str
     detail: Optional[str] = None
+
+
+# ---------------------------------------------------------------------------
+# Ingestion (POST /v1/ingest)
+# ---------------------------------------------------------------------------
+
+class IngestRequest(BaseModel):
+    """Discover open-source dev signals (Hugging Face models + arXiv papers).
+
+    Discovery and deterministic scaffolding cost **no** model tokens. Setting
+    ``distill=true`` fills each scaffold's five cognitive layers via the model
+    and therefore **costs tokens** (and requires ``DEEPSEEK_API_KEY``).
+    """
+
+    queries: Optional[List[str]] = Field(
+        default=None,
+        description="Watch-list queries; defaults to the built-in dev/coding watch-list.",
+    )
+    sources: List[str] = Field(
+        default_factory=lambda: ["hf", "arxiv"],
+        description="Which sources to query: 'hf' (Hugging Face) and/or 'arxiv'.",
+    )
+    limit: int = Field(
+        default=10, ge=1, le=50, description="Results per query per source."
+    )
+    only_new: bool = Field(
+        default=False,
+        description="Return (and scaffold/distill) only candidates not seen before.",
+    )
+    scaffold: bool = Field(
+        default=False,
+        description="Write a deterministic SKILL.md scaffold per candidate (0 tokens).",
+    )
+    distill: bool = Field(
+        default=False,
+        description=(
+            "Fill each scaffold into a mature skill via the model. COSTS TOKENS "
+            "and requires DEEPSEEK_API_KEY. Implies scaffolding to disk."
+        ),
+    )
+    max_distill: int = Field(
+        default=5, ge=1, le=50, description="Cap model-distilled skills per call (token guard)."
+    )
+    scaffold_dir: Optional[str] = Field(
+        default=None,
+        description=(
+            "Target directory for scaffolds / distilled skills; defaults to the "
+            "served skills dir. Existing files are never clobbered."
+        ),
+    )
+    commit: bool = Field(
+        default=False,
+        description=(
+            "Persist seen-keys so future calls only surface new candidates. "
+            "Default off (read-only)."
+        ),
+    )
+
+
+class IngestResponse(BaseModel):
+    digest: "IngestionDigest"
+    scaffolded: int = Field(default=0, description="Scaffold files written this call.")
+    distilled: int = Field(default=0, description="Model-distilled skills written this call.")
+    scaffold_dir: Optional[str] = Field(
+        default=None, description="Directory the files were written to (if any)."
+    )
+    committed: bool = Field(default=False, description="Whether the seen-store was updated.")
+
+
+# Imported at the bottom to avoid any import-order surprises; ``ingestion`` has
+# no dependency on this module, so this is safe.
+from .ingestion import IngestionDigest  # noqa: E402
+
+IngestResponse.model_rebuild()

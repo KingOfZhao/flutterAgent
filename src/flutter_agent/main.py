@@ -10,6 +10,7 @@ Mounts:
   * GET  /v1/skills/{id}         fetch one skill (incl. markdown body)
   * POST /v1/skills/reload       hot-reload skills from disk
   * POST /v1/refine              run the refinement pipeline (canonical)
+  * POST /v1/ingest              discover open-source dev signals (HF + arXiv)
   * POST /v1/chat/completions    OpenAI-compatible facade
 """
 from __future__ import annotations
@@ -27,7 +28,7 @@ from .log_setup import configure_logging
 from .deepseek_client import DeepSeekClient
 from .pipeline import RefinementPipeline
 from .pub_validator import PubValidator
-from .routes import metrics, openai_compat, refine, runs, skills
+from .routes import ingest, metrics, openai_compat, refine, runs, skills
 from .run_store import RunStore
 from .schemas import HealthResponse
 from .skill_loader import SkillRegistry
@@ -122,6 +123,7 @@ a{{color:#2563eb}}</style></head>
   <li><code>POST /v1/chat/completions</code> — OpenAI-compatible (supports <code>stream=true</code> SSE; use <code>model=&quot;flutter-agent&quot;</code>)</li>
   <li><code>GET  /v1/skills</code> — list loaded skill docs</li>
   <li><code>POST /v1/skills/reload</code> — hot-reload <code>SKILL.md</code> files</li>
+  <li><code>POST /v1/ingest</code> — discover open-source dev signals (HF models + arXiv papers)</li>
   <li><code>GET  /v1/runs</code> &middot; <code>GET /v1/runs/{{id}}</code> — audit log of past pipelines</li>
   <li><code>GET  /v1/metrics</code> — aggregate run statistics (tokens, cost, success rate)</li>
   <li><code>GET  /healthz</code> — health</li>
@@ -147,6 +149,7 @@ async def healthz() -> HealthResponse:
 
 app.include_router(skills.router)
 app.include_router(refine.router)
+app.include_router(ingest.router)
 app.include_router(runs.router)
 app.include_router(openai_compat.router)
 app.include_router(metrics.router)

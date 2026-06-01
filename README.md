@@ -105,6 +105,7 @@ flutterAgent/
 │   ├── deps.py                  # FastAPI DI 工厂
 │   └── routes/
 │       ├── refine.py            # POST /v1/refine
+│       ├── ingest.py            # POST /v1/ingest  (HF + arXiv 吸收)
 │       ├── skills.py            # /v1/skills + reload
 │       ├── runs.py              # GET /v1/runs[/{id}]
 │       ├── openai_compat.py     # POST /v1/chat/completions  (含 SSE)
@@ -334,6 +335,7 @@ requirement
 | 方法 | 路径 | 用途 |
 |---|---|---|
 | `POST` | `/v1/refine` | 强类型流水线,返回 `RefineResponse`(含 `cost` / `validations` / `cache_key`) |
+| `POST` | `/v1/ingest` | 持续吸收开源:发现 HF 模型 + arXiv 论文,可选 `scaffold`/`distill`,返回 `IngestResponse` |
 | `POST` | `/v1/chat/completions` | OpenAI 兼容;agent / passthrough 双模;支持 SSE |
 | `GET` | `/v1/skills` | 列出已加载 skill |
 | `GET` | `/v1/skills/{id}` | 取单个 skill(含 markdown body) |
@@ -418,6 +420,27 @@ python scripts/ingest_cli.py discover --only-new --scaffold-dir skills \
 # 0 7 * * *  cd /path/to/flutterAgent && .venv/bin/python scripts/ingest_cli.py \
 #            discover --only-new --json data/digests/$(date +\%F).json
 ```
+
+也可走 HTTP(同一能力,接进服务):`POST /v1/ingest`。**发现 + 草稿 0 token**;`distill=true` 才调底层模型(花 token,需 `DEEPSEEK_API_KEY`,模型出错回 502)。
+
+```bash
+# 只发现(返回 IngestResponse.digest;不写盘、不动 seen-store)
+curl -X POST http://127.0.0.1:8765/v1/ingest \
+  -H 'Content-Type: application/json' \
+  -d '{"queries":["code generation"],"sources":["hf","arxiv"],"limit":5}'
+
+# 发现 + 生成草稿到指定目录 + 持久化 seen-store(下次只报新增)
+curl -X POST http://127.0.0.1:8765/v1/ingest \
+  -H 'Content-Type: application/json' \
+  -d '{"only_new":true,"scaffold":true,"scaffold_dir":"skills","commit":true}'
+
+# ★ 调模型把草稿填成成熟 skill(花 token;max_distill 限流;无 key 返回 400)
+curl -X POST http://127.0.0.1:8765/v1/ingest \
+  -H 'Content-Type: application/json' \
+  -d '{"only_new":true,"distill":true,"max_distill":3,"scaffold_dir":"skills"}'
+```
+
+请求字段:`queries`(默认内置 watch-list)、`sources`(`hf`/`arxiv`)、`limit`、`only_new`、`scaffold`、`distill`、`max_distill`、`scaffold_dir`(默认服务 skills 目录,不覆盖已存在文件)、`commit`(默认 `false`,只读)。
 
 ## 所有 Skills
 

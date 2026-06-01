@@ -287,6 +287,95 @@
         }
       }
     },
+    "/v1/ingest": {
+      "post": {
+        "tags": [
+          "ingest"
+        ],
+        "summary": "Discover (and optionally scaffold/distill) open-source dev signals",
+        "operationId": "ingest_v1_ingest_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g. distill without key).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream model error during distill.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/runs": {
       "get": {
         "tags": [
@@ -509,6 +598,55 @@
           }
         }
       }
+    },
+    "/v1/metrics": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Aggregate statistics across all recorded runs.",
+        "operationId": "get_metrics_v1_metrics_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -692,6 +830,323 @@
         ],
         "title": "HealthResponse"
       },
+      "IngestRequest": {
+        "properties": {
+          "queries": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Queries",
+            "description": "Watch-list queries; defaults to the built-in dev/coding watch-list."
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources",
+            "description": "Which sources to query: 'hf' (Hugging Face) and/or 'arxiv'."
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "description": "Results per query per source.",
+            "default": 10
+          },
+          "only_new": {
+            "type": "boolean",
+            "title": "Only New",
+            "description": "Return (and scaffold/distill) only candidates not seen before.",
+            "default": false
+          },
+          "scaffold": {
+            "type": "boolean",
+            "title": "Scaffold",
+            "description": "Write a deterministic SKILL.md scaffold per candidate (0 tokens).",
+            "default": false
+          },
+          "distill": {
+            "type": "boolean",
+            "title": "Distill",
+            "description": "Fill each scaffold into a mature skill via the model. COSTS TOKENS and requires DEEPSEEK_API_KEY. Implies scaffolding to disk.",
+            "default": false
+          },
+          "max_distill": {
+            "type": "integer",
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Max Distill",
+            "description": "Cap model-distilled skills per call (token guard).",
+            "default": 5
+          },
+          "scaffold_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scaffold Dir",
+            "description": "Target directory for scaffolds / distilled skills; defaults to the served skills dir. Existing files are never clobbered."
+          },
+          "commit": {
+            "type": "boolean",
+            "title": "Commit",
+            "description": "Persist seen-keys so future calls only surface new candidates. Default off (read-only).",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "IngestRequest",
+        "description": "Discover open-source dev signals (Hugging Face models + arXiv papers).\n\nDiscovery and deterministic scaffolding cost **no** model tokens. Setting\n``distill=true`` fills each scaffold's five cognitive layers via the model\nand therefore **costs tokens** (and requires ``DEEPSEEK_API_KEY``)."
+      },
+      "IngestResponse": {
+        "properties": {
+          "digest": {
+            "$ref": "#/components/schemas/IngestionDigest"
+          },
+          "scaffolded": {
+            "type": "integer",
+            "title": "Scaffolded",
+            "description": "Scaffold files written this call.",
+            "default": 0
+          },
+          "distilled": {
+            "type": "integer",
+            "title": "Distilled",
+            "description": "Model-distilled skills written this call.",
+            "default": 0
+          },
+          "scaffold_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scaffold Dir",
+            "description": "Directory the files were written to (if any)."
+          },
+          "committed": {
+            "type": "boolean",
+            "title": "Committed",
+            "description": "Whether the seen-store was updated.",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "digest"
+        ],
+        "title": "IngestResponse"
+      },
+      "IngestionCandidate": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "'huggingface' or 'arxiv'."
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "'model' or 'paper'."
+          },
+          "ref": {
+            "type": "string",
+            "title": "Ref",
+            "description": "Stable id within the source (model id / arxiv id)."
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "default": ""
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "default": ""
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Metrics"
+          },
+          "is_new": {
+            "type": "boolean",
+            "title": "Is New",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "kind",
+          "ref"
+        ],
+        "title": "IngestionCandidate",
+        "description": "One discovered open-source artifact (model or paper)."
+      },
+      "IngestionDigest": {
+        "properties": {
+          "generated_at": {
+            "type": "integer",
+            "title": "Generated At"
+          },
+          "queries": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Queries"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "new_count": {
+            "type": "integer",
+            "title": "New Count",
+            "default": 0
+          },
+          "sources_ok": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Sources Ok"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/IngestionCandidate"
+            },
+            "type": "array",
+            "title": "Candidates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "generated_at",
+          "queries"
+        ],
+        "title": "IngestionDigest"
+      },
+      "MetricsResponse": {
+        "properties": {
+          "total_runs": {
+            "type": "integer",
+            "title": "Total Runs",
+            "description": "Total refinement runs recorded.",
+            "default": 0
+          },
+          "cached_runs": {
+            "type": "integer",
+            "title": "Cached Runs",
+            "description": "Runs served from cache.",
+            "default": 0
+          },
+          "total_tokens": {
+            "type": "integer",
+            "title": "Total Tokens",
+            "description": "Cumulative tokens consumed.",
+            "default": 0
+          },
+          "total_cost_usd": {
+            "type": "number",
+            "title": "Total Cost Usd",
+            "description": "Cumulative estimated cost in USD.",
+            "default": 0.0
+          },
+          "avg_elapsed_ms": {
+            "type": "number",
+            "title": "Avg Elapsed Ms",
+            "description": "Average wall-clock time per run (ms).",
+            "default": 0.0
+          },
+          "bad_packages_total": {
+            "type": "integer",
+            "title": "Bad Packages Total",
+            "description": "Total packages that failed pub.dev validation.",
+            "default": 0
+          },
+          "skills_loaded": {
+            "type": "integer",
+            "title": "Skills Loaded",
+            "description": "Number of skills currently loaded.",
+            "default": 0
+          },
+          "top_skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Top Skills",
+            "description": "Most frequently selected skill ids (top 10)."
+          },
+          "stage_success_rate": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Stage Success Rate",
+            "description": "Fraction of stages where stage_valid=True, keyed by stage name."
+          }
+        },
+        "type": "object",
+        "title": "MetricsResponse",
+        "description": "Aggregate statistics from run history."
+      },
       "PackageValidation": {
         "properties": {
           "package": {
@@ -855,6 +1310,25 @@
             "title": "Validate Packages",
             "description": "If true, every entry in architecture.third_party is checked against pub.dev to catch hallucinated package names.",
             "default": true
+          },
+          "review_max_iterations": {
+            "type": "integer",
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Review Max Iterations",
+            "description": "Closed loop: when the review stage flags blocking findings (severity blocker/major or blocking=true), re-run implementation with the findings as feedback and re-review, up to this many extra passes. 0 disables the loop (review stays advisory).",
+            "default": 1
+          },
+          "review_block_severity": {
+            "type": "string",
+            "enum": [
+              "blocker",
+              "major",
+              "minor"
+            ],
+            "title": "Review Block Severity",
+            "description": "Lowest finding severity that makes the review blocking. 'major' (default) blocks on blocker+major; 'blocker' only on blockers (loosest); 'minor' also blocks on minor (strictest). The model's explicit blocking=true always blocks regardless of this setting.",
+            "default": "major"
           }
         },
         "type": "object",
@@ -969,6 +1443,44 @@
             ],
             "title": "Breakdown"
           },
+          "implementation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Implementation"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review"
+          },
+          "review_iterations": {
+            "type": "integer",
+            "title": "Review Iterations",
+            "description": "Number of extra implementation→review passes the closed loop ran because the review flagged blocking findings. 0 = first review passed or the loop was disabled.",
+            "default": 0
+          },
+          "review_history": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewPass"
+            },
+            "type": "array",
+            "title": "Review History",
+            "description": "Per-pass audit of the closed loop: one entry per review evaluation (first review + each re-review), with finding counts by severity and source. Empty when the review stage did not run."
+          },
           "acceptance": {
             "anyOf": [
               {
@@ -980,6 +1492,15 @@
               }
             ],
             "title": "Acceptance"
+          },
+          "acceptance_gaps": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Acceptance Gaps",
+            "description": "Deterministic cross-check gaps between acceptance, breakdown and implementation (tasks missing acceptance criteria, test stubs not referenced by the test plan). Advisory; does not drive the loop."
           },
           "markdown": {
             "anyOf": [
@@ -1011,6 +1532,61 @@
           "stages"
         ],
         "title": "RefineResponse"
+      },
+      "ReviewPass": {
+        "properties": {
+          "iteration": {
+            "type": "integer",
+            "title": "Iteration",
+            "description": "0 = first review; 1+ = re-reviews driven by the loop."
+          },
+          "blocking": {
+            "type": "boolean",
+            "title": "Blocking",
+            "description": "Whether this pass was judged blocking (drove a re-implement)."
+          },
+          "findings": {
+            "type": "integer",
+            "title": "Findings",
+            "description": "Total findings in this pass.",
+            "default": 0
+          },
+          "by_severity": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Severity",
+            "description": "Finding counts keyed by severity."
+          },
+          "by_source": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Source",
+            "description": "Finding counts keyed by source ('llm' vs 'static')."
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary",
+            "description": "Review summary text."
+          }
+        },
+        "type": "object",
+        "required": [
+          "iteration",
+          "blocking"
+        ],
+        "title": "ReviewPass",
+        "description": "One evaluation of the review stage inside the closed loop, for audit."
       },
       "RunSummary": {
         "properties": {
@@ -1135,6 +1711,22 @@
             "type": "array",
             "title": "Stage Hints"
           },
+          "extends": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Extends",
+            "description": "Skill ids this skill deepens/specializes. The ranker treats self + targets as one family and de-duplicates so a broad parent and its narrow child do not both consume the token budget."
+          },
+          "see_also": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "See Also",
+            "description": "Related skill ids (cross-references; non-binding for ranking)."
+          },
           "path": {
             "type": "string",
             "title": "Path"
@@ -1202,6 +1794,22 @@
             "type": "array",
             "title": "Stage Hints"
           },
+          "extends": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Extends",
+            "description": "Skill ids this skill deepens/specializes. The ranker treats self + targets as one family and de-duplicates so a broad parent and its narrow child do not both consume the token budget."
+          },
+          "see_also": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "See Also",
+            "description": "Related skill ids (cross-references; non-binding for ranking)."
+          },
           "path": {
             "type": "string",
             "title": "Path"
@@ -1223,6 +1831,8 @@
           "spec",
           "architecture",
           "breakdown",
+          "implementation",
+          "review",
           "acceptance",
           "markdown"
         ],
@@ -1252,6 +1862,24 @@
             "title": "Repaired",
             "description": "True if the stage's JSON was rescued by a repair retry.",
             "default": false
+          },
+          "stage_valid": {
+            "type": "boolean",
+            "title": "Stage Valid",
+            "description": "Whether the parsed JSON conforms to the expected stage schema.",
+            "default": true
+          },
+          "validation_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validation Error",
+            "description": "Human-readable schema validation error, null when valid."
           },
           "usage": {
             "$ref": "#/components/schemas/TokenUsage"
