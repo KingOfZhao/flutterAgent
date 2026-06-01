@@ -569,6 +569,52 @@
 | Material Design 3 颜色系统 | <https://m3.material.io/styles/color/system/overview> |
 | 自定义字体 / google_fonts | <https://docs.flutter.dev/cookbook/design/fonts> · <https://pub.dev/packages/google_fonts> |
 
+### 17.3 设计稿→代码 playbook(flutter-design-to-code-playbook)
+
+| 主题 | 链接 |
+|---|---|
+| Widget 测试入门 | <https://docs.flutter.dev/cookbook/testing/widget/introduction> |
+| Golden 测试(matchesGoldenFile) | <https://api.flutter.dev/flutter/flutter_test/matchesGoldenFile.html> |
+| 自适应/响应式设计 | <https://docs.flutter.dev/ui/adaptive-responsive> |
+
+### 17.4 组件还原范例库(flutter-ui-component-recipes)
+
+| 主题 | 链接 |
+|---|---|
+| Material 组件目录 | <https://docs.flutter.dev/ui/widgets/material> |
+| Widget 目录总览 | <https://docs.flutter.dev/ui/widgets> |
+| Material 3 组件 | <https://m3.material.io/components> |
+| Cupertino 组件 | <https://docs.flutter.dev/ui/widgets/cupertino> |
+| CustomPaint | <https://api.flutter.dev/flutter/widgets/CustomPaint-class.html> |
+
+## 18. 交付:CI/CD 深化(flutter-cicd-pipelines)
+
+| 主题 | 链接 |
+|---|---|
+| GitHub Actions 矩阵 | <https://docs.github.com/actions/using-jobs/using-a-matrix-for-your-jobs> |
+| Actions 缓存依赖 | <https://docs.github.com/actions/using-workflows/caching-dependencies-to-speed-up-workflows> |
+| Actions 环境(审批/保护) | <https://docs.github.com/actions/deployment/targeting-different-environments/using-environments-for-deployment> |
+| Actions Secrets | <https://docs.github.com/actions/security-guides/encrypted-secrets> |
+| 可复用 workflow | <https://docs.github.com/actions/using-workflows/reusing-workflows> |
+| Flutter CI/CD 部署 | <https://docs.flutter.dev/deployment/cd> |
+| Flutter flavors / dart-define | <https://docs.flutter.dev/deployment/flavors> |
+| fastlane | <https://docs.fastlane.tools/> |
+| subosito/flutter-action | <https://github.com/subosito/flutter-action> |
+
+## 19. 运维:可观测性(flutter-observability)
+
+| 主题 | 链接 |
+|---|---|
+| Flutter 错误处理(onError) | <https://docs.flutter.dev/testing/errors> |
+| PlatformDispatcher.onError | <https://api.flutter.dev/flutter/dart-ui/PlatformDispatcher/onError.html> |
+| Firebase Crashlytics(Flutter) | <https://firebase.google.com/docs/crashlytics/get-started?platform=flutter> |
+| Sentry for Flutter | <https://docs.sentry.io/platforms/flutter/> |
+| Firebase Performance Monitoring | <https://firebase.google.com/docs/perf-mon/get-started-flutter> |
+| Firebase Analytics(Flutter) | <https://firebase.google.com/docs/analytics/get-started?platform=flutter> |
+| logging 包 | <https://pub.dev/packages/logging> |
+| OpenTelemetry / Dart | <https://opentelemetry.io/docs/> · <https://pub.dev/packages/opentelemetry> |
+| Dart 混淆与符号 | <https://docs.flutter.dev/deployment/obfuscate> |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。

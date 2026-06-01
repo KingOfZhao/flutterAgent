@@ -45,8 +45,13 @@ stage_hints: [breakdown, acceptance]
 
 > **UI 识别与还原能力**(输入是设计稿/截图时):
 > 从图里提取规格(取色、字号等比换算、渐变方向、关键信息清单)用 `flutter-ui-from-image`;
-> 把提取出的 token 落成工程化主题(ColorScheme/TextTheme/ThemeData/亮暗)用 `flutter-design-tokens-theming`。
+> 把提取出的 token 落成工程化主题(ColorScheme/TextTheme/ThemeData/亮暗)用 `flutter-design-tokens-theming`;
+> 想要"设计稿→代码"端到端照着走用 `flutter-design-to-code-playbook`;照图找组件骨架用 `flutter-ui-component-recipes`。
 > (先成规格 → 再成主题 → 再按 1B 实现 UI。)
+
+> **交付与运维能力**(发布与线上阶段):
+> 把基础 CI 做深(构建矩阵/缓存/产物归档/发布自动化)用 `flutter-cicd-pipelines`(基础 CI 见 `flutter-ci-cd`);
+> 线上可观测(崩溃上报/结构化日志/指标/追踪/行为分析)用 `flutter-observability`。
 
 > 一句话原则:**改动越小越好,验证越足越好,文档跟着改动走。** 不发明不存在的包,不写伪代码,所有"为什么"都要能落到 `REFERENCES.md` 的官方出处。
 

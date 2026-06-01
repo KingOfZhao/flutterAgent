@@ -2,7 +2,7 @@
 
 一个本地运行的 **Flutter 需求精炼器**。所有工程主张都能在 [`REFERENCES.md`](./REFERENCES.md) 里找到官方文档 / pub.dev / 行业标准的出处。
 
-- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **52 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构,并用 [女娲 Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的五层蒸馏法提炼资深工程师“思维操作系统”——`flutter-skill-distillation` 把该蒸馏法本地化为可复用能力(支持“蒸馏指定专家”),并已蒸馏 5 位 Flutter 框架/实践专家为 `*-mindset` skill;19 个领域 skill 均补有精简的“心智模型 + 诚实边界”层;另有一组**代码领域**能力:地道写法 / 评审 / 重构 / 依赖养护 / 错误处理 / 代码生成 / 并发隔离区 / API 包设计 / 静态分析 / monorepo;以及一组**平台 + 协议**能力:原生互操作(platform channel / Pigeon / FFI)、Android / iOS / 桌面三端工程层、通信协议(HTTP/gRPC/GraphQL/WebSocket/SSE/MQTT)与认证授权协议(OAuth2/OIDC/PKCE/JWT);还有一组**UI 识别与还原**能力:从设计稿/截图取色、字号等比换算、渐变方向识别、关键信息提取 → 落成 ColorScheme/TextTheme/ThemeData 主题)。
+- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **56 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构,并用 [女娲 Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的五层蒸馏法提炼资深工程师“思维操作系统”——`flutter-skill-distillation` 把该蒸馏法本地化为可复用能力(支持“蒸馏指定专家”),并已蒸馏 5 位 Flutter 框架/实践专家为 `*-mindset` skill;19 个领域 skill 均补有精简的“心智模型 + 诚实边界”层;另有一组**代码领域**能力:地道写法 / 评审 / 重构 / 依赖养护 / 错误处理 / 代码生成 / 并发隔离区 / API 包设计 / 静态分析 / monorepo;以及一组**平台 + 协议**能力:原生互操作(platform channel / Pigeon / FFI)、Android / iOS / 桌面三端工程层、通信协议(HTTP/gRPC/GraphQL/WebSocket/SSE/MQTT)与认证授权协议(OAuth2/OIDC/PKCE/JWT);还有一组**UI 识别与还原**能力:从设计稿/截图取色、字号等比换算、渐变方向识别、关键信息提取 → 落成 ColorScheme/TextTheme/ThemeData 主题,并有“设计稿→代码”端到端 playbook 与组件级还原范例库;以及一组**交付与运维**能力:CI/CD 深化(矩阵/缓存/产物归档/发布自动化)与可观测性(崩溃上报/日志/指标/追踪/行为分析))。
 - 把用户的一句话需求,经多阶段流水线(分类 → 规格 → 架构 → 任务拆解 → 验收 → 汇总 PRD),交给 任何 OpenAI 兼容模型去精炼(默认 DeepSeek v4 pro;可接 `deepseek-chat` / `deepseek-reasoner` / `gpt-4o` / Ollama 本地)。
 - **反幻觉层**:架构阶段产出的所有第三方包会在 pub.dev API 上被验证,不存在 / 已废弃 / 版本超前的包会被标警并在 PRD 顶部贴 warning。
 - **成本透明**:按 DeepSeek / OpenAI 公布价目实时估算 USD,累计到每个 stage 、整个运行以及 run history list。
@@ -26,7 +26,7 @@ flutterAgent/
 ├── scripts/
 │   ├── refine_cli.py            # 命令行直接调用精炼流水线
 │   └── export_openapi.py        # 导出 openapi.json 到磁盘
-├── skills/                      # Markdown 形式的 skill / spec(52 个)
+├── skills/                      # Markdown 形式的 skill / spec(56 个)
 │   ├── task-refinement/SKILL.md
 │   ├── architecture-design/SKILL.md
 │   ├── state-management/SKILL.md
@@ -78,7 +78,11 @@ flutterAgent/
 │   ├── flutter-network-protocols/SKILL.md    # 协议: HTTP/2·3/REST/gRPC/GraphQL/WebSocket/SSE/MQTT/TLS
 │   ├── flutter-auth-protocols/SKILL.md       # 协议: OAuth2/OIDC/PKCE/JWT/刷新令牌/生物识别
 │   ├── flutter-ui-from-image/SKILL.md        # UI: 读图成规格(取色/字号等比换算/渐变方向/关键信息)
-│   └── flutter-design-tokens-theming/SKILL.md # UI: 设计 token 工程化主题(ColorScheme/TextTheme/亮暗)
+│   ├── flutter-design-tokens-theming/SKILL.md # UI: 设计 token 工程化主题(ColorScheme/TextTheme/亮暗)
+│   ├── flutter-design-to-code-playbook/SKILL.md # UI: 设计稿→代码端到端 playbook(S0→S8)
+│   ├── flutter-ui-component-recipes/SKILL.md # UI: 组件级还原范例库(照图找 widget + 骨架)
+│   ├── flutter-cicd-pipelines/SKILL.md       # 交付: CI/CD 深化(矩阵/缓存/产物归档/发布自动化)
+│   └── flutter-observability/SKILL.md        # 运维: 可观测性(崩溃/日志/指标/追踪/分析)
 ├── logs/                        # runs.jsonl 自动写入(gitignored)
 ├── REFERENCES.md                # 全部官方/开源出处汇总
 ├── src/flutter_agent/
@@ -394,6 +398,10 @@ requirement
 | `flutter-auth-protocols` | 协议·认证授权:OAuth2 / OIDC / PKCE / JWT / 刷新令牌 / 生物识别 | oauth.net/2 + openid.net + datatracker.ietf.org/doc/html/rfc7636 |
 | `flutter-ui-from-image` | UI·读图成规格:取色 / 字号等比换算 / 渐变方向 / 关键信息提取 | api.flutter.dev/.../MediaQuery + docs.flutter.dev/ui/adaptive-responsive + api.flutter.dev/.../Gradient |
 | `flutter-design-tokens-theming` | UI·设计 token 主题:ColorScheme / TextTheme / ThemeData / 亮暗双主题 | docs.flutter.dev/cookbook/design/themes + m3.material.io/styles/color |
+| `flutter-design-to-code-playbook` | UI·设计稿→代码端到端 SOP:S0 对齐 → S8 比对交付 | docs.flutter.dev/cookbook/testing/widget + matchesGoldenFile |
+| `flutter-ui-component-recipes` | UI·组件还原范例:常见 UI → widget + 代码骨架 + 易错点 | docs.flutter.dev/ui/widgets/material + m3.material.io/components |
+| `flutter-cicd-pipelines` | 交付·CI/CD 深化:构建矩阵 / 缓存 / 产物归档 / 发布自动化 | docs.github.com/actions + docs.flutter.dev/deployment/cd + docs.fastlane.tools |
+| `flutter-observability` | 运维·可观测性:崩溃上报 / 结构化日志 / 指标 / 追踪 / 行为分析 | firebase.google.com/docs/crashlytics + docs.sentry.io/platforms/flutter + opentelemetry.io |
 
 > 标「官方 skill 格式」的 skill 采用 [flutter/skills](https://github.com/flutter/skills) 的结构(`Contents / Core Concepts / Workflow + Task Progress / Conditional Logic / Examples / Troubleshooting`),同时保留本项目加载器所需的 front-matter 字段。
 
