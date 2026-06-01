@@ -21,7 +21,10 @@ from typing import Any, Dict, List, Optional
 
 from .cache import RunCache, make_cache_key
 from .config import Settings
-from .consistency import check_implementation_consistency
+from .consistency import (
+    check_acceptance_consistency,
+    check_implementation_consistency,
+)
 from .deepseek_client import DeepSeekClient, UpstreamError
 from .pricing import estimate_cost
 from .pub_validator import PubValidator
@@ -562,6 +565,15 @@ class RefinementPipeline:
                             )
                         )
 
+        # ---- acceptance cross-check (deterministic, advisory) -----------
+        acceptance_gaps: List[Dict[str, Any]] = []
+        if Stage.acceptance in prior:
+            acceptance_gaps = check_acceptance_consistency(
+                prior.get(Stage.acceptance),
+                prior.get(Stage.breakdown),
+                prior.get(Stage.implementation),
+            )
+
         # ---- pub.dev package validation ---------------------------------
         validations: List[PackageValidation] = []
         if req.validate_packages and self._pub_validator is not None:
@@ -594,6 +606,7 @@ class RefinementPipeline:
             review_iterations=review_iterations,
             review_history=review_history,
             acceptance=prior.get(Stage.acceptance),
+            acceptance_gaps=acceptance_gaps,
             markdown=self._prepend_validation_warnings(markdown_out, validations),
             validations=validations,
         )

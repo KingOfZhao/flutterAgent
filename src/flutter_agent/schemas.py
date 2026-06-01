@@ -276,6 +276,14 @@ class RefineResponse(BaseModel):
         ),
     )
     acceptance: Optional[Dict[str, Any]] = None
+    acceptance_gaps: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description=(
+            "Deterministic cross-check gaps between acceptance, breakdown and "
+            "implementation (tasks missing acceptance criteria, test stubs not "
+            "referenced by the test plan). Advisory; does not drive the loop."
+        ),
+    )
     markdown: Optional[str] = Field(
         default=None, description="Final human-readable PRD in Markdown."
     )

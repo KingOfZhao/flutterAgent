@@ -231,6 +231,8 @@ async def test_full_pipeline_with_mock_llm(settings, registry, tmp_path):
     assert response.review["findings"][0]["issue"]
     assert response.acceptance is not None
     assert "criteria" in response.acceptance
+    # acceptance cross-check surfaces tasks lacking acceptance criteria
+    assert {g["path"] for g in response.acceptance_gaps if g["category"] == "acceptance"} == {"T-1", "T-2", "T-3"}
     assert response.markdown is not None
     assert "产品需求文档" in response.markdown
 

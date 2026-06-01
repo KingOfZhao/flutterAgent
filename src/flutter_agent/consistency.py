@@ -198,3 +198,88 @@ def check_implementation_consistency(
                     })
 
     return findings
+
+
+def _collect_tasks(node: Any, acc: List[Dict[str, Any]]) -> None:
+    """Gather every task dict found under any ``tasks`` list in the breakdown."""
+    if isinstance(node, dict):
+        for key, val in node.items():
+            if key == "tasks" and isinstance(val, list):
+                for t in val:
+                    if isinstance(t, dict):
+                        acc.append(t)
+                        _collect_tasks(t, acc)
+            else:
+                _collect_tasks(val, acc)
+    elif isinstance(node, list):
+        for item in node:
+            _collect_tasks(item, acc)
+
+
+def _collect_strings(node: Any, acc: List[str]) -> None:
+    if isinstance(node, str):
+        if node.strip():
+            acc.append(node.strip())
+    elif isinstance(node, list):
+        for item in node:
+            _collect_strings(item, acc)
+    elif isinstance(node, dict):
+        for val in node.values():
+            _collect_strings(val, acc)
+
+
+def check_acceptance_consistency(
+    acceptance: Any,
+    breakdown: Any,
+    implementation: Any,
+) -> List[Dict[str, str]]:
+    """Deterministic cross-check between acceptance, breakdown and the
+    implementation test stubs. Returns gaps shaped like findings."""
+    gaps: List[Dict[str, str]] = []
+    if not isinstance(acceptance, dict):
+        return gaps
+
+    # A. Every breakdown task should declare at least one acceptance criterion.
+    if isinstance(breakdown, dict):
+        tasks: List[Dict[str, Any]] = []
+        _collect_tasks(breakdown, tasks)
+        for t in tasks:
+            crit = t.get("acceptance")
+            has_crit = isinstance(crit, list) and any(
+                isinstance(c, str) and c.strip() for c in crit
+            )
+            if not has_crit:
+                label = t.get("id") or t.get("title") or "<task>"
+                gaps.append({
+                    "path": str(label),
+                    "severity": "minor",
+                    "category": "acceptance",
+                    "issue": "breakdown 任务缺少验收标准(acceptance)",
+                    "suggestion": "为该任务补至少一条可验证的验收标准",
+                    "source": "static",
+                })
+
+    # B. Each implementation test stub should be referenced by the test plan.
+    if isinstance(implementation, dict):
+        stub_paths: List[str] = []
+        stubs = implementation.get("test_stubs")
+        if isinstance(stubs, list):
+            for s in stubs:
+                if isinstance(s, dict) and isinstance(s.get("path"), str) and s["path"].strip():
+                    stub_paths.append(s["path"].strip())
+        plan_strings: List[str] = []
+        _collect_strings(acceptance.get("test_plan"), plan_strings)
+        if stub_paths and plan_strings:
+            blob = "\n".join(plan_strings)
+            for sp in stub_paths:
+                if sp not in blob:
+                    gaps.append({
+                        "path": sp,
+                        "severity": "minor",
+                        "category": "testability",
+                        "issue": "implementation 的测试桩未被 acceptance.test_plan 覆盖",
+                        "suggestion": "在 test_plan 引用该测试文件,避免实现与验收脱节",
+                        "source": "static",
+                    })
+
+    return gaps

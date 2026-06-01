@@ -1,7 +1,10 @@
 """Unit tests for the deterministic implementation consistency checker."""
 from __future__ import annotations
 
-from flutter_agent.consistency import check_implementation_consistency
+from flutter_agent.consistency import (
+    check_acceptance_consistency,
+    check_implementation_consistency,
+)
 
 
 def _impl(files, test_stubs=None):
@@ -112,6 +115,38 @@ def test_dangling_internal_dependency_is_minor():
     assert dangling[0]["severity"] == "minor"
     # package: imports are never flagged
     assert all("package:" not in f["issue"] for f in findings)
+
+
+def test_acceptance_task_without_criteria_is_flagged():
+    acceptance = {"test_plan": []}
+    breakdown = {
+        "epics": [{"stories": [{"tasks": [
+            {"id": "T-1", "acceptance": ["given/when/then"]},
+            {"id": "T-2", "acceptance": []},
+            {"id": "T-3"},
+        ]}]}]
+    }
+    gaps = check_acceptance_consistency(acceptance, breakdown, {})
+    labels = {g["path"] for g in gaps if g["category"] == "acceptance"}
+    assert labels == {"T-2", "T-3"}
+
+
+def test_acceptance_test_plan_must_reference_stubs():
+    acceptance = {"test_plan": ["跑 test/a_test.dart 验证渲染"]}
+    implementation = {
+        "test_stubs": [
+            {"path": "test/a_test.dart"},
+            {"path": "test/b_test.dart"},
+        ]
+    }
+    gaps = check_acceptance_consistency(acceptance, {}, implementation)
+    uncovered = [g["path"] for g in gaps if g["category"] == "testability"]
+    assert uncovered == ["test/b_test.dart"]
+
+
+def test_acceptance_consistency_defensive():
+    assert check_acceptance_consistency(None, {}, {}) == []
+    assert check_acceptance_consistency("oops", {}, {}) == []
 
 
 def test_defensive_against_garbage_input():
