@@ -54,6 +54,12 @@ class Settings(BaseSettings):
         description="Append-only JSONL file recording every /v1/refine call.",
     )
 
+    # ---- Open-source ingestion ----
+    ingestion_seen_path: str = Field(
+        default="data/ingestion_seen.json",
+        description="JSON store of already-reported ingestion candidate keys.",
+    )
+
     # ---- Logging ----
     log_format: str = Field(
         default="text",
@@ -89,6 +95,11 @@ class Settings(BaseSettings):
     @property
     def runs_log_file(self) -> Path:
         p = Path(self.runs_log_path)
+        return p if p.is_absolute() else (REPO_ROOT / p)
+
+    @property
+    def ingestion_seen_file(self) -> Path:
+        p = Path(self.ingestion_seen_path)
         return p if p.is_absolute() else (REPO_ROOT / p)
 
     @property
