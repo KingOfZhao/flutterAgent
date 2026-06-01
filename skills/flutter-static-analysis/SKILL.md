@@ -5,7 +5,7 @@ version: 1.0.0
 platforms: [all, mobile, desktop, web]
 tags: [static-analysis, lint, analysis-options, flutter_lints, very_good_analysis, custom_lint, quality-gate, ci]
 applies_when: 配置/收紧静态分析、统一 lint 规则、写自定义 lint 把团队约定自动化
-stage_hints: [acceptance, architecture]
+stage_hints: [acceptance, architecture, review]
 ---
 
 # Flutter 静态分析自动化

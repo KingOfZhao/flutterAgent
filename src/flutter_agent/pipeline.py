@@ -158,10 +158,79 @@ _STAGE_INSTRUCTIONS: Dict[Stage, str] = {
 - 每个 task 至少 1 条 acceptance。
 **仅输出 JSON**。
 """,
+    Stage.implementation: """# 当前阶段: implementation (代码骨架)
+
+输入: spec + architecture + breakdown JSON。
+任务: 把任务清单落成**逼近代码**的实现骨架,让下游(编码 Agent / 人)可以照着直接写。
+严格遵守 architecture.directory_tree 与分层/依赖方向;遵守 dart-language-idioms / flutter-error-handling
+等代码领域 SKILL 的写法约定。**只给签名/骨架,不写完整业务实现**,未完成处用 `// TODO(spec):` 标注。
+
+**仅输出 JSON**,结构:
+{
+  "files": [
+    {
+      "path": "lib/...",                 // 必须落在 architecture.directory_tree 内
+      "purpose": "这个文件负责什么",
+      "language": "dart",
+      "layer": "presentation|application|domain|data|...",
+      "public_api": ["ClassName", "ClassName.method(Args) -> Return", ...],
+      "depends_on": ["lib/...dart", "package:xxx/xxx.dart"],
+      "skeleton": "类/方法签名 + import + // TODO 占位的 Dart 代码骨架(不写完整实现)"
+    }
+  ],
+  "data_models": [
+    {"name": "User", "kind": "freezed|class|enum|sealed", "fields": [{"name":"id","type":"String"}], "notes":"..."}
+  ],
+  "widget_tree": "关键页面的 widget 树(缩进文本),标出状态来源与回调",
+  "test_stubs": [
+    {"path": "test/...", "covers": "lib/...dart", "kind": "unit|widget|golden|integration", "cases": ["should ...", ...]}
+  ],
+  "wiring": ["把上述文件接起来的步骤,如 注册 provider / 路由 / DI"],
+  "assumptions": ["从需求无法确定、此处所做的假设"]
+}
+约束:
+- 每个 task(来自 breakdown)至少映射到一个 file 或 test_stub。
+- skeleton 只放签名与结构,业务逻辑用 // TODO(spec): 占位,避免编造未确认的实现。
+- 不引入 architecture.third_party 之外的新依赖;若确需新依赖,写进 assumptions 待确认。
+""",
+    Stage.review: """# 当前阶段: review (代码自检 / 评审)
+
+输入: architecture + breakdown + implementation JSON。
+任务: 站在评审者视角,对 implementation 产物做一次**自查**,按 flutter-code-review 的红线清单
+与 flutter-static-analysis 的规则,找出问题并给出**可执行的修复建议**(对位到具体 file/path)。
+这是质量反馈环:发现问题就回填,让下游(编码 Agent / 人)拿到的是已自审过的骨架。
+
+**仅输出 JSON**,结构:
+{
+  "summary": "一句话总体评价(骨架是否就绪、主要风险)",
+  "findings": [
+    {
+      "path": "lib/...",                 // 对位 implementation.files 的某个 path(全局问题用 \"<general>\")
+      "severity": "blocker|major|minor|nit",
+      "category": "architecture|error-handling|testability|naming|null-safety|performance|security|style|other",
+      "issue": "问题是什么(具体、可核对)",
+      "suggestion": "怎么改(给出方向或签名级示例,不必整段重写)"
+    }
+  ],
+  "checklist": [
+    {"item": "分层与依赖方向正确(无反向依赖)", "status": "pass|fail|na"},
+    {"item": "失败路径已建模(可预期失败/未预期异常)", "status": "pass|fail|na"},
+    {"item": "资源可释放(订阅/控制器有 dispose)", "status": "pass|fail|na"},
+    {"item": "纯核心可测、依赖可注入", "status": "pass|fail|na"},
+    {"item": "无明显 lint/红线违规(吞异常/print/裸 any)", "status": "pass|fail|na"}
+  ],
+  "blocking": true
+}
+约束:
+- findings 的 path 必须能在 implementation.files 中找到(或用 "<general>")。
+- 没有问题时 findings 给空数组,blocking=false;不要编造问题凑数。
+- severity=blocker 至少要在 summary 点明;blocking 取决于是否存在 blocker/major。
+""",
     Stage.acceptance: """# 当前阶段: acceptance
 
-输入: breakdown JSON。
+输入: breakdown(+ implementation / review,若有) JSON。
 任务: 产出 acceptance_matrix / test_plan / risks / milestones,如 task-refinement SKILL 阶段 4。
+若已有 implementation.test_stubs,test_plan 应与其对齐(同一文件/同一用例不重复造)。
 **仅输出 JSON**。
 """,
     Stage.markdown: """# 当前阶段: markdown
@@ -174,10 +243,12 @@ _STAGE_INSTRUCTIONS: Dict[Stage, str] = {
 4. 数据模型与接口
 5. 技术架构(含目录树)
 6. 任务清单(Epic 表 + Story 表)
-7. 测试与验收
-8. 风险与里程碑
+7. 实现骨架(若有 implementation:文件清单 + 关键签名/widget 树 + 测试桩;代码用 ```dart 围栏)
+8. 自检与评审(若有 review:总体结论 + findings 表[path/severity/issue/suggestion] + checklist)
+9. 测试与验收
+10. 风险与里程碑
 
-要求:中文输出;使用表格;不要包代码围栏在最外层。
+要求:中文输出;使用表格;除第 7 节内嵌代码外,不要包代码围栏在最外层。
 """,
 }
 
@@ -360,6 +431,8 @@ class RefinementPipeline:
             spec=prior.get(Stage.spec),
             architecture=prior.get(Stage.architecture),
             breakdown=prior.get(Stage.breakdown),
+            implementation=prior.get(Stage.implementation),
+            review=prior.get(Stage.review),
             acceptance=prior.get(Stage.acceptance),
             markdown=self._prepend_validation_warnings(markdown_out, validations),
             validations=validations,

@@ -5,7 +5,7 @@ version: 1.0.0
 platforms: [all, mobile, desktop, web]
 tags: [api-design, package, pub, semver, public-api, library, stability, breaking-change, modularity]
 applies_when: 设计可复用的 package / 模块的公共 API、规划版本与稳定性、向 pub.dev 发布或内部共享
-stage_hints: [architecture, breakdown]
+stage_hints: [architecture, breakdown, implementation]
 ---
 
 # Dart API 与包设计

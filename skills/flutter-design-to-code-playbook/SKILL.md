@@ -5,7 +5,7 @@ version: 1.0.0
 platforms: [all, mobile, desktop, web]
 tags: [playbook, design-to-code, workflow, ui, theming, end-to-end, figma, screenshot]
 applies_when: 拿到一张/一组设计稿或截图,要端到端落成可运行、可验收的 Flutter UI
-stage_hints: [spec, breakdown, acceptance]
+stage_hints: [spec, breakdown, implementation, acceptance]
 ---
 
 # 设计稿 → Flutter 代码 端到端 playbook

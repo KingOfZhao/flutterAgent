@@ -5,7 +5,7 @@ version: 1.0.0
 platforms: [all, mobile, desktop, web]
 tags: [feature, development, new, scaffold, vertical-slice, feature-flag]
 applies_when: 需求是在已有 Flutter 项目中新增功能 / 页面 / 模块
-stage_hints: [architecture, breakdown]
+stage_hints: [architecture, breakdown, implementation]
 ---
 
 # Flutter 新增功能 SOP

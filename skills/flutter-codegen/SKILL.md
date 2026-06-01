@@ -5,7 +5,7 @@ version: 1.0.0
 platforms: [all, mobile, desktop, web]
 tags: [codegen, build_runner, freezed, json_serializable, riverpod_generator, source_gen, generated, maintenance]
 applies_when: 维护/排查基于 build_runner 的代码生成(数据类、JSON 序列化、provider、路由等)
-stage_hints: [breakdown, acceptance]
+stage_hints: [breakdown, implementation, acceptance]
 ---
 
 # Flutter 代码生成

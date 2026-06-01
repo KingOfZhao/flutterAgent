@@ -5,7 +5,7 @@ version: 1.0.0
 platforms: [all, mobile, desktop, web]
 tags: [error-handling, exceptions, result, either, failure, crash, logging, reporting, resilience]
 applies_when: 设计失败路径——可预期失败怎么建模、未预期异常怎么兜底、错误怎么记录上报
-stage_hints: [architecture, breakdown]
+stage_hints: [architecture, breakdown, implementation, review]
 ---
 
 # Flutter 错误处理策略

@@ -30,6 +30,9 @@ stage_hints: [breakdown, acceptance]
 > 数据类/序列化/provider 的代码生成用 `flutter-codegen`;CPU 密集/并行用 `flutter-concurrency-isolates`;
 > 静态分析自动化(质量前移到写代码当下)用 `flutter-static-analysis`。
 > 设计可复用库/模块的公共 API 用 `dart-api-package-design`;多包仓库维护用 `flutter-monorepo-melos`。
+> 复杂业务用类型建模(让非法状态不可表达/状态机)用 `flutter-domain-modeling`;
+> 把代码设计成可测的形状(DI/接缝/纯核心/控时间)用 `flutter-testability-design`;
+> 异步编排与事件流(Future 组合/Stream/取消背压)用 `dart-async-streams`。
 > 这些是"把代码写好/改好/养好"的底座。
 
 > **平台工程能力**(改动触达原生层 / 打包 / 平台配置时):

@@ -5,7 +5,7 @@ version: 1.0.0
 platforms: [all]
 tags: [state, riverpod, bloc, provider]
 applies_when: 出现表单 / 列表 / 实时数据 / 跨页面状态
-stage_hints: [architecture, breakdown]
+stage_hints: [architecture, breakdown, implementation]
 ---
 
 # 状态管理规范

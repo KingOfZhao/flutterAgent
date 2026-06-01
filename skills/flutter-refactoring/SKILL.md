@@ -5,7 +5,7 @@ version: 1.0.0
 platforms: [all, mobile, desktop, web]
 tags: [refactoring, refactor, maintenance, tech-debt, tests, safe-change, legacy]
 applies_when: 不改变外部行为地改进代码结构(拆 widget / 上移状态 / 拆 god class / 偿还技术债)
-stage_hints: [architecture, breakdown]
+stage_hints: [architecture, breakdown, implementation]
 ---
 
 # Flutter 安全重构 SOP

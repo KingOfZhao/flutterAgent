@@ -5,7 +5,7 @@ version: 1.0.0
 platforms: [all, mobile, desktop, web]
 tags: [code-review, review, pr, quality, checklist, feedback, maintenance]
 applies_when: 评审一个 Flutter/Dart PR,或自查自己的改动是否可合入
-stage_hints: [acceptance]
+stage_hints: [acceptance, review]
 ---
 
 # Flutter 代码评审 SOP

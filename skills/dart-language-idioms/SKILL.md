@@ -5,7 +5,7 @@ version: 1.0.0
 platforms: [all, mobile, desktop, web]
 tags: [dart, language, idioms, effective-dart, null-safety, records, pattern-matching, sealed, extension-types, style]
 applies_when: 写或改 Dart 代码时,想把语言层写地道、用对现代特性、避免坏味道
-stage_hints: [architecture, breakdown]
+stage_hints: [architecture, breakdown, implementation, review]
 ---
 
 # Dart 语言地道写法

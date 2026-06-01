@@ -5,7 +5,7 @@ version: 1.0.0
 platforms: [all]
 tags: [navigation, routing, deeplink, go_router, navigator, tabs, nested]
 applies_when: 需求涉及页面跳转、深度链接、嵌套导航、Tab 页面保活或路由守卫
-stage_hints: [spec, architecture, breakdown]
+stage_hints: [spec, architecture, breakdown, implementation]
 ---
 
 # Flutter 导航与路由规范

@@ -86,6 +86,44 @@ class BreakdownOutput(_Permissive):
     )
 
 
+# ---- implementation ---------------------------------------------------------
+
+class ImplementationFile(_Permissive):
+    """A single file skeleton produced by the implementation stage."""
+    path: str = Field(..., description="File path within architecture.directory_tree.")
+
+
+class ImplementationOutput(_Permissive):
+    """Implementation stage turns the breakdown into code skeletons.
+
+    Only ``files`` is enforced (it is what makes this stage useful); the rest
+    (data_models / widget_tree / test_stubs / wiring) are optional and loose.
+    """
+    files: List[ImplementationFile] = Field(
+        default_factory=list,
+        description="Per-file skeletons: path, signatures, TODO placeholders.",
+    )
+
+
+# ---- review -----------------------------------------------------------------
+
+class ReviewFinding(_Permissive):
+    """A single self-review finding against the implementation skeleton."""
+    issue: str = Field(..., description="What is wrong (concrete, checkable).")
+
+
+class ReviewOutput(_Permissive):
+    """Review stage self-checks the implementation and reports findings.
+
+    Only ``findings`` shape is enforced (each must carry an ``issue``); the
+    rest (summary / checklist / blocking) are optional and loose.
+    """
+    findings: List[ReviewFinding] = Field(
+        default_factory=list,
+        description="Self-review findings, each with a fix suggestion.",
+    )
+
+
 # ---- acceptance -------------------------------------------------------------
 
 class AcceptanceOutput(_Permissive):
@@ -105,6 +143,8 @@ STAGE_SCHEMAS: Dict[str, type] = {
     "spec": SpecOutput,
     "architecture": ArchitectureOutput,
     "breakdown": BreakdownOutput,
+    "implementation": ImplementationOutput,
+    "review": ReviewOutput,
     "acceptance": AcceptanceOutput,
     # "markdown" has no JSON schema — it's prose.
 }

@@ -2,8 +2,8 @@
 
 一个本地运行的 **Flutter 需求精炼器**。所有工程主张都能在 [`REFERENCES.md`](./REFERENCES.md) 里找到官方文档 / pub.dev / 行业标准的出处。
 
-- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **56 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构,并用 [女娲 Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的五层蒸馏法提炼资深工程师“思维操作系统”——`flutter-skill-distillation` 把该蒸馏法本地化为可复用能力(支持“蒸馏指定专家”),并已蒸馏 5 位 Flutter 框架/实践专家为 `*-mindset` skill;19 个领域 skill 均补有精简的“心智模型 + 诚实边界”层;另有一组**代码领域**能力:地道写法 / 评审 / 重构 / 依赖养护 / 错误处理 / 代码生成 / 并发隔离区 / API 包设计 / 静态分析 / monorepo;以及一组**平台 + 协议**能力:原生互操作(platform channel / Pigeon / FFI)、Android / iOS / 桌面三端工程层、通信协议(HTTP/gRPC/GraphQL/WebSocket/SSE/MQTT)与认证授权协议(OAuth2/OIDC/PKCE/JWT);还有一组**UI 识别与还原**能力:从设计稿/截图取色、字号等比换算、渐变方向识别、关键信息提取 → 落成 ColorScheme/TextTheme/ThemeData 主题,并有“设计稿→代码”端到端 playbook 与组件级还原范例库;以及一组**交付与运维**能力:CI/CD 深化(矩阵/缓存/产物归档/发布自动化)与可观测性(崩溃上报/日志/指标/追踪/行为分析))。
-- 把用户的一句话需求,经多阶段流水线(分类 → 规格 → 架构 → 任务拆解 → 验收 → 汇总 PRD),交给 任何 OpenAI 兼容模型去精炼(默认 DeepSeek v4 pro;可接 `deepseek-chat` / `deepseek-reasoner` / `gpt-4o` / Ollama 本地)。
+- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **59 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构,并用 [女娲 Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的五层蒸馏法提炼资深工程师“思维操作系统”——`flutter-skill-distillation` 把该蒸馏法本地化为可复用能力(支持“蒸馏指定专家”),并已蒸馏 5 位 Flutter 框架/实践专家为 `*-mindset` skill;19 个领域 skill 均补有精简的“心智模型 + 诚实边界”层;另有一组**代码领域**能力:地道写法 / 评审 / 重构 / 依赖养护 / 错误处理 / 代码生成 / 并发隔离区 / API 包设计 / 静态分析 / monorepo / 领域建模(让非法状态不可表达)/ 可测试性设计 / 异步与流;以及一组**平台 + 协议**能力:原生互操作(platform channel / Pigeon / FFI)、Android / iOS / 桌面三端工程层、通信协议(HTTP/gRPC/GraphQL/WebSocket/SSE/MQTT)与认证授权协议(OAuth2/OIDC/PKCE/JWT);还有一组**UI 识别与还原**能力:从设计稿/截图取色、字号等比换算、渐变方向识别、关键信息提取 → 落成 ColorScheme/TextTheme/ThemeData 主题,并有“设计稿→代码”端到端 playbook 与组件级还原范例库;以及一组**交付与运维**能力:CI/CD 深化(矩阵/缓存/产物归档/发布自动化)与可观测性(崩溃上报/日志/指标/追踪/行为分析))。
+- 把用户的一句话需求,经多阶段流水线(分类 → 规格 → 架构 → 任务拆解 → 实现骨架 → 代码自检 → 验收 → 汇总 PRD),交给 任何 OpenAI 兼容模型去精炼(默认 DeepSeek v4 pro;可接 `deepseek-chat` / `deepseek-reasoner` / `gpt-4o` / Ollama 本地)。
 - **反幻觉层**:架构阶段产出的所有第三方包会在 pub.dev API 上被验证,不存在 / 已废弃 / 版本超前的包会被标警并在 PRD 顶部贴 warning。
 - **成本透明**:按 DeepSeek / OpenAI 公布价目实时估算 USD,累计到每个 stage 、整个运行以及 run history list。
 - **幂等缓存**:同一需求 + 同一 skills + 同一参数 → 内容寻址 SHA-256 命中 `logs/runs.jsonl`,跳过上游调用返回原始运行。
@@ -26,7 +26,7 @@ flutterAgent/
 ├── scripts/
 │   ├── refine_cli.py            # 命令行直接调用精炼流水线
 │   └── export_openapi.py        # 导出 openapi.json 到磁盘
-├── skills/                      # Markdown 形式的 skill / spec(56 个)
+├── skills/                      # Markdown 形式的 skill / spec(59 个)
 │   ├── task-refinement/SKILL.md
 │   ├── architecture-design/SKILL.md
 │   ├── state-management/SKILL.md
@@ -71,6 +71,9 @@ flutterAgent/
 │   ├── dart-api-package-design/SKILL.md      # 代码: API/包设计(公共 API/SemVer/pub 发布)
 │   ├── flutter-static-analysis/SKILL.md      # 代码: 静态分析自动化(analysis_options/lints/custom_lint)
 │   ├── flutter-monorepo-melos/SKILL.md       # 代码: 多包/monorepo(pub workspaces + melos)
+│   ├── flutter-domain-modeling/SKILL.md      # 代码: 领域建模(让非法状态不可表达/状态机/值对象)
+│   ├── flutter-testability-design/SKILL.md   # 代码: 可测试性设计(DI/接缝/纯核心/控时间随机)
+│   ├── dart-async-streams/SKILL.md           # 代码: 异步与流(Future 组合/Stream/取消背压/zones)
 │   ├── flutter-platform-channels/SKILL.md    # 平台: 原生互操作(MethodChannel/EventChannel/Pigeon/FFI)
 │   ├── flutter-android-platform/SKILL.md     # 平台: Android 工程层(Gradle/Manifest/权限/R8/Play)
 │   ├── flutter-ios-platform/SKILL.md         # 平台: iOS/Apple 工程层(Xcode/Info.plist/ATS/审核)
@@ -285,9 +288,11 @@ requirement
        └── stage 2  spec               (用户故事 / 功能点 / 数据模型 / 接口)
             └── stage 3  architecture   (模块划分 / 状态管理 / 依赖选型)
                  └── [pub.dev validation]  — 对 architecture.third_party 逐个查 latest / discontinued
-                 └── stage 4  breakdown   (Epic → Story → Task,带工时和验收)
-                      └── stage 5  acceptance (测试用例 + 风险清单)
-                           └── stage 6  markdown   (汇总人类阅读的 PRD,顶部 prepend 依赖告警)
+                 └── stage 4  breakdown      (Epic → Story → Task,带工时和验收)
+                      └── stage 5  implementation (逼近代码的骨架:文件/接口签名/widget 树/数据模型/测试桩)
+                           └── stage 6  review       (代码自检:按 code-review/static-analysis 红线产出 findings + checklist)
+                                └── stage 7  acceptance (测试用例 + 风险清单)
+                                     └── stage 8  markdown    (汇总人类阅读的 PRD,顶部 prepend 依赖告警)
   └── [cost & cache index]         — 写入 runs.jsonl + 增量索引 cache key
 ```
 
@@ -352,7 +357,7 @@ requirement
 
 1. **Phase 1 采集**:对人物,覆盖其开源源码 / 演讲 / 文章 / 争议;对主题,覆盖官方文档 + 权威实践 + 反面案例。
 2. **Phase 2 提炼**:候选观点过三重验证,不过则降级或丢弃。
-3. **Phase 3 构建**:填入五层 + 本项目加载器所需 front-matter(`id` = 目录名 = `<name>-mindset`,`platforms` ⊆ {all,mobile,desktop,web},`stage_hints` ⊆ {classify,spec,architecture,breakdown,acceptance,markdown}),落地 `skills/<name>-mindset/SKILL.md`。
+3. **Phase 3 构建**:填入五层 + 本项目加载器所需 front-matter(`id` = 目录名 = `<name>-mindset`,`platforms` ⊆ {all,mobile,desktop,web},`stage_hints` ⊆ {classify,spec,architecture,breakdown,implementation,review,acceptance,markdown}),落地 `skills/<name>-mindset/SKILL.md`。
 4. **Phase 4 验证**:用 3 个该专家公开回答过的问题测方向一致;用 1 个他没讨论过的问题测"适度不确定"(防过拟合)。
 5. **登记 + 自检**:在 `flutter-skill-distillation` 花名册、`README.md`、`REFERENCES.md` 同步,并在 `tests/test_distillation_and_lenses.py` 的 `EXPERT_SKILLS` 加一行;`pytest` 绿 + `/healthz` skill 数 +1。
 
@@ -419,6 +424,9 @@ requirement
 | `dart-api-package-design` | 代码·API/包设计:公共 API 稳定性 / SemVer / pub 发布 | dart.dev/effective-dart/design + dart.dev/tools/pub/publishing |
 | `flutter-static-analysis` | 代码·静态分析自动化:analysis_options / lint 规则集 / custom_lint | dart.dev/tools/analysis + dart.dev/tools/linter-rules |
 | `flutter-monorepo-melos` | 代码·多包/monorepo:pub workspaces + melos 编排与发版 | dart.dev/tools/pub/workspaces + melos.invertase.dev |
+| `flutter-domain-modeling` | 代码·领域建模:让非法状态不可表达 / sealed 状态机 / 值对象与不变量 | dart.dev/language/class-modifiers + dart.dev/language/patterns |
+| `flutter-testability-design` | 代码·可测试性设计:依赖注入 / 接缝 / 纯函数核心 / 控时间与随机 | docs.flutter.dev/testing/overview + pub.dev/packages/clock |
+| `dart-async-streams` | 代码·异步与流:Future 组合 / Stream / async* / 取消与背压 / zones | dart.dev/libraries/async/async-await + dart.dev/libraries/async/using-streams |
 | `flutter-platform-channels` | 平台·原生互操作:MethodChannel / EventChannel / Pigeon / dart:ffi | docs.flutter.dev/platform-integration/platform-channels + pub.dev/packages/pigeon |
 | `flutter-android-platform` | 平台·Android 工程层:Gradle / Manifest / 权限 / R8 / Play | developer.android.com/build/shrink-code + developer.android.com/google/play/requirements/target-sdk |
 | `flutter-ios-platform` | 平台·iOS/Apple 工程层:Xcode / Info.plist / ATS / 权限串 / 审核 | docs.flutter.dev/deployment/ios + developer.apple.com/app-store/review/guidelines |

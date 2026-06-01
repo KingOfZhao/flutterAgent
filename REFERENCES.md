@@ -452,6 +452,38 @@
 | melos 快速开始 | <https://melos.invertase.dev/getting-started> |
 | melos 6→7 迁移(pub workspaces) | <https://melos.invertase.dev/~melos-latest/guides/migrations> |
 
+### 14.11 领域建模(flutter-domain-modeling)
+
+| 主题 | 链接 |
+|---|---|
+| Dart class modifiers(sealed/final) | <https://dart.dev/language/class-modifiers> |
+| Pattern matching | <https://dart.dev/language/patterns> |
+| Effective Dart · Design | <https://dart.dev/effective-dart/design> |
+| freezed(sealed/union 生成) | <https://pub.dev/packages/freezed> |
+| Make illegal states unrepresentable(类型驱动设计理念) | <https://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/> |
+
+### 14.12 可测试性设计(flutter-testability-design)
+
+| 主题 | 链接 |
+|---|---|
+| Flutter 测试总览 | <https://docs.flutter.dev/testing/overview> |
+| WidgetTester(推进时间) | <https://api.flutter.dev/flutter/flutter_test/WidgetTester-class.html> |
+| fake_async | <https://pub.dev/packages/fake_async> |
+| clock(可注入时钟) | <https://pub.dev/packages/clock> |
+| mocktail(fake/mock) | <https://pub.dev/packages/mocktail> |
+
+### 14.13 异步与流(dart-async-streams)
+
+| 主题 | 链接 |
+|---|---|
+| async/await | <https://dart.dev/libraries/async/async-await> |
+| Future API | <https://api.dart.dev/stable/dart-async/Future-class.html> |
+| 使用 Stream | <https://dart.dev/libraries/async/using-streams> |
+| 创建 Stream(async*/Controller) | <https://dart.dev/libraries/async/creating-streams> |
+| 事件循环 | <https://dart.dev/articles/archive/event-loop> |
+| StreamBuilder | <https://api.flutter.dev/flutter/widgets/StreamBuilder-class.html> |
+| rxdart | <https://pub.dev/packages/rxdart> |
+
 ---
 
 ## 15. 平台工程能力(PC / iOS / Android 原生与打包)

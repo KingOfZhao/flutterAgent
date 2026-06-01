@@ -63,6 +63,8 @@ def _parse_stages(value: Optional[str]) -> List[Stage]:
             Stage.spec,
             Stage.architecture,
             Stage.breakdown,
+            Stage.implementation,
+            Stage.review,
             Stage.acceptance,
             Stage.markdown,
         ]

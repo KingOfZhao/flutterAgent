@@ -1,7 +1,7 @@
 """Integration test: full pipeline with mocked LLM responses.
 
 Verifies:
-- Stage chaining (classify -> spec -> architecture -> breakdown -> acceptance -> markdown)
+- Stage chaining (classify -> spec -> architecture -> breakdown -> implementation -> review -> acceptance -> markdown)
 - Skill auto-selection via ranker
 - pub.dev validation integration
 - Cost aggregation
@@ -61,6 +61,40 @@ _MOCK_BREAKDOWN = json.dumps({
     ],
 })
 
+_MOCK_IMPLEMENTATION = json.dumps({
+    "files": [
+        {
+            "path": "lib/features/product/product_list_page.dart",
+            "purpose": "产品列表页",
+            "layer": "presentation",
+            "public_api": ["ProductListPage"],
+            "depends_on": ["package:flutter_riverpod/flutter_riverpod.dart"],
+            "skeleton": "class ProductListPage extends ConsumerWidget { /* TODO(spec): build */ }",
+        },
+    ],
+    "data_models": [{"name": "Product", "kind": "freezed", "fields": [{"name": "id", "type": "String"}]}],
+    "widget_tree": "ProductListPage > ListView > ProductTile",
+    "test_stubs": [
+        {"path": "test/product_list_page_test.dart", "covers": "lib/features/product/product_list_page.dart", "kind": "widget", "cases": ["should render list"]},
+    ],
+    "wiring": ["注册 productListProvider"],
+})
+
+_MOCK_REVIEW = json.dumps({
+    "summary": "骨架基本就绪，建议补齐错误态",
+    "findings": [
+        {
+            "path": "lib/features/product/product_list_page.dart",
+            "severity": "minor",
+            "category": "error-handling",
+            "issue": "未处理加载失败的 UI 错误态",
+            "suggestion": "用 AsyncValue 三态渲染 error 分支",
+        }
+    ],
+    "checklist": [{"item": "失败路径已建模", "status": "fail"}],
+    "blocking": False,
+})
+
 _MOCK_ACCEPTANCE = json.dumps({
     "criteria": [
         "Given product list, when user taps item, then navigate to detail",
@@ -83,6 +117,8 @@ _STAGE_RESPONSES = {
     "spec": _MOCK_SPEC,
     "architecture": _MOCK_ARCHITECTURE,
     "breakdown": _MOCK_BREAKDOWN,
+    "implementation": _MOCK_IMPLEMENTATION,
+    "review": _MOCK_REVIEW,
     "acceptance": _MOCK_ACCEPTANCE,
     "markdown": _MOCK_MARKDOWN,
 }
@@ -93,7 +129,7 @@ class _MockDeepSeekClient:
 
     def __init__(self):
         self._call_count = 0
-        self._stage_order = ["classify", "spec", "architecture", "breakdown", "acceptance", "markdown"]
+        self._stage_order = ["classify", "spec", "architecture", "breakdown", "implementation", "review", "acceptance", "markdown"]
 
     async def chat(self, messages, *, model=None, temperature=None, max_tokens=None, response_format=None):
         # Determine stage from system prompt content or call order
@@ -143,7 +179,7 @@ def registry(settings):
 
 @pytest.mark.asyncio
 async def test_full_pipeline_with_mock_llm(settings, registry, tmp_path):
-    """Run all 6 stages with mocked LLM and verify the response structure."""
+    """Run all 8 stages with mocked LLM and verify the response structure."""
     mock_client = _MockDeepSeekClient()
     cache = RunCache(settings.runs_log_file)
 
@@ -160,7 +196,7 @@ async def test_full_pipeline_with_mock_llm(settings, registry, tmp_path):
         platforms=[Platform.mobile],
         stages=[
             Stage.classify, Stage.spec, Stage.architecture,
-            Stage.breakdown, Stage.acceptance, Stage.markdown,
+            Stage.breakdown, Stage.implementation, Stage.review, Stage.acceptance, Stage.markdown,
         ],
         validate_packages=False,
     )
@@ -171,12 +207,12 @@ async def test_full_pipeline_with_mock_llm(settings, registry, tmp_path):
     assert response.id.startswith("run-")
     assert response.cached is False
     assert response.cache_key != ""
-    assert len(response.stages) == 6
+    assert len(response.stages) == 8
     assert response.requirement == req.requirement
 
     # Stage results
     stage_names = [sr.stage.value for sr in response.stages]
-    assert stage_names == ["classify", "spec", "architecture", "breakdown", "acceptance", "markdown"]
+    assert stage_names == ["classify", "spec", "architecture", "breakdown", "implementation", "review", "acceptance", "markdown"]
 
     # Parsed outputs
     assert response.classify is not None
@@ -187,6 +223,12 @@ async def test_full_pipeline_with_mock_llm(settings, registry, tmp_path):
     assert "third_party" in response.architecture
     assert response.breakdown is not None
     assert "tasks" in response.breakdown
+    assert response.implementation is not None
+    assert "files" in response.implementation
+    assert response.implementation["files"][0]["path"].startswith("lib/")
+    assert response.review is not None
+    assert "findings" in response.review
+    assert response.review["findings"][0]["issue"]
     assert response.acceptance is not None
     assert "criteria" in response.acceptance
     assert response.markdown is not None
@@ -198,8 +240,8 @@ async def test_full_pipeline_with_mock_llm(settings, registry, tmp_path):
 
     # Usage aggregation
     assert response.usage.total_tokens > 0
-    # 6 stages * 800 tokens each = 4800
-    assert response.usage.total_tokens == 4800
+    # 8 stages * 800 tokens each = 6400
+    assert response.usage.total_tokens == 6400
 
     # Stage-level schema validation — all mock outputs should pass
     for sr in response.stages:
@@ -267,6 +309,36 @@ def test_stage_hints_filter_skills_per_stage(settings, registry):
     for sk in universal_skills:
         assert sk.id in md_prompt or sk.name in md_prompt
         assert sk.id in arch_prompt or sk.name in arch_prompt
+
+
+def test_default_stages_include_implementation_and_review():
+    """The default pipeline must run implementation then review in order."""
+    req = RefineRequest(requirement="任意需求")
+    names = [s.value for s in req.stages]
+    assert names == [
+        "classify", "spec", "architecture", "breakdown",
+        "implementation", "review", "acceptance", "markdown",
+    ]
+    # implementation precedes review precedes acceptance (the feedback loop order)
+    assert names.index("implementation") < names.index("review") < names.index("acceptance")
+
+
+def test_review_stage_instruction_uses_review_skills():
+    """The review stage prompt must invoke the code-review + static-analysis skills."""
+    from flutter_agent.pipeline import _STAGE_INSTRUCTIONS
+
+    instr = _STAGE_INSTRUCTIONS[Stage.review]
+    assert "flutter-code-review" in instr
+    assert "flutter-static-analysis" in instr
+    assert "findings" in instr
+
+
+def test_review_skills_declare_review_stage_hint(registry):
+    """code-review / static-analysis must be injectable during the review stage."""
+    for sid in ("flutter-code-review", "flutter-static-analysis"):
+        sk = registry.get(sid)
+        assert sk is not None
+        assert "review" in sk.stage_hints, f"{sid} should hint the review stage"
 
 
 @pytest.mark.asyncio

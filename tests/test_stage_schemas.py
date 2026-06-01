@@ -45,6 +45,64 @@ class TestValidateStageOutput:
         data = {"tasks": [{"name": "setup project"}]}
         assert validate_stage_output("breakdown", data) is None
 
+    def test_implementation_valid(self):
+        data = {
+            "files": [
+                {
+                    "path": "lib/features/auth/login_page.dart",
+                    "purpose": "登录页",
+                    "public_api": ["LoginPage"],
+                    "skeleton": "class LoginPage extends StatelessWidget { /* TODO */ }",
+                }
+            ],
+            "test_stubs": [{"path": "test/login_page_test.dart", "covers": "lib/.../login_page.dart"}],
+        }
+        assert validate_stage_output("implementation", data) is None
+
+    def test_implementation_empty_files_still_valid(self):
+        # files defaults to [], so {} passes the loose schema
+        assert validate_stage_output("implementation", {}) is None
+
+    def test_implementation_file_requires_path(self):
+        # each file entry must have a path
+        data = {"files": [{"purpose": "missing path"}]}
+        result = validate_stage_output("implementation", data)
+        assert result is not None
+
+    def test_implementation_files_wrong_type(self):
+        # files must be a list of objects, not a string
+        result = validate_stage_output("implementation", {"files": "lib/main.dart"})
+        assert result is not None
+
+    def test_review_valid(self):
+        data = {
+            "summary": "骨架就绪,有一处错误处理待补",
+            "findings": [
+                {
+                    "path": "lib/features/auth/login_service.dart",
+                    "severity": "major",
+                    "category": "error-handling",
+                    "issue": "登录失败未建模为返回值",
+                    "suggestion": "返回 Result<User> 而非抛裸异常",
+                }
+            ],
+            "checklist": [{"item": "失败路径已建模", "status": "fail"}],
+            "blocking": True,
+        }
+        assert validate_stage_output("review", data) is None
+
+    def test_review_empty_findings_still_valid(self):
+        assert validate_stage_output("review", {"findings": [], "blocking": False}) is None
+
+    def test_review_finding_requires_issue(self):
+        data = {"findings": [{"path": "lib/x.dart", "severity": "minor"}]}
+        result = validate_stage_output("review", data)
+        assert result is not None
+
+    def test_review_findings_wrong_type(self):
+        result = validate_stage_output("review", {"findings": "looks good"})
+        assert result is not None
+
     def test_acceptance_valid(self):
         data = {"criteria": ["user can log in"]}
         assert validate_stage_output("acceptance", data) is None

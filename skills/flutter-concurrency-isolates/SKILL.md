@@ -5,7 +5,7 @@ version: 1.0.0
 platforms: [all, mobile, desktop, web]
 tags: [concurrency, isolate, compute, async, parallelism, jank, threads, message-passing, performance]
 applies_when: 有重计算/阻塞工作要挪出 UI 线程,或需要真正并行(isolate)、处理并发与竞态
-stage_hints: [architecture, breakdown]
+stage_hints: [architecture, breakdown, implementation]
 ---
 
 # Flutter 并发与隔离区

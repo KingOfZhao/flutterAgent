@@ -5,7 +5,7 @@ version: 1.0.0
 platforms: [all, mobile, desktop, web]
 tags: [ui, components, recipes, widgets, design-to-code, material, cupertino]
 applies_when: 看着设计稿里的某个 UI 元素,需要快速找到对应 Flutter 组件与实现骨架
-stage_hints: [breakdown, acceptance]
+stage_hints: [breakdown, implementation, acceptance]
 ---
 
 # 组件级还原范例库

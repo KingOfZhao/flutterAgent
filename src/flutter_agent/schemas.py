@@ -63,6 +63,8 @@ class Stage(str, Enum):
     spec = "spec"
     architecture = "architecture"
     breakdown = "breakdown"
+    implementation = "implementation"
+    review = "review"
     acceptance = "acceptance"
     markdown = "markdown"
 
@@ -92,6 +94,8 @@ class RefineRequest(BaseModel):
             Stage.spec,
             Stage.architecture,
             Stage.breakdown,
+            Stage.implementation,
+            Stage.review,
             Stage.acceptance,
             Stage.markdown,
         ],
@@ -222,6 +226,8 @@ class RefineResponse(BaseModel):
     spec: Optional[Dict[str, Any]] = None
     architecture: Optional[Dict[str, Any]] = None
     breakdown: Optional[Dict[str, Any]] = None
+    implementation: Optional[Dict[str, Any]] = None
+    review: Optional[Dict[str, Any]] = None
     acceptance: Optional[Dict[str, Any]] = None
     markdown: Optional[str] = Field(
         default=None, description="Final human-readable PRD in Markdown."

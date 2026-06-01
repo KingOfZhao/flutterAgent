@@ -36,6 +36,9 @@ CODE_DOMAIN_SKILLS = [
     "dart-api-package-design",
     "flutter-static-analysis",
     "flutter-monorepo-melos",
+    "flutter-domain-modeling",
+    "flutter-testability-design",
+    "dart-async-streams",
 ]
 
 LENS_HEADER = "## 心智模型与诚实边界"
