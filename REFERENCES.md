@@ -454,4 +454,90 @@
 
 ---
 
+## 15. 平台工程能力(PC / iOS / Android 原生与打包)
+
+### 15.1 原生互操作(flutter-platform-channels)
+
+| 主题 | 链接 |
+|---|---|
+| 平台通道(platform channels) | <https://docs.flutter.dev/platform-integration/platform-channels> |
+| Pigeon(类型安全互操作) | <https://pub.dev/packages/pigeon> |
+| dart:ffi(C 互操作) | <https://dart.dev/interop/c-interop> |
+| ffigen(C 绑定生成) | <https://pub.dev/packages/ffigen> |
+| Objective-C/Swift 互操作 | <https://dart.dev/interop/objective-c-interop> |
+| Java/Kotlin 互操作(jnigen) | <https://dart.dev/interop/java-interop> |
+| 开发 packages & plugins | <https://docs.flutter.dev/packages-and-plugins/developing-packages> |
+
+### 15.2 Android 平台工程(flutter-android-platform)
+
+| 主题 | 链接 |
+|---|---|
+| Android add-to-app | <https://docs.flutter.dev/add-to-app> |
+| Android 构建与发布 | <https://docs.flutter.dev/deployment/android> |
+| Android 权限概览 | <https://developer.android.com/guide/topics/permissions/overview> |
+| 运行时权限请求 | <https://developer.android.com/training/permissions/requesting> |
+| R8 收缩与混淆 | <https://developer.android.com/build/shrink-code> |
+| targetSdk 与 Play 政策 | <https://developer.android.com/google/play/requirements/target-sdk> |
+| App Links(深链) | <https://developer.android.com/training/app-links> |
+| AGP 版本兼容 | <https://developer.android.com/build/releases/gradle-plugin> |
+
+### 15.3 iOS/Apple 平台工程(flutter-ios-platform)
+
+| 主题 | 链接 |
+|---|---|
+| iOS 构建与发布 | <https://docs.flutter.dev/deployment/ios> |
+| Info.plist 信息属性键 | <https://developer.apple.com/documentation/bundleresources/information_property_list> |
+| 保护用户隐私(权限) | <https://developer.apple.com/documentation/uikit/protecting_the_user_s_privacy> |
+| App Transport Security | <https://developer.apple.com/documentation/security/preventing_insecure_network_connections> |
+| Privacy Manifest 文件 | <https://developer.apple.com/documentation/bundleresources/privacy_manifest_files> |
+| App Review Guidelines | <https://developer.apple.com/app-store/review/guidelines/> |
+| Universal Links | <https://developer.apple.com/documentation/xcode/allowing-apps-and-websites-to-link-to-your-content> |
+| Flutter iOS SwiftPM | <https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers> |
+
+### 15.4 桌面平台工程(flutter-desktop-platform)
+
+| 主题 | 链接 |
+|---|---|
+| 桌面支持总览 | <https://docs.flutter.dev/platform-integration/desktop> |
+| 构建与发布 Windows | <https://docs.flutter.dev/deployment/windows> |
+| 构建与发布 macOS | <https://docs.flutter.dev/deployment/macos> |
+| 构建与发布 Linux | <https://docs.flutter.dev/deployment/linux> |
+| msix 打包 | <https://pub.dev/packages/msix> |
+| macOS 公证(notarytool) | <https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution> |
+| AppImage / Flatpak / Snap | <https://appimage.org/> · <https://flatpak.org/> · <https://snapcraft.io/> |
+| window_manager | <https://pub.dev/packages/window_manager> |
+
+## 16. 协议能力(通信与认证授权)
+
+### 16.1 通信协议(flutter-network-protocols)
+
+| 主题 | 链接 |
+|---|---|
+| HTTP 概览(MDN) | <https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview> |
+| Flutter 网络与 HTTP | <https://docs.flutter.dev/data-and-backend/networking> |
+| gRPC 官方 / Dart | <https://grpc.io/docs/> · <https://grpc.io/docs/languages/dart/> |
+| gRPC-Web | <https://github.com/grpc/grpc-web> |
+| Protocol Buffers | <https://protobuf.dev/> |
+| GraphQL / graphql_flutter | <https://graphql.org/learn/> · <https://pub.dev/packages/graphql_flutter> |
+| WebSocket / web_socket_channel | <https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API> · <https://pub.dev/packages/web_socket_channel> |
+| Server-Sent Events | <https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events> |
+| MQTT / mqtt_client | <https://mqtt.org/> · <https://pub.dev/packages/mqtt_client> |
+| TLS 1.3 / HTTP/3(RFC) | <https://datatracker.ietf.org/doc/html/rfc8446> · <https://datatracker.ietf.org/doc/html/rfc9114> |
+
+### 16.2 认证授权协议(flutter-auth-protocols)
+
+| 主题 | 链接 |
+|---|---|
+| OAuth 2.0 / RFC 6749 | <https://oauth.net/2/> · <https://datatracker.ietf.org/doc/html/rfc6749> |
+| PKCE(RFC 7636) | <https://datatracker.ietf.org/doc/html/rfc7636> |
+| OAuth for Native Apps(RFC 8252) | <https://datatracker.ietf.org/doc/html/rfc8252> |
+| OpenID Connect | <https://openid.net/developers/how-connect-works/> |
+| JWT(RFC 7519) | <https://datatracker.ietf.org/doc/html/rfc7519> · <https://jwt.io/introduction> |
+| flutter_appauth | <https://pub.dev/packages/flutter_appauth> |
+| flutter_secure_storage | <https://pub.dev/packages/flutter_secure_storage> |
+| local_auth(生物识别) | <https://pub.dev/packages/local_auth> |
+| OWASP MASVS | <https://mas.owasp.org/MASVS/> |
+
+---
+
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。

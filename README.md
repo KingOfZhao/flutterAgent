@@ -2,7 +2,7 @@
 
 一个本地运行的 **Flutter 需求精炼器**。所有工程主张都能在 [`REFERENCES.md`](./REFERENCES.md) 里找到官方文档 / pub.dev / 行业标准的出处。
 
-- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **44 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构,并用 [女娲 Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的五层蒸馏法提炼资深工程师“思维操作系统”——`flutter-skill-distillation` 把该蒸馏法本地化为可复用能力(支持“蒸馏指定专家”),并已蒸馏 5 位 Flutter 框架/实践专家为 `*-mindset` skill;19 个领域 skill 均补有精简的“心智模型 + 诚实边界”层;另有一组**代码领域**能力:地道写法 / 评审 / 重构 / 依赖养护 / 错误处理 / 代码生成 / 并发隔离区 / API 包设计 / 静态分析 / monorepo)。
+- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **50 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构,并用 [女娲 Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的五层蒸馏法提炼资深工程师“思维操作系统”——`flutter-skill-distillation` 把该蒸馏法本地化为可复用能力(支持“蒸馏指定专家”),并已蒸馏 5 位 Flutter 框架/实践专家为 `*-mindset` skill;19 个领域 skill 均补有精简的“心智模型 + 诚实边界”层;另有一组**代码领域**能力:地道写法 / 评审 / 重构 / 依赖养护 / 错误处理 / 代码生成 / 并发隔离区 / API 包设计 / 静态分析 / monorepo;以及一组**平台 + 协议**能力:原生互操作(platform channel / Pigeon / FFI)、Android / iOS / 桌面三端工程层、通信协议(HTTP/gRPC/GraphQL/WebSocket/SSE/MQTT)与认证授权协议(OAuth2/OIDC/PKCE/JWT))。
 - 把用户的一句话需求,经多阶段流水线(分类 → 规格 → 架构 → 任务拆解 → 验收 → 汇总 PRD),交给 任何 OpenAI 兼容模型去精炼(默认 DeepSeek v4 pro;可接 `deepseek-chat` / `deepseek-reasoner` / `gpt-4o` / Ollama 本地)。
 - **反幻觉层**:架构阶段产出的所有第三方包会在 pub.dev API 上被验证,不存在 / 已废弃 / 版本超前的包会被标警并在 PRD 顶部贴 warning。
 - **成本透明**:按 DeepSeek / OpenAI 公布价目实时估算 USD,累计到每个 stage 、整个运行以及 run history list。
@@ -26,7 +26,7 @@ flutterAgent/
 ├── scripts/
 │   ├── refine_cli.py            # 命令行直接调用精炼流水线
 │   └── export_openapi.py        # 导出 openapi.json 到磁盘
-├── skills/                      # Markdown 形式的 skill / spec(44 个)
+├── skills/                      # Markdown 形式的 skill / spec(50 个)
 │   ├── task-refinement/SKILL.md
 │   ├── architecture-design/SKILL.md
 │   ├── state-management/SKILL.md
@@ -70,7 +70,13 @@ flutterAgent/
 │   ├── flutter-concurrency-isolates/SKILL.md # 代码: 并发与隔离区(isolate/compute/Isolate.run)
 │   ├── dart-api-package-design/SKILL.md      # 代码: API/包设计(公共 API/SemVer/pub 发布)
 │   ├── flutter-static-analysis/SKILL.md      # 代码: 静态分析自动化(analysis_options/lints/custom_lint)
-│   └── flutter-monorepo-melos/SKILL.md       # 代码: 多包/monorepo(pub workspaces + melos)
+│   ├── flutter-monorepo-melos/SKILL.md       # 代码: 多包/monorepo(pub workspaces + melos)
+│   ├── flutter-platform-channels/SKILL.md    # 平台: 原生互操作(MethodChannel/EventChannel/Pigeon/FFI)
+│   ├── flutter-android-platform/SKILL.md     # 平台: Android 工程层(Gradle/Manifest/权限/R8/Play)
+│   ├── flutter-ios-platform/SKILL.md         # 平台: iOS/Apple 工程层(Xcode/Info.plist/ATS/审核)
+│   ├── flutter-desktop-platform/SKILL.md     # 平台: 桌面三端(Win/macOS/Linux 打包/签名/公证)
+│   ├── flutter-network-protocols/SKILL.md    # 协议: HTTP/2·3/REST/gRPC/GraphQL/WebSocket/SSE/MQTT/TLS
+│   └── flutter-auth-protocols/SKILL.md       # 协议: OAuth2/OIDC/PKCE/JWT/刷新令牌/生物识别
 ├── logs/                        # runs.jsonl 自动写入(gitignored)
 ├── REFERENCES.md                # 全部官方/开源出处汇总
 ├── src/flutter_agent/
@@ -378,6 +384,12 @@ requirement
 | `dart-api-package-design` | 代码·API/包设计:公共 API 稳定性 / SemVer / pub 发布 | dart.dev/effective-dart/design + dart.dev/tools/pub/publishing |
 | `flutter-static-analysis` | 代码·静态分析自动化:analysis_options / lint 规则集 / custom_lint | dart.dev/tools/analysis + dart.dev/tools/linter-rules |
 | `flutter-monorepo-melos` | 代码·多包/monorepo:pub workspaces + melos 编排与发版 | dart.dev/tools/pub/workspaces + melos.invertase.dev |
+| `flutter-platform-channels` | 平台·原生互操作:MethodChannel / EventChannel / Pigeon / dart:ffi | docs.flutter.dev/platform-integration/platform-channels + pub.dev/packages/pigeon |
+| `flutter-android-platform` | 平台·Android 工程层:Gradle / Manifest / 权限 / R8 / Play | developer.android.com/build/shrink-code + developer.android.com/google/play/requirements/target-sdk |
+| `flutter-ios-platform` | 平台·iOS/Apple 工程层:Xcode / Info.plist / ATS / 权限串 / 审核 | docs.flutter.dev/deployment/ios + developer.apple.com/app-store/review/guidelines |
+| `flutter-desktop-platform` | 平台·桌面三端:Win/macOS/Linux 打包 / 签名 / 公证 | docs.flutter.dev/platform-integration/desktop + developer.apple.com notarization |
+| `flutter-network-protocols` | 协议·通信协议全景:HTTP/2·3 / REST / gRPC / GraphQL / WebSocket / SSE / MQTT / TLS | grpc.io + graphql.org + mqtt.org + developer.mozilla.org |
+| `flutter-auth-protocols` | 协议·认证授权:OAuth2 / OIDC / PKCE / JWT / 刷新令牌 / 生物识别 | oauth.net/2 + openid.net + datatracker.ietf.org/doc/html/rfc7636 |
 
 > 标「官方 skill 格式」的 skill 采用 [flutter/skills](https://github.com/flutter/skills) 的结构(`Contents / Core Concepts / Workflow + Task Progress / Conditional Logic / Examples / Troubleshooting`),同时保留本项目加载器所需的 front-matter 字段。
 

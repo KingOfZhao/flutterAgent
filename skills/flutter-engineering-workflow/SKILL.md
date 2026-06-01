@@ -32,6 +32,17 @@ stage_hints: [breakdown, acceptance]
 > 设计可复用库/模块的公共 API 用 `dart-api-package-design`;多包仓库维护用 `flutter-monorepo-melos`。
 > 这些是"把代码写好/改好/养好"的底座。
 
+> **平台工程能力**(改动触达原生层 / 打包 / 平台配置时):
+> 调原生能力用 `flutter-platform-channels`(MethodChannel/Pigeon/FFI);
+> Android 工程层(Gradle/Manifest/权限/R8)用 `flutter-android-platform`;
+> iOS/Apple 工程层(Xcode/Info.plist/权限串/ATS/审核)用 `flutter-ios-platform`;
+> 桌面三端打包签名公证用 `flutter-desktop-platform`。
+
+> **协议能力**(与后端/设备通信时):
+> 选通信协议(HTTP/2·3、REST、gRPC、GraphQL、WebSocket、SSE、MQTT)用 `flutter-network-protocols`;
+> 登录与令牌(OAuth2/OIDC/PKCE/JWT/刷新/生物识别)用 `flutter-auth-protocols`。
+> (协议选型在先,客户端实现见 `flutter-network`,凭证安全见 `flutter-security`。)
+
 > 一句话原则:**改动越小越好,验证越足越好,文档跟着改动走。** 不发明不存在的包,不写伪代码,所有"为什么"都要能落到 `REFERENCES.md` 的官方出处。
 
 ---
@@ -46,6 +57,7 @@ stage_hints: [breakdown, acceptance]
 2. **判定目标平台**:mobile(iOS/Android)、desktop(Windows/macOS/Linux)、web。
    平台不同,能力边界不同(权限、窗口、文件系统、`dart:io` vs `dart:html`)。
    - 跨端差异交给 `flutter-cross-platform`;平台细节交给 `flutter-mobile` / `flutter-desktop` / `flutter-web`。
+   - 触达原生层 / 平台工程配置(权限、Gradle、Xcode、桌面打包)交给 `flutter-android-platform` / `flutter-ios-platform` / `flutter-desktop-platform`;调原生 API 用 `flutter-platform-channels`。
 3. **锚定代码位置**:按 Clean Architecture 三层(presentation / domain / data,见 `architecture-design`)定位"改动应落在哪一层"。
    - UI 不对 → presentation(widget / state)。
    - 业务规则不对 → domain(usecase / entity)。
