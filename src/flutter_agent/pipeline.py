@@ -21,6 +21,7 @@ from typing import Any, Dict, List, Optional
 
 from .cache import RunCache, make_cache_key
 from .config import Settings
+from .consistency import check_implementation_consistency
 from .deepseek_client import DeepSeekClient, UpstreamError
 from .pricing import estimate_cost
 from .pub_validator import PubValidator
@@ -315,6 +316,39 @@ def _review_is_blocking(review: Optional[Dict[str, Any]]) -> bool:
     return False
 
 
+def _augment_review_with_consistency(prior: Dict[Stage, Dict[str, Any]]) -> int:
+    """Merge deterministic structural findings into prior[review].findings.
+
+    Returns the number of static findings added. Idempotent per review output:
+    each fresh review starts without static findings, so re-reviews re-derive
+    them from the (possibly updated) implementation."""
+    review = prior.get(Stage.review)
+    if not isinstance(review, dict):
+        return 0
+    static = check_implementation_consistency(
+        prior.get(Stage.implementation),
+        prior.get(Stage.breakdown),
+        prior.get(Stage.architecture),
+    )
+    if not static:
+        return 0
+    findings = review.get("findings")
+    if not isinstance(findings, list):
+        findings = []
+    existing = {
+        (f.get("path"), f.get("issue"))
+        for f in findings
+        if isinstance(f, dict)
+    }
+    added = 0
+    for f in static:
+        if (f["path"], f["issue"]) not in existing:
+            findings.append(f)
+            added += 1
+    review["findings"] = findings
+    return added
+
+
 def _format_review_feedback(review: Dict[str, Any]) -> str:
     """Turn review findings into a concrete fix list fed back to implementation."""
     lines: List[str] = []
@@ -451,6 +485,7 @@ class RefinementPipeline:
                 # Closed loop: if the review blocks, re-implement with the
                 # findings as feedback and re-review, bounded by the request.
                 elif stage == Stage.review and Stage.implementation in req.stages:
+                    _augment_review_with_consistency(prior)
                     while (
                         review_iterations < req.review_max_iterations
                         and _review_is_blocking(prior.get(Stage.review))
@@ -483,6 +518,7 @@ class RefinementPipeline:
                         total_usage.add(review_again.usage)
                         if review_again.parsed is not None:
                             prior[Stage.review] = review_again.parsed
+                            _augment_review_with_consistency(prior)
 
                         review_iterations += 1
 

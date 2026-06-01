@@ -475,6 +475,117 @@ async def test_review_loop_reimplements_when_blocking(settings, registry):
     assert len(response.stages) == 10
 
 
+_IMPL_NO_TEST = json.dumps({
+    "files": [{"path": "lib/features/x/x_page.dart", "purpose": "X 页", "layer": "presentation"}],
+    "test_stubs": [],  # <-- missing coverage; the static check should catch this
+})
+
+_IMPL_WITH_TEST = json.dumps({
+    "files": [{"path": "lib/features/x/x_page.dart", "purpose": "X 页", "layer": "presentation"}],
+    "test_stubs": [{"path": "test/x_page_test.dart", "covers": "lib/features/x/x_page.dart", "kind": "widget", "cases": ["renders"]}],
+})
+
+
+class _StaticGapMockClient:
+    """LLM review is ALWAYS clean (non-blocking). The first implementation has
+    no test stub; the deterministic consistency check should make review
+    blocking and drive one re-implementation, which then adds the test stub."""
+
+    _STAGES = ["classify", "spec", "architecture", "breakdown",
+               "implementation", "review", "acceptance", "markdown"]
+
+    def __init__(self):
+        self.impl_calls = 0
+
+    def _detect_stage(self, messages) -> str:
+        user = messages[-1]["content"]
+        for st in self._STAGES:
+            if f"当前阶段({st})" in user:
+                return st
+        return "markdown"
+
+    async def chat(self, messages, *, model=None, temperature=None, max_tokens=None, response_format=None):
+        stage = self._detect_stage(messages)
+        if stage == "implementation":
+            self.impl_calls += 1
+            text = _IMPL_NO_TEST if self.impl_calls == 1 else _IMPL_WITH_TEST
+        elif stage == "review":
+            text = _MOCK_REVIEW  # always clean (blocking=False, only a minor finding)
+        else:
+            text = _STAGE_RESPONSES.get(stage, "{}")
+        return {
+            "choices": [{"message": {"content": text}}],
+            "usage": {"prompt_tokens": 500, "completion_tokens": 300, "total_tokens": 800},
+        }
+
+    @staticmethod
+    def extract_text(completion):
+        return completion["choices"][0]["message"]["content"] or ""
+
+    @staticmethod
+    def extract_usage(completion):
+        u = completion.get("usage", {})
+        return {
+            "prompt_tokens": int(u.get("prompt_tokens", 0)),
+            "completion_tokens": int(u.get("completion_tokens", 0)),
+            "total_tokens": int(u.get("total_tokens", 0)),
+        }
+
+
+@pytest.mark.asyncio
+async def test_static_consistency_drives_review_loop(settings, registry):
+    """Even when the LLM review is clean, a missing test stub (deterministic
+    check) makes the review blocking and triggers one re-implementation."""
+    client = _StaticGapMockClient()
+    pipeline = RefinementPipeline(settings=settings, client=client, registry=registry)
+
+    req = RefineRequest(
+        requirement="一个简单页面",
+        platforms=[Platform.mobile],
+        stages=[
+            Stage.classify, Stage.spec, Stage.architecture, Stage.breakdown,
+            Stage.implementation, Stage.review, Stage.acceptance, Stage.markdown,
+        ],
+        review_max_iterations=1,
+        validate_packages=False,
+    )
+
+    response = await pipeline.run(req)
+
+    assert response.review_iterations == 1   # static gap drove the loop
+    assert client.impl_calls == 2            # re-implemented to add the test stub
+    # After the fix, the final review carries no static testability finding.
+    static = [f for f in response.review.get("findings", []) if f.get("source") == "static"]
+    assert static == []
+
+
+@pytest.mark.asyncio
+async def test_static_finding_surfaced_even_when_loop_disabled(settings, registry):
+    """With the loop off, the deterministic finding is still merged into the
+    review output as advisory (not acted upon)."""
+    client = _StaticGapMockClient()
+    pipeline = RefinementPipeline(settings=settings, client=client, registry=registry)
+
+    req = RefineRequest(
+        requirement="一个简单页面",
+        platforms=[Platform.mobile],
+        stages=[
+            Stage.classify, Stage.spec, Stage.architecture, Stage.breakdown,
+            Stage.implementation, Stage.review, Stage.acceptance, Stage.markdown,
+        ],
+        review_max_iterations=0,
+        validate_packages=False,
+    )
+
+    response = await pipeline.run(req)
+
+    assert response.review_iterations == 0
+    assert client.impl_calls == 1
+    static = [f for f in response.review.get("findings", []) if f.get("source") == "static"]
+    assert len(static) == 1
+    assert static[0]["category"] == "testability"
+
+
 @pytest.mark.asyncio
 async def test_review_loop_disabled_when_max_iterations_zero(settings, registry):
     """review_max_iterations=0 keeps review advisory: no re-implementation."""

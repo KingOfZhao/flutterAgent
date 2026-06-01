@@ -159,7 +159,7 @@ curl -X POST http://127.0.0.1:8765/v1/refine \
 主要 flags:
 - `use_cache: true` — 命中内容寻址缓存时跳过上游调用。
 - `validate_packages: true` (默认) — 在 architecture 阶段后用 pub.dev API 验证每个推荐包。
-- `review_max_iterations: 1` (默认) — **评审闭环**:当 review 阶段判定为 blocking(`blocking=true` 或存在 blocker/major findings)时,把 findings 回灌给 implementation 重产一版骨架并再次 review,最多迭代这么多次;`0` 关闭闭环(review 仅作建议)。实际迭代次数见返回的 `review_iterations`。
+- `review_max_iterations: 1` (默认) — **评审闭环**:当 review 阶段判定为 blocking(`blocking=true` 或存在 blocker/major findings)时,把 findings 回灌给 implementation 重产一版骨架并再次 review,最多迭代这么多次;`0` 关闭闭环(review 仅作建议)。实际迭代次数见返回的 `review_iterations`。review 的 findings 除 LLM 自查外,还会叠加一层**确定性结构自检**(纯 Python,不依赖模型):每个 `lib/` 文件是否有测试桩、breakdown 声明 `files_touched` 的文件是否都产出骨架、文件路径是否落在 `architecture.directory_tree` 内;这些 finding 带 `source: "static"`,即使模型自查漏了也能据此触发闭环。
 
 ### 2. 用 OpenAI SDK 调用(OpenAI 兼容,支持流式)
 
@@ -291,7 +291,7 @@ requirement
                  └── [pub.dev validation]  — 对 architecture.third_party 逐个查 latest / discontinued
                  └── stage 4  breakdown      (Epic → Story → Task,带工时和验收)
                       └── stage 5  implementation (逼近代码的骨架:文件/接口签名/widget 树/数据模型/测试桩)
-                           └── stage 6  review       (代码自检:按 code-review/static-analysis 红线产出 findings + checklist)
+                           └── stage 6  review       (代码自检:LLM 按 code-review/static-analysis 红线 + 确定性结构自检 → findings + checklist)
                                 └── [review 闭环]   — review blocking 时把 findings 回灌 implementation 重产并再 review(≤ review_max_iterations)
                                 └── stage 7  acceptance (测试用例 + 风险清单)
                                      └── stage 8  markdown    (汇总人类阅读的 PRD,顶部 prepend 依赖告警)
