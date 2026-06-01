@@ -235,6 +235,9 @@ async def test_full_pipeline_with_mock_llm(settings, registry, tmp_path):
     assert {g["path"] for g in response.acceptance_gaps if g["category"] == "acceptance"} == {"T-1", "T-2", "T-3"}
     assert response.markdown is not None
     assert "产品需求文档" in response.markdown
+    # deterministic audit section is appended to the PRD
+    assert "## 闭环与自检审计(自动生成)" in response.markdown
+    assert "验收交叉校验缺口" in response.markdown
 
     # Cost aggregation
     assert response.cost is not None
@@ -366,6 +369,27 @@ def test_review_is_blocking_helper():
     assert _review_is_blocking(major, "major") is True
     # explicit model blocking flag always wins, even at the loosest threshold
     assert _review_is_blocking({"blocking": True}, "blocker") is True
+
+
+def test_append_audit_section_is_skipped_when_empty():
+    from flutter_agent.pipeline import RefinementPipeline
+
+    # nothing to report -> markdown unchanged
+    assert RefinementPipeline._append_audit_section("# PRD", [], []) == "# PRD"
+    # None markdown stays None
+    assert RefinementPipeline._append_audit_section(None, [], []) is None
+
+
+def test_format_review_feedback_threshold_label():
+    from flutter_agent.pipeline import _format_review_feedback
+
+    review = {"findings": [{"severity": "minor", "path": "lib/a.dart", "issue": "x", "suggestion": "y"}]}
+    # at minor threshold the minor finding is included in the feedback
+    fb = _format_review_feedback(review, "minor")
+    assert "lib/a.dart" in fb
+    # at major threshold the minor finding is filtered out
+    fb2 = _format_review_feedback(review, "major")
+    assert "lib/a.dart" not in fb2
 
 
 def test_format_review_feedback_only_blocking():

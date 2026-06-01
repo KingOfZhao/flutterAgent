@@ -621,7 +621,10 @@ class RefinementPipeline:
             review_history=review_history,
             acceptance=prior.get(Stage.acceptance),
             acceptance_gaps=acceptance_gaps,
-            markdown=self._prepend_validation_warnings(markdown_out, validations),
+            markdown=self._prepend_validation_warnings(
+                self._append_audit_section(markdown_out, review_history, acceptance_gaps),
+                validations,
+            ),
             validations=validations,
         )
 
@@ -813,6 +816,42 @@ class RefinementPipeline:
                 f"pub.dev latest={v.latest or 'n/a'}) — {v.reason or 'see validations'}"
             )
         return "\n".join(lines) + "\n\n" + markdown
+
+    @staticmethod
+    def _append_audit_section(
+        markdown: Optional[str],
+        review_history: List[ReviewPass],
+        acceptance_gaps: List[Dict[str, Any]],
+    ) -> Optional[str]:
+        """Append a deterministic audit block (closed-loop passes + acceptance
+        gaps) to the PRD so the mechanical checks are always visible, even if
+        the model's markdown omits them."""
+        if not markdown or (not review_history and not acceptance_gaps):
+            return markdown
+        lines = ["", "---", "", "## 闭环与自检审计(自动生成)", ""]
+        if review_history:
+            lines.append("### 评审闭环")
+            lines.append("")
+            lines.append("| 轮次 | findings | blocker/major/minor | 来源(llm/static) | blocking |")
+            lines.append("| --- | --- | --- | --- | --- |")
+            for p in review_history:
+                sev = "/".join(str(p.by_severity.get(k, 0)) for k in ("blocker", "major", "minor"))
+                src = f"{p.by_source.get('llm', 0)}/{p.by_source.get('static', 0)}"
+                lines.append(
+                    f"| {p.iteration} | {p.findings} | {sev} | {src} | {'是' if p.blocking else '否'} |"
+                )
+            lines.append("")
+        if acceptance_gaps:
+            lines.append("### 验收交叉校验缺口")
+            lines.append("")
+            lines.append("| 对象 | 严重度 | 问题 |")
+            lines.append("| --- | --- | --- |")
+            for g in acceptance_gaps:
+                lines.append(
+                    f"| {g.get('path', '?')} | {g.get('severity', '?')} | {g.get('issue', '')} |"
+                )
+            lines.append("")
+        return markdown + "\n".join(lines)
 
     def _build_system_prompt(self, stage: Stage, skills: List[SkillDetail]) -> str:
         available = ", ".join(sorted(s.id for s in self._registry.list())) or "(empty)"

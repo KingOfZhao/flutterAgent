@@ -97,6 +97,16 @@ def refine(
     ),
     temperature: Optional[float] = typer.Option(None, "--temperature", "-t"),
     max_tokens: Optional[int] = typer.Option(None, "--max-tokens"),
+    review_max_iterations: int = typer.Option(
+        1,
+        "--review-max-iterations",
+        help="Closed loop: extra implementation->review passes when review blocks. 0 disables.",
+    ),
+    review_block_severity: str = typer.Option(
+        "major",
+        "--review-block-severity",
+        help="Lowest finding severity that blocks: blocker|major|minor.",
+    ),
     out: Optional[Path] = typer.Option(
         None, "--out", "-o", help="Write the final markdown PRD to this file."
     ),
@@ -126,6 +136,8 @@ def refine(
         stages=_parse_stages(stages),
         temperature=temperature,
         max_tokens=max_tokens,
+        review_max_iterations=review_max_iterations,
+        review_block_severity=review_block_severity,
     )
 
     if dry_run:

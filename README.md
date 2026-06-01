@@ -159,7 +159,19 @@ curl -X POST http://127.0.0.1:8765/v1/refine \
 主要 flags:
 - `use_cache: true` — 命中内容寻址缓存时跳过上游调用。
 - `validate_packages: true` (默认) — 在 architecture 阶段后用 pub.dev API 验证每个推荐包。
-- `review_max_iterations: 1` (默认) — **评审闭环**:当 review 阶段判定为 blocking(`blocking=true` 或存在 blocker/major findings)时,把 findings 回灌给 implementation 重产一版骨架并再次 review,最多迭代这么多次;`0` 关闭闭环(review 仅作建议)。实际迭代次数见返回的 `review_iterations`。review 的 findings 除 LLM 自查外,还会叠加一层**确定性结构自检**(纯 Python,不依赖模型):每个 `lib/` 文件是否有测试桩、breakdown 声明 `files_touched` 的文件是否都产出骨架、文件路径是否落在 `architecture.directory_tree` 内;这些 finding 带 `source: "static"`,即使模型自查漏了也能据此触发闭环。
+- `review_max_iterations: 1` (默认) — **评审闭环**:当 review 阶段判定为 blocking 时,把 findings 回灌给 implementation 重产一版骨架并再次 review,最多迭代这么多次;`0` 关闭闭环(review 仅作建议)。实际迭代次数见返回的 `review_iterations`。
+- `review_block_severity: "major"` (默认) — 触发闭环的最低严重度阈值:`major` 拦 blocker+major;`blocker` 只拦 blocker(最松);`minor` 连 minor 也拦(最严)。模型显式 `blocking=true` 不受此阈值影响,始终拦截。
+
+**review findings 的两个来源**:除 LLM 自查外,review 还叠加一层**确定性结构自检**(纯 Python,不依赖模型),finding 带 `source: "static"`,即使模型自查漏了也能据此触发闭环:
+- 每个 `lib/` 文件是否有测试桩(major)、breakdown 声明 `files_touched` 的文件是否都产出骨架(major)、文件路径是否落在 `architecture.directory_tree` 内(minor)
+- 重复文件路径(major)、测试桩 `covers` 指向不存在文件(minor)、`depends_on` 悬空内部依赖(minor)
+
+**审计与可观测**:
+- `review_iterations` / `review_history[]` — 闭环每轮的 findings 计数(按严重度、按 llm/static 来源)与 blocking 标记。
+- `acceptance_gaps[]` — acceptance 阶段的确定性交叉校验(任务缺验收标准、测试桩未被 test_plan 引用),仅作建议、不驱动闭环。
+- 最终 Markdown PRD 末尾自动追加「闭环与自检审计」表格,无需依赖模型生成。
+
+CLI 对应 flag:`--review-max-iterations`、`--review-block-severity`。
 
 ### 2. 用 OpenAI SDK 调用(OpenAI 兼容,支持流式)
 
