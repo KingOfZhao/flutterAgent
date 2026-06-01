@@ -19,9 +19,15 @@ stage_hints: [breakdown, acceptance]
 | 0 理解 & 定位 | 把需求/缺陷锚定到具体文件、layer、平台 | 本 skill + `architecture-design` |
 | 1A 修复 (fix) | 复现 → 定位根因 → 最小改动 → 防回归 | `flutter-debugging` |
 | 1B 新增 (feature) | 脚手架 → 状态 → UI → 接线 → 灰度 | `flutter-feature-development` |
+| 1C 重构 (refactor) | 有护栏地改结构、不改行为 | `flutter-refactoring` |
+| 1D 升级依赖 (deps) | 看现状 → 分级升级 → 验证 → 记录 | `flutter-dependency-maintenance` |
 | 2 自测 (verify) | analyze / format / test / build 本地闭环 | `flutter-verification` |
 | 3 文档 (docs) | dartdoc / README / CHANGELOG / ADR | `flutter-documentation` |
-| 4 交付 (deliver) | 提交规范 / PR / CI 门禁 | 本 skill §5 + `flutter-ci-cd` |
+| 4 交付 (deliver) | 提交规范 / PR / 评审 / CI 门禁 | 本 skill §5 + `flutter-code-review` + `flutter-ci-cd` |
+
+> **代码质量横切能力**(贯穿 1A–1D 实现全程,不属于某一阶段):
+> 语言层写地道用 `dart-language-idioms`;失败路径设计用 `flutter-error-handling`;
+> 数据类/序列化/provider 的代码生成用 `flutter-codegen`。这三条是"把代码写好/养好"的底座。
 
 > 一句话原则:**改动越小越好,验证越足越好,文档跟着改动走。** 不发明不存在的包,不写伪代码,所有"为什么"都要能落到 `REFERENCES.md` 的官方出处。
 
@@ -33,7 +39,7 @@ stage_hints: [breakdown, acceptance]
 
 先把任务"翻译"成工程坐标,别急着改代码:
 
-1. **判定任务类型**:修 bug / 加功能 / 重构 / 升级依赖 —— 决定走 1A 还是 1B。
+1. **判定任务类型**:修 bug(1A)/ 加功能(1B)/ 重构(1C,`flutter-refactoring`)/ 升级依赖(1D,`flutter-dependency-maintenance`)—— 不同类型走不同路径,别混在一个 PR。
 2. **判定目标平台**:mobile(iOS/Android)、desktop(Windows/macOS/Linux)、web。
    平台不同,能力边界不同(权限、窗口、文件系统、`dart:io` vs `dart:html`)。
    - 跨端差异交给 `flutter-cross-platform`;平台细节交给 `flutter-mobile` / `flutter-desktop` / `flutter-web`。

@@ -2,7 +2,7 @@
 
 一个本地运行的 **Flutter 需求精炼器**。所有工程主张都能在 [`REFERENCES.md`](./REFERENCES.md) 里找到官方文档 / pub.dev / 行业标准的出处。
 
-- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **34 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构,并用 [女娲 Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的五层蒸馏法提炼资深工程师“思维操作系统”——`flutter-skill-distillation` 把该蒸馏法本地化为可复用能力(支持“蒸馏指定专家”),并已蒸馏 5 位 Flutter 框架/实践专家为 `*-mindset` skill;19 个领域 skill 均补有精简的“心智模型 + 诚实边界”层)。
+- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **40 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构,并用 [女娲 Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的五层蒸馏法提炼资深工程师“思维操作系统”——`flutter-skill-distillation` 把该蒸馏法本地化为可复用能力(支持“蒸馏指定专家”),并已蒸馏 5 位 Flutter 框架/实践专家为 `*-mindset` skill;19 个领域 skill 均补有精简的“心智模型 + 诚实边界”层;另有一组**代码领域**能力:地道写法 / 评审 / 重构 / 依赖养护 / 错误处理 / 代码生成)。
 - 把用户的一句话需求,经多阶段流水线(分类 → 规格 → 架构 → 任务拆解 → 验收 → 汇总 PRD),交给 任何 OpenAI 兼容模型去精炼(默认 DeepSeek v4 pro;可接 `deepseek-chat` / `deepseek-reasoner` / `gpt-4o` / Ollama 本地)。
 - **反幻觉层**:架构阶段产出的所有第三方包会在 pub.dev API 上被验证,不存在 / 已废弃 / 版本超前的包会被标警并在 PRD 顶部贴 warning。
 - **成本透明**:按 DeepSeek / OpenAI 公布价目实时估算 USD,累计到每个 stage 、整个运行以及 run history list。
@@ -26,7 +26,7 @@ flutterAgent/
 ├── scripts/
 │   ├── refine_cli.py            # 命令行直接调用精炼流水线
 │   └── export_openapi.py        # 导出 openapi.json 到磁盘
-├── skills/                      # Markdown 形式的 skill / spec(34 个)
+├── skills/                      # Markdown 形式的 skill / spec(40 个)
 │   ├── task-refinement/SKILL.md
 │   ├── architecture-design/SKILL.md
 │   ├── state-management/SKILL.md
@@ -60,7 +60,13 @@ flutterAgent/
 │   ├── felix-angelov-mindset/SKILL.md        # 框架专家: Felix Angelov(Bloc)思维
 │   ├── tim-sneath-mindset/SKILL.md           # 框架专家: Tim Sneath(产品愿景)思维
 │   ├── andrea-bizzotto-mindset/SKILL.md      # 实践专家: Andrea Bizzotto(应用架构)思维
-│   └── filip-hracek-mindset/SKILL.md         # 实践专家: Filip Hracek(实用主义)思维
+│   ├── filip-hracek-mindset/SKILL.md         # 实践专家: Filip Hracek(实用主义)思维
+│   ├── dart-language-idioms/SKILL.md         # 代码: Dart 地道写法(Effective Dart + Dart3 特性)
+│   ├── flutter-code-review/SKILL.md          # 代码: 评审 SOP(看什么/红线/给反馈)
+│   ├── flutter-refactoring/SKILL.md          # 代码: 安全重构(小步+测试护栏+常见手法)
+│   ├── flutter-dependency-maintenance/SKILL.md # 代码: 依赖养护(pub upgrade/破坏性升级/dart fix)
+│   ├── flutter-error-handling/SKILL.md       # 代码: 错误处理(Result/Either/错误边界/上报)
+│   └── flutter-codegen/SKILL.md              # 代码: 代码生成(build_runner/freezed/json/riverpod)
 ├── logs/                        # runs.jsonl 自动写入(gitignored)
 ├── REFERENCES.md                # 全部官方/开源出处汇总
 ├── src/flutter_agent/
@@ -358,6 +364,12 @@ requirement
 | `tim-sneath-mindset` | 框架专家·Tim Sneath:四支柱 / 一套代码处处一流 / DX 即产品 | Flutter keynote + nuwa-skill |
 | `andrea-bizzotto-mindset` | 实践专家·Andrea Bizzotto:分层骨架 / 组合 / 单向数据流 | codewithandrea.com + nuwa-skill |
 | `filip-hracek-mindset` | 实践专家·Filip Hracek:实用主义 / 状态管理连续谱 / 能讲清 | Google I/O talks + nuwa-skill |
+| `dart-language-idioms` | 代码·Dart 地道写法:Effective Dart + records/patterns/sealed/extension types | dart.dev/effective-dart + dart.dev/language |
+| `flutter-code-review` | 代码·评审 SOP:看什么 / 红线清单 / 怎么给反馈 | google.github.io/eng-practices/review |
+| `flutter-refactoring` | 代码·安全重构:小步 + 测试护栏 + 常见手法 + 绞杀者模式 | refactoring.com + martinfowler.com |
+| `flutter-dependency-maintenance` | 代码·依赖养护:pub outdated/upgrade / 破坏性升级 / dart fix / SemVer | dart.dev/tools/pub + semver.org |
+| `flutter-error-handling` | 代码·错误处理:Result/Either vs 异常 / 错误边界 / 日志上报 | docs.flutter.dev/testing/errors + dart.dev |
+| `flutter-codegen` | 代码·代码生成:build_runner / freezed / json_serializable / riverpod_generator | pub.dev + docs.flutter.dev/.../serialization/json |
 
 > 标「官方 skill 格式」的 skill 采用 [flutter/skills](https://github.com/flutter/skills) 的结构(`Contents / Core Concepts / Workflow + Task Progress / Conditional Logic / Examples / Troubleshooting`),同时保留本项目加载器所需的 front-matter 字段。
 

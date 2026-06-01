@@ -336,6 +336,78 @@
 | 渲染性能 / 两条线程(模型 4 出处) | <https://docs.flutter.dev/perf/rendering-performance> |
 | 自适应与跨端(模型 6 出处) | <https://docs.flutter.dev/ui/adaptive-responsive> |
 
+## 14. 代码领域能力(写好 / 改好 / 养好代码)
+
+这组 skill 强化"纯编程与代码维护"——贯穿 `flutter-engineering-workflow` 的实现全程。
+
+### 14.1 Dart 语言地道写法(dart-language-idioms)
+
+| 主题 | 链接 |
+|---|---|
+| Effective Dart 总览 | <https://dart.dev/effective-dart> |
+| Effective Dart · Usage | <https://dart.dev/effective-dart/usage> |
+| Effective Dart · Design | <https://dart.dev/effective-dart/design> |
+| 空安全(sound null safety) | <https://dart.dev/null-safety> |
+| Records | <https://dart.dev/language/records> |
+| Patterns / pattern matching | <https://dart.dev/language/patterns> |
+| Branches(switch 表达式) | <https://dart.dev/language/branches> |
+| Class modifiers(sealed/final/base) | <https://dart.dev/language/class-modifiers> |
+| Extension types | <https://dart.dev/language/extension-types> |
+| `dart fix` | <https://dart.dev/tools/dart-fix> |
+| Linter rules | <https://dart.dev/tools/linter-rules> |
+
+### 14.2 代码评审(flutter-code-review)
+
+| 主题 | 链接 |
+|---|---|
+| Google Eng Practices · Code Review | <https://google.github.io/eng-practices/review/> |
+| 评审者:看什么 | <https://google.github.io/eng-practices/review/reviewer/looking-for.html> |
+| CL 作者指南 | <https://google.github.io/eng-practices/review/developer/> |
+
+### 14.3 安全重构(flutter-refactoring)
+
+| 主题 | 链接 |
+|---|---|
+| Refactoring(Martin Fowler) | <https://refactoring.com/> |
+| Strangler Fig 模式 | <https://martinfowler.com/bliki/StranglerFigApplication.html> |
+| 性能最佳实践(Extract Widget/const) | <https://docs.flutter.dev/perf/best-practices> |
+| Flutter App 架构 | <https://docs.flutter.dev/app-architecture> |
+
+### 14.4 依赖养护(flutter-dependency-maintenance)
+
+| 主题 | 链接 |
+|---|---|
+| 依赖管理(pub) | <https://dart.dev/tools/pub/dependencies> |
+| 版本约束与解析 | <https://dart.dev/tools/pub/versioning> |
+| `flutter pub outdated` | <https://dart.dev/tools/pub/cmd/pub-outdated> |
+| `flutter pub upgrade` | <https://dart.dev/tools/pub/cmd/pub-upgrade> |
+| Semantic Versioning | <https://semver.org/> |
+| Flutter 破坏性变更索引 | <https://docs.flutter.dev/release/breaking-changes> |
+| fvm(版本固定) | <https://fvm.app/> |
+
+### 14.5 错误处理(flutter-error-handling)
+
+| 主题 | 链接 |
+|---|---|
+| Flutter 错误处理 | <https://docs.flutter.dev/testing/errors> |
+| `PlatformDispatcher.onError` | <https://api.flutter.dev/flutter/dart-ui/PlatformDispatcher/onError.html> |
+| `FlutterError.onError` | <https://api.flutter.dev/flutter/foundation/FlutterError/onError.html> |
+| Dart 异常 | <https://dart.dev/language/error-handling> |
+| `logging` 包 | <https://pub.dev/packages/logging> |
+| `fpdart`(Either/TaskEither) | <https://pub.dev/packages/fpdart> |
+
+### 14.6 代码生成(flutter-codegen)
+
+| 主题 | 链接 |
+|---|---|
+| `build_runner` | <https://pub.dev/packages/build_runner> |
+| `source_gen` | <https://pub.dev/packages/source_gen> |
+| freezed | <https://pub.dev/packages/freezed> |
+| `json_serializable` | <https://pub.dev/packages/json_serializable> |
+| JSON 序列化(官方指南) | <https://docs.flutter.dev/data-and-backend/serialization/json> |
+| Riverpod 代码生成 | <https://riverpod.dev/docs/concepts/about_code_generation> |
+| `go_router_builder` | <https://pub.dev/packages/go_router_builder> |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。
