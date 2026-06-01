@@ -37,10 +37,60 @@ from .schemas import (
     TokenUsage,
 )
 from .skill_loader import SkillRegistry
-from .skill_ranker import rank_skills, select_within_budget
+from .skill_ranker import build_families, rank_skills, select_within_budget
 from .stage_schemas import validate_stage_output
 
 logger = logging.getLogger(__name__)
+
+
+# Foundational skills and the signals that justify force-including them.
+# When none of a skill's trigger terms appear in the requirement, it is no
+# longer pinned to the top — it still competes on its own keyword relevance.
+# Strong, unambiguous signals only (weak generics like 列表/数据/ui were
+# dropped because they misfire on performance/ops tasks).
+_STATE_TERMS = (
+    "状态", "state", "交互", "数据流", "表单", "登录",
+    "provider", "riverpod", "bloc", "getx", "setstate", "redux", "mobx",
+)
+_ARCH_TERMS = (
+    "架构", "结构", "模块", "分层", "重构", "工程化", "新功能",
+    "architecture", "clean", "mvvm", "mvc", "feature",
+    "需求", "功能", "迁移", "重写",
+)
+# Narrow ops/maintenance tasks: when one of these appears and there is no
+# structure/state signal, do NOT pin foundational skills — they would just
+# waste token budget that the actually-relevant ops skills need.
+_OPS_TERMS = (
+    "打包", "签名", "混淆", "发布", "上架", "商店", "store", "公证", "归档",
+    "ci", "cd", "流水线", "pipeline", "缓存", "cache", "产物", "密钥",
+    "剖析", "profil", "jank", "掉帧", "卡顿", "构建", "build", "release",
+    "性能", "调优", "优化", "内存", "启动", "体积",
+)
+
+
+def _resolve_foundational_ids(requirement: str, platforms: List[str]) -> List[str]:
+    """Decide which foundational skills to force-include for this requirement.
+
+    Narrow ops tasks (e.g. "Android 打包签名", "配置 CI 缓存", "性能剖析") that
+    mention no structure/state signal get neither pinned, freeing budget for
+    the skills that actually matter. Such tasks still receive arch/state skills
+    if they happen to rank, just not at a forced +100.
+    """
+    text = (requirement or "").lower()
+    ids: List[str] = []
+    if any(term in text for term in _ARCH_TERMS):
+        ids.append("architecture-design")
+    if any(term in text for term in _STATE_TERMS):
+        ids.append("state-management")
+    if not ids:
+        is_ops = any(term in text for term in _OPS_TERMS)
+        # Generic app/feature task with no clear signal -> keep old behaviour
+        # (pin both). A narrow ops task -> pin nothing.
+        if not is_ops:
+            ids = ["architecture-design", "state-management"]
+    if {"mobile", "desktop"}.issubset(set(platforms)):
+        ids.append("flutter-cross-platform")
+    return ids
 
 
 _REPAIR_SYSTEM = (
@@ -334,11 +384,10 @@ class RefinementPipeline:
         platforms = _platforms_to_strs(req.platforms)
         all_skills = [s for _, s in enumerate(self._registry._skills.values())]
 
-        # Always include these foundational skills regardless of score
-        always_ids = ["architecture-design", "state-management"]
-        # If cross-platform is implied make sure adapter skill is in
-        if {"mobile", "desktop"}.issubset(set(platforms)):
-            always_ids.append("flutter-cross-platform")
+        # Foundational skills are force-included only when the requirement is
+        # actually about app structure / state — not for narrow ops tasks
+        # (packaging / CI / profiling), where pinning them wastes budget.
+        always_ids = _resolve_foundational_ids(req.requirement, platforms)
 
         ranked = rank_skills(
             requirement=req.requirement,
@@ -346,9 +395,11 @@ class RefinementPipeline:
             platforms=platforms,
             always_include=always_ids,
         )
+        families = build_families(all_skills)
         picked = select_within_budget(
             ranked,
             always_include=set(always_ids),
+            families=families,
         )
         logger.info(
             "skill ranker: %d/%d skills selected (top scores: %s)",

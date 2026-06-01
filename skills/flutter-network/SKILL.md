@@ -6,9 +6,13 @@ platforms: [all]
 tags: [network, dio, http, websocket, graphql, grpc, interceptor, retry, offline, cancel]
 applies_when: 需求涉及 API 调用 / 网络请求 / 实时通信 / 离线同步
 stage_hints: [architecture, breakdown]
+see_also: [flutter-network-protocols]
 ---
 
 # Flutter 网络层工程规范
+
+> 分工:本 skill 负责**客户端实现**(dio/拦截器/重试/取消/离线缓存/错误映射)。
+> 该用**什么协议**(HTTP/2·3、gRPC、GraphQL、WebSocket/SSE/MQTT 选型)见 `flutter-network-protocols`。
 
 > 直接依据:
 > * Flutter 官方 Networking: **[docs.flutter.dev/data-and-backend/networking](https://docs.flutter.dev/data-and-backend/networking)**

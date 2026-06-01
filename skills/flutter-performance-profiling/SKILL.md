@@ -10,8 +10,13 @@ platforms: [all, mobile, desktop, web]
 tags: [performance, profiling, devtools, jank, frame, memory, startup, raster, 性能]
 applies_when: 需要测量 / 诊断 / 优化 Flutter 运行时性能或包体积
 stage_hints: [breakdown, acceptance]
+extends: [flutter-performance]
+see_also: [flutter-performance]
 ---
 # 性能剖析与优化工作流
+
+> 分工:本 skill 负责**测量与定位**(profile 模式、DevTools、jank/过度重建/内存/启动剖析的工作流)。
+> 具体**优化规则与性能预算**(列表/图片/动画该怎么写)见 `flutter-performance`。本 skill 是它的**工具深化**。
 
 > 采用 Flutter 官方 skill 结构。本 skill 给"性能"维度的可执行流程;工程选型与帧预算原则见 `flutter-performance`,资源生命周期/泄漏见 `flutter-resource-lifecycle`,体积优化的发布侧见 `flutter-build-and-release`。
 

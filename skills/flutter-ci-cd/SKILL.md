@@ -6,9 +6,13 @@ platforms: [all]
 tags: [ci, cd, fastlane, github-actions, codemagic, flavors]
 applies_when: 任何上架 / 内测分发的项目
 stage_hints: [architecture, breakdown, acceptance]
+see_also: [flutter-cicd-pipelines]
 ---
 
 # Flutter CI / CD 规范
+
+> 分工:本 skill 负责 CI/CD 的**基础规范与全貌**(必过关卡、flavors、各端发布管线、版本号、回滚)。
+> 把流水线**做深做快**(构建矩阵/缓存/产物归档/密钥分层/发布自动化)见 `flutter-cicd-pipelines`。
 
 > 直接依据:
 > * Flutter 官方 CD 文档:**[docs.flutter.dev/deployment/cd](https://docs.flutter.dev/deployment/cd)**

@@ -6,6 +6,7 @@ platforms: [all, mobile, desktop, web]
 tags: [protocol, http, http2, http3, rest, grpc, graphql, websocket, sse, mqtt, tls, networking]
 applies_when: 选型/理解与后端的通信协议,判断请求-响应 vs 流式 vs 实时推送该用什么
 stage_hints: [architecture, breakdown]
+see_also: [flutter-network]
 ---
 
 # 通信协议全景

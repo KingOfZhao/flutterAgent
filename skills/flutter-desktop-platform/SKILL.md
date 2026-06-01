@@ -6,7 +6,11 @@ platforms: [desktop]
 tags: [desktop, windows, macos, linux, msix, dmg, notarization, appimage, flatpak, snap, packaging, signing]
 applies_when: 需要为 Windows/macOS/Linux 配置工程、打包分发、签名公证或集成桌面原生能力
 stage_hints: [architecture, breakdown, acceptance]
+see_also: [flutter-desktop, flutter-build-and-release]
 ---
+
+> 分工:本 skill 负责**桌面三端专属工程**(打包格式/签名/公证/分发/原生集成)。
+> 桌面端**通用基线**见 `flutter-desktop`;**通用构建命令链**见 `flutter-build-and-release`。
 
 # 桌面平台工程(Win / macOS / Linux)
 

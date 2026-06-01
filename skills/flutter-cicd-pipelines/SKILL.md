@@ -6,6 +6,8 @@ platforms: [all, mobile, desktop, web]
 tags: [ci, cd, pipeline, matrix, cache, artifacts, release-automation, fastlane, github-actions, secrets]
 applies_when: 已有基础 CI,需要把流水线做深做稳——加速、分环境、产物可追溯、发布自动化
 stage_hints: [architecture, breakdown, acceptance]
+extends: [flutter-ci-cd]
+see_also: [flutter-ci-cd, flutter-build-and-release]
 ---
 
 # CI/CD 深化

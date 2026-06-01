@@ -219,6 +219,9 @@ version: 1.0.0
 platforms: [mobile]
 tags: [flutter, mobile, android, ios]
 applies_when: "需求目标平台包含 Android 或 iOS"
+stage_hints: [spec, architecture, breakdown]
+extends: []                                   # 本 skill 深化/特化了谁(可选)
+see_also: [flutter-android-platform]          # 相关 skill 交叉引用(可选)
 ---
 
 # Flutter Mobile 工程规范
@@ -234,6 +237,32 @@ applies_when: "需求目标平台包含 Android 或 iOS"
 ```
 
 加载器会扫描 `skills/**/SKILL.md`,front-matter 进入 metadata,正文进入 system prompt。
+
+### skill 之间的关系字段(`extends` / `see_also`)
+
+随着 skill 增多,会出现**职责相邻**的 skill(如 `flutter-performance` 规则 vs
+`flutter-performance-profiling` 工具)。两个关系字段让 ranker 和读者都知道分工:
+
+- **`extends: [parent-id]`** — 声明"我是 parent 的深化/特化"。ranker 把
+  `self + parent`(及传递闭包)视为**同一族**,在 token 预算内**只选族内最相关的那个**,
+  避免父子两条一起挤占上下文。当前两族:`flutter-performance-profiling → flutter-performance`、
+  `flutter-cicd-pipelines → flutter-ci-cd`。
+- **`see_also: [other-id, ...]`** — 纯交叉引用(互补但不去重),如
+  `flutter-network`(客户端实现)↔ `flutter-network-protocols`(协议选型)、
+  `flutter-mobile` ↔ `flutter-android-platform`/`flutter-ios-platform`。
+- 每个重叠 skill 的正文顶部都带一行 **「分工:本 skill 负责 X;Y 见 \`other\`」**,人和模型都不踩重复。
+
+> 设计动机见 [`REFLECTION_redundancy_and_leverage.md`](REFLECTION_redundancy_and_leverage.md)。
+
+### ranker 选用机制(`skill_ranker.py`)
+
+1. **关键词打分**:在原有 unigram(CJK 单字 + 拉丁词)基础上,新增 **CJK bigram(双字)**
+   评分——`协议`/`性能`/`打包` 作为整体匹配,不再因共享单字而误命中无关 skill;
+   bigram 只取 `tags / applies_when / name` 等**策划过的元数据**,正文不参与,降噪更彻底。
+2. **族去重**:见上,`extends` 同族在预算内只进最相关的一个。
+3. **基础 skill 条件注入**:`architecture-design` / `state-management` 不再无条件置顶——
+   仅当需求含**结构/状态信号**时才强制注入;**纯运维任务**(打包/签名/CI/性能剖析)不注入,
+   把预算让给真正相关的 skill;完全无信号的通用需求才回退到注入两者(见 `pipeline._resolve_foundational_ids`)。
 
 ## 配置项(.env)
 

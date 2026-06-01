@@ -6,9 +6,13 @@ platforms: [desktop, windows, macos, linux, pc]
 tags: [flutter, desktop, windows, macos, linux]
 applies_when: 需求目标平台包含 PC / Windows / macOS / Linux
 stage_hints: [spec, architecture, breakdown]
+see_also: [flutter-desktop-platform]
 ---
 
 # Flutter Desktop 工程规范
+
+> 分工:本 skill 是桌面端的**综述**(三端通用的工程与交互约定)。
+> 需要**打包分发/签名公证/原生集成**(MSIX/DMG 公证/AppImage)见 `flutter-desktop-platform`。
 
 你正在为一个 **面向 Windows / macOS / Linux 的 Flutter 桌面端** 项目产出工程设计。
 

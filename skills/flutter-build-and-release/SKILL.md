@@ -10,8 +10,12 @@ platforms: [all, mobile, desktop, web]
 tags: [build, release, packaging, signing, flavors, obfuscate, deploy, store, 打包]
 applies_when: 需要构建 / 签名 / 混淆 / 发布 Flutter 各平台产物
 stage_hints: [architecture, breakdown, acceptance]
+see_also: [flutter-cicd-pipelines, flutter-android-platform, flutter-ios-platform, flutter-desktop-platform]
 ---
 # 构建、签名与发布 Flutter 应用
+
+> 分工:本 skill 负责**手动出包的命令链与原理**(各平台 build/签名/混淆/flavors)。
+> 把这些步骤**搬进流水线自动发版**见 `flutter-cicd-pipelines`;各端工程层细节见 `flutter-android-platform` / `flutter-ios-platform` / `flutter-desktop-platform`。
 
 > 采用 Flutter 官方 skill 结构。本 skill 是 `flutter-engineering-workflow` 阶段 4"交付"的打包维度展开,CI 自动化见 `flutter-ci-cd`,体积优化见 `flutter-performance-profiling`。
 

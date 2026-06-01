@@ -31,22 +31,63 @@ _WORD_RE = re.compile(r"[\u4e00-\u9fff]|[a-zA-Z0-9_]+", re.UNICODE)
 
 
 def _tokenize(text: str) -> Set[str]:
-    """Extract a bag of lowercase tokens from text."""
+    """Extract a bag of lowercase unigram tokens from text.
+
+    CJK characters become single-char tokens; latin runs stay whole words.
+    """
     return {m.group(0).lower() for m in _WORD_RE.finditer(text or "")}
 
 
+def _bigram_tokens(text: str) -> Set[str]:
+    """Tokens biased toward specificity to cut single-CJK-char noise.
+
+    - latin/number words are kept whole (e.g. ``go_router``)
+    - each maximal run of CJK chars yields adjacent **bigrams**
+      (e.g. ``协议选型`` -> ``协议`` ``议选`` ``选型``), and the single char
+      when the run has length 1.
+
+    Bigrams make multi-char terms (``协议`` / ``性能`` / ``打包``) match each
+    other specifically, so unrelated skills no longer collide just because
+    they share one common character.
+    """
+    tokens: Set[str] = set()
+    # CJK runs and latin words, in order.
+    for m in re.finditer(r"[\u4e00-\u9fff]+|[a-zA-Z0-9_]+", text or ""):
+        chunk = m.group(0)
+        if chunk[0].isascii():
+            tokens.add(chunk.lower())
+            continue
+        if len(chunk) == 1:
+            tokens.add(chunk)
+        else:
+            for i in range(len(chunk) - 1):
+                tokens.add(chunk[i : i + 2])
+    return tokens
+
+
 def _skill_keywords(skill: SkillDetail) -> Set[str]:
-    """Build keyword set for a skill from tags + applies_when + body snippet."""
+    """Unigram keyword set: tags + applies_when + name + short body snippet."""
     parts: List[str] = []
     parts.extend(skill.tags)
     if skill.applies_when:
         parts.append(skill.applies_when)
-    # Use the skill name as well
     parts.append(skill.name)
-    # First 300 chars of body for additional keyword density
-    parts.append(skill.body[:300])
-    combined = " ".join(parts)
-    return _tokenize(combined)
+    # Short body snippet for recall; kept small to limit incidental noise.
+    parts.append(skill.body[:200])
+    return _tokenize(" ".join(parts))
+
+
+def _skill_specific_tokens(skill: SkillDetail) -> Set[str]:
+    """Bigram/word tokens from the *curated* metadata only (no body).
+
+    Excludes the body so that prose intros do not generate spurious matches;
+    only intentional tags / applies_when / name drive specific scoring.
+    """
+    parts: List[str] = list(skill.tags)
+    if skill.applies_when:
+        parts.append(skill.applies_when)
+    parts.append(skill.name)
+    return _bigram_tokens(" ".join(parts))
 
 
 def estimate_tokens(text: str) -> int:
@@ -80,32 +121,40 @@ def rank_skills(
     """
     always = set(always_include or [])
     req_tokens = _tokenize(requirement)
+    req_specific = _bigram_tokens(requirement)
     platform_set = {p.lower() for p in platforms}
 
     scored: List[Tuple[SkillDetail, float]] = []
     for skill in skills:
         score = 0.0
 
-        # 1. Keyword overlap (Jaccard-like but we only care about overlap size
-        #    relative to requirement length)
+        # 1. Unigram keyword overlap (recall). Weight reduced vs. earlier so a
+        #    single shared CJK character contributes less incidental noise.
         sk_kw = _skill_keywords(skill)
         overlap = req_tokens & sk_kw
         if req_tokens:
-            score += len(overlap) / max(len(req_tokens), 1) * 5.0
+            score += len(overlap) / max(len(req_tokens), 1) * 2.5
 
-        # 2. Tag direct match bonus
+        # 2. Specific (bigram / whole-word) overlap against curated metadata.
+        #    Multi-char terms like 协议 / 性能 / 打包 must match as a unit, so
+        #    unrelated skills no longer collide on a shared single character.
+        sk_specific = _skill_specific_tokens(skill)
+        specific_overlap = req_specific & sk_specific
+        score += len(specific_overlap) * 3.0
+
+        # 3. Tag direct match bonus
         tag_set = {t.lower() for t in skill.tags}
         tag_overlap = req_tokens & tag_set
         score += len(tag_overlap) * 2.0
 
-        # 3. Platform match
+        # 4. Platform match
         skill_plats = {p.lower() for p in skill.platforms}
         if "all" in skill_plats:
             score += 1.0  # mild bonus for universal skills
         elif skill_plats & platform_set:
             score += 3.0
 
-        # 4. Always-include skills get top priority
+        # 5. Always-include skills get top priority
         if skill.id in always:
             score += 100.0
 
@@ -115,12 +164,48 @@ def rank_skills(
     return scored
 
 
+def build_families(skills: List[SkillDetail]) -> Dict[str, str]:
+    """Group skills into families via ``extends`` edges (union-find).
+
+    Returns a map ``skill_id -> family_root``. A skill and every id it
+    ``extends`` (and transitively) share one root. Skills with no ``extends``
+    edge to/from anything form their own singleton family.
+    """
+    parent: Dict[str, str] = {}
+
+    def find(x: str) -> str:
+        parent.setdefault(x, x)
+        root = x
+        while parent[root] != root:
+            root = parent[root]
+        # path compression
+        while parent[x] != root:
+            parent[x], x = root, parent[x]
+        return root
+
+    def union(a: str, b: str) -> None:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            # deterministic root: smaller id wins
+            lo, hi = sorted((ra, rb))
+            parent[hi] = lo
+
+    ids = {s.id for s in skills}
+    for s in skills:
+        find(s.id)
+        for target in s.extends:
+            if target in ids:
+                union(s.id, target)
+    return {sid: find(sid) for sid in parent}
+
+
 def select_within_budget(
     ranked: List[Tuple[SkillDetail, float]],
     token_budget: int = DEFAULT_SKILL_TOKEN_BUDGET,
     *,
     min_skills: int = 3,
     always_include: Optional[Set[str]] = None,
+    families: Optional[Dict[str, str]] = None,
 ) -> List[SkillDetail]:
     """Greedily select top-ranked skills until the token budget is exhausted.
 
@@ -134,21 +219,40 @@ def select_within_budget(
         Minimum skills to include regardless of budget (top N by score).
     always_include : set or None
         Skill IDs that must be included even if they bust the budget.
+    families : dict or None
+        Optional ``skill_id -> family_root`` map (see ``build_families``).
+        When provided, only the **top-ranked** member of each family is
+        selected; lower-ranked members of an already-covered family are
+        skipped so a broad parent and its narrow child do not both consume
+        budget. ``always_include`` and ``min_skills`` members bypass de-dup.
 
     Returns
     -------
     Selected skills in relevance order.
     """
     always = always_include or set()
+    fam = families or {}
     selected: List[SkillDetail] = []
     used_tokens = 0
+    covered_families: Set[str] = set()
 
     for skill, _score in ranked:
         body_tokens = estimate_tokens(skill.body)
-        must = skill.id in always or len(selected) < min_skills
+        is_always = skill.id in always
+        family = fam.get(skill.id)
+
+        # Family de-dup runs before the min_skills floor: only explicit
+        # always-include skills may bring in a second member of a family.
+        # This stops a parent+child pair from both filling the top-N seats.
+        if not is_always and family is not None and family in covered_families:
+            continue
+
+        must = is_always or len(selected) < min_skills
         if must or (used_tokens + body_tokens <= token_budget):
             selected.append(skill)
             used_tokens += body_tokens
+            if family is not None:
+                covered_families.add(family)
         # If budget exhausted and not a must-include, skip.
 
     return selected

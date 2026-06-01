@@ -6,9 +6,14 @@ platforms: [mobile, ios, android]
 tags: [flutter, mobile, ios, android]
 applies_when: 需求目标平台包含 Android 或 iOS
 stage_hints: [spec, architecture, breakdown]
+see_also: [flutter-android-platform, flutter-ios-platform]
 ---
 
 # Flutter Mobile 工程规范
+
+> 分工:本 skill 是移动端的**综述**(两端通用的工程约定)。需要**平台深入**时:
+> Android 工程层(Gradle/清单/权限/R8/Play)见 `flutter-android-platform`;
+> iOS 工程层(Xcode/Info.plist/capabilities/ATS/App Store)见 `flutter-ios-platform`。
 
 你正在为一个 **面向 iOS / Android 的 Flutter 移动端** 项目产出工程设计。
 所有产出必须遵循下列约束,不要发明不存在的库,不要给伪代码。

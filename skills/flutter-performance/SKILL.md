@@ -6,9 +6,13 @@ platforms: [all]
 tags: [performance, profiling, frame-budget, isolate, image, chart, realtime, ticker]
 applies_when: 列表 / 动画 / 大图 / 实时数据 / 长任务场景 / 高频图表 / K线 / 波形
 stage_hints: [architecture, breakdown]
+see_also: [flutter-performance-profiling]
 ---
 
 # Flutter 性能规范
+
+> 分工:本 skill 负责**性能预算与优化规则**(列表/图片/动画/启动/体积该怎么写)。
+> 想**测量与定位**(profile 模式、DevTools、jank/内存剖析工作流)见 `flutter-performance-profiling`。
 
 ## 1. 性能预算(必须写进 acceptance)
 

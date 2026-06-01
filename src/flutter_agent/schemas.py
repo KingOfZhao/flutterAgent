@@ -22,6 +22,18 @@ class SkillMeta(BaseModel):
     tags: List[str] = Field(default_factory=list)
     applies_when: Optional[str] = None
     stage_hints: List[str] = Field(default_factory=list)
+    extends: List[str] = Field(
+        default_factory=list,
+        description=(
+            "Skill ids this skill deepens/specializes. The ranker treats "
+            "self + targets as one family and de-duplicates so a broad parent "
+            "and its narrow child do not both consume the token budget."
+        ),
+    )
+    see_also: List[str] = Field(
+        default_factory=list,
+        description="Related skill ids (cross-references; non-binding for ranking).",
+    )
 
 
 class SkillSummary(SkillMeta):

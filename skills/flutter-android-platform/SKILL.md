@@ -6,9 +6,13 @@ platforms: [mobile]
 tags: [android, gradle, manifest, permissions, r8, proguard, intent, flutteractivity, play, kotlin]
 applies_when: 需要配置 Android 工程层(Gradle/清单/权限/混淆规则/原生嵌入)或排查 Android 专属问题
 stage_hints: [architecture, breakdown, acceptance]
+see_also: [flutter-mobile, flutter-build-and-release]
 ---
 
 # Android 平台工程
+
+> 分工:本 skill 负责 **Android 专属工程层**(Gradle/清单/权限/R8/原生嵌入/Play)。
+> 移动端**通用约定**见 `flutter-mobile`;**打包签名混淆的通用流程**见 `flutter-build-and-release`。
 
 Flutter 的 Android 部分本质是一个**标准 Android 工程**(`android/` 目录里是 Gradle 项目)。
 要配权限、改 Gradle、写 keep 规则、嵌入原生、上 Play,就得懂 Android 工程层。本 skill

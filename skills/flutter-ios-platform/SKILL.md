@@ -6,9 +6,13 @@ platforms: [mobile]
 tags: [ios, apple, xcode, info-plist, entitlements, capabilities, ats, permissions, app-store, swift, spm]
 applies_when: 需要配置 iOS 工程层(Xcode/Info.plist/权限串/能力/ATS)或排查 iOS 专属问题、上架 App Store
 stage_hints: [architecture, breakdown, acceptance]
+see_also: [flutter-mobile, flutter-build-and-release]
 ---
 
 # iOS/Apple 平台工程
+
+> 分工:本 skill 负责 **iOS/Apple 专属工程层**(Xcode/Info.plist/capabilities/ATS/App Store)。
+> 移动端**通用约定**见 `flutter-mobile`;**打包签名公证的通用流程**见 `flutter-build-and-release`。
 
 Flutter 的 iOS 部分本质是一个**标准 Xcode 工程**(`ios/Runner.xcodeproj` / `.xcworkspace`)。
 要配权限用途串、开能力(capabilities)、过 ATS、上 App Store,就得懂 Apple 工程层与审核规则。
