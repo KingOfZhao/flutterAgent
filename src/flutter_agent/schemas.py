@@ -137,6 +137,15 @@ class RefineRequest(BaseModel):
             "passes. 0 disables the loop (review stays advisory)."
         ),
     )
+    review_block_severity: Literal["blocker", "major", "minor"] = Field(
+        default="major",
+        description=(
+            "Lowest finding severity that makes the review blocking. 'major' "
+            "(default) blocks on blocker+major; 'blocker' only on blockers "
+            "(loosest); 'minor' also blocks on minor (strictest). The model's "
+            "explicit blocking=true always blocks regardless of this setting."
+        ),
+    )
 
 
 class TokenUsage(BaseModel):

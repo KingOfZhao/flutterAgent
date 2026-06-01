@@ -302,20 +302,30 @@ def _platforms_to_strs(platforms: List[Platform]) -> List[str]:
     return out or ["mobile", "desktop"]  # safe default
 
 
-_BLOCKING_SEVERITIES = {"blocker", "major"}
+_SEVERITY_RANK = {"blocker": 3, "major": 2, "minor": 1, "nit": 0}
 
 
-def _review_is_blocking(review: Optional[Dict[str, Any]]) -> bool:
+def _blocking_severities(threshold: str) -> set:
+    """Severities at or above the configured threshold count as blocking."""
+    t = _SEVERITY_RANK.get(str(threshold).lower(), 2)
+    return {s for s, r in _SEVERITY_RANK.items() if r >= t}
+
+
+def _review_is_blocking(
+    review: Optional[Dict[str, Any]], threshold: str = "major"
+) -> bool:
     """A review blocks the implementation when it says so, or when any finding
-    is severity blocker/major. Defensive against loose/missing fields."""
+    is at/above the configured severity threshold. Defensive against loose
+    fields."""
     if not isinstance(review, dict):
         return False
     if review.get("blocking") is True:
         return True
+    blocking = _blocking_severities(threshold)
     findings = review.get("findings")
     if isinstance(findings, list):
         for f in findings:
-            if isinstance(f, dict) and str(f.get("severity", "")).lower() in _BLOCKING_SEVERITIES:
+            if isinstance(f, dict) and str(f.get("severity", "")).lower() in blocking:
                 return True
     return False
 
@@ -353,7 +363,9 @@ def _augment_review_with_consistency(prior: Dict[Stage, Dict[str, Any]]) -> int:
     return added
 
 
-def _summarize_review_pass(review: Optional[Dict[str, Any]], iteration: int) -> ReviewPass:
+def _summarize_review_pass(
+    review: Optional[Dict[str, Any]], iteration: int, threshold: str = "major"
+) -> ReviewPass:
     """Compact audit entry for one review evaluation."""
     by_severity: Dict[str, int] = {}
     by_source: Dict[str, int] = {}
@@ -375,7 +387,7 @@ def _summarize_review_pass(review: Optional[Dict[str, Any]], iteration: int) -> 
                 by_source[src] = by_source.get(src, 0) + 1
     return ReviewPass(
         iteration=iteration,
-        blocking=_review_is_blocking(review),
+        blocking=_review_is_blocking(review, threshold),
         findings=total,
         by_severity=by_severity,
         by_source=by_source,
@@ -383,8 +395,9 @@ def _summarize_review_pass(review: Optional[Dict[str, Any]], iteration: int) -> 
     )
 
 
-def _format_review_feedback(review: Dict[str, Any]) -> str:
+def _format_review_feedback(review: Dict[str, Any], threshold: str = "major") -> str:
     """Turn review findings into a concrete fix list fed back to implementation."""
+    blocking = _blocking_severities(threshold)
     lines: List[str] = []
     summary = review.get("summary")
     if isinstance(summary, str) and summary.strip():
@@ -395,14 +408,14 @@ def _format_review_feedback(review: Dict[str, Any]) -> str:
             if not isinstance(f, dict):
                 continue
             sev = str(f.get("severity", "?"))
-            if sev.lower() not in _BLOCKING_SEVERITIES:
+            if sev.lower() not in blocking:
                 continue
             path = f.get("path", "<general>")
             issue = f.get("issue", "")
             sug = f.get("suggestion", "")
             lines.append(f"{i}. [{sev}] {path}: {issue} → 修复建议: {sug}")
     lines.append(
-        "请在保留原有文件结构的前提下,仅针对上述 blocker/major 问题修订骨架,"
+        f"请在保留原有文件结构的前提下,仅针对上述 {'/'.join(sorted(blocking))} 级别问题修订骨架,"
         "输出完整的 implementation JSON(不要省略未改动的文件)。"
     )
     return "\n".join(lines)
@@ -520,15 +533,16 @@ class RefinementPipeline:
                 # Closed loop: if the review blocks, re-implement with the
                 # findings as feedback and re-review, bounded by the request.
                 elif stage == Stage.review and Stage.implementation in req.stages:
+                    threshold = req.review_block_severity
                     _augment_review_with_consistency(prior)
                     review_history.append(
-                        _summarize_review_pass(prior.get(Stage.review), 0)
+                        _summarize_review_pass(prior.get(Stage.review), 0, threshold)
                     )
                     while (
                         review_iterations < req.review_max_iterations
-                        and _review_is_blocking(prior.get(Stage.review))
+                        and _review_is_blocking(prior.get(Stage.review), threshold)
                     ):
-                        feedback = _format_review_feedback(prior[Stage.review])
+                        feedback = _format_review_feedback(prior[Stage.review], threshold)
                         logger.info(
                             "review blocking -> re-implement pass %d/%d",
                             review_iterations + 1,
@@ -561,7 +575,7 @@ class RefinementPipeline:
                         review_iterations += 1
                         review_history.append(
                             _summarize_review_pass(
-                                prior.get(Stage.review), review_iterations
+                                prior.get(Stage.review), review_iterations, threshold
                             )
                         )
 

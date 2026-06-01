@@ -357,6 +357,15 @@ def test_review_is_blocking_helper():
     assert _review_is_blocking({"blocking": False, "findings": []}) is False
     assert _review_is_blocking(None) is False
     assert _review_is_blocking("oops") is False
+    # configurable threshold
+    minor = {"findings": [{"severity": "minor", "issue": "x"}]}
+    assert _review_is_blocking(minor, "minor") is True
+    assert _review_is_blocking(minor, "major") is False
+    major = {"findings": [{"severity": "major", "issue": "x"}]}
+    assert _review_is_blocking(major, "blocker") is False
+    assert _review_is_blocking(major, "major") is True
+    # explicit model blocking flag always wins, even at the loosest threshold
+    assert _review_is_blocking({"blocking": True}, "blocker") is True
 
 
 def test_format_review_feedback_only_blocking():
@@ -559,6 +568,33 @@ async def test_static_consistency_drives_review_loop(settings, registry):
     # After the fix, the final review carries no static testability finding.
     static = [f for f in response.review.get("findings", []) if f.get("source") == "static"]
     assert static == []
+
+
+@pytest.mark.asyncio
+async def test_review_block_severity_minor_makes_minor_findings_block(settings, registry):
+    """A minor-only review is advisory by default but blocking when the
+    threshold is lowered to 'minor'."""
+    base_stages = [
+        Stage.classify, Stage.spec, Stage.architecture, Stage.breakdown,
+        Stage.implementation, Stage.review, Stage.acceptance, Stage.markdown,
+    ]
+
+    # default threshold (major): minor finding does not block
+    pipeline = RefinementPipeline(settings=settings, client=_MockDeepSeekClient(), registry=registry, pub_validator=None)
+    resp_default = await pipeline.run(RefineRequest(
+        requirement="电商应用", platforms=[Platform.mobile], stages=base_stages,
+        review_max_iterations=1, validate_packages=False,
+    ))
+    assert resp_default.review_iterations == 0
+
+    # threshold lowered to minor: the same minor finding now drives the loop
+    pipeline2 = RefinementPipeline(settings=settings, client=_MockDeepSeekClient(), registry=registry, pub_validator=None)
+    resp_strict = await pipeline2.run(RefineRequest(
+        requirement="电商应用", platforms=[Platform.mobile], stages=base_stages,
+        review_max_iterations=1, review_block_severity="minor", validate_packages=False,
+    ))
+    assert resp_strict.review_iterations == 1
+    assert resp_strict.review_history[0].blocking is True
 
 
 @pytest.mark.asyncio
