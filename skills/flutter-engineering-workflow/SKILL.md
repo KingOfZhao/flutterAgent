@@ -27,7 +27,10 @@ stage_hints: [breakdown, acceptance]
 
 > **代码质量横切能力**(贯穿 1A–1D 实现全程,不属于某一阶段):
 > 语言层写地道用 `dart-language-idioms`;失败路径设计用 `flutter-error-handling`;
-> 数据类/序列化/provider 的代码生成用 `flutter-codegen`。这三条是"把代码写好/养好"的底座。
+> 数据类/序列化/provider 的代码生成用 `flutter-codegen`;CPU 密集/并行用 `flutter-concurrency-isolates`;
+> 静态分析自动化(质量前移到写代码当下)用 `flutter-static-analysis`。
+> 设计可复用库/模块的公共 API 用 `dart-api-package-design`;多包仓库维护用 `flutter-monorepo-melos`。
+> 这些是"把代码写好/改好/养好"的底座。
 
 > 一句话原则:**改动越小越好,验证越足越好,文档跟着改动走。** 不发明不存在的包,不写伪代码,所有"为什么"都要能落到 `REFERENCES.md` 的官方出处。
 

@@ -408,6 +408,50 @@
 | Riverpod 代码生成 | <https://riverpod.dev/docs/concepts/about_code_generation> |
 | `go_router_builder` | <https://pub.dev/packages/go_router_builder> |
 
+### 14.7 并发与隔离区(flutter-concurrency-isolates)
+
+| 主题 | 链接 |
+|---|---|
+| 并发编程(isolate 模型) | <https://dart.dev/language/concurrency> |
+| `Isolate.run` | <https://api.dart.dev/stable/dart-isolate/Isolate/run.html> |
+| `Isolate` / Ports | <https://api.dart.dev/stable/dart-isolate/Isolate-class.html> |
+| Flutter `compute` | <https://api.flutter.dev/flutter/foundation/compute.html> |
+| futures / async-await | <https://dart.dev/libraries/async/async-await> |
+| 渲染性能 / 帧预算 | <https://docs.flutter.dev/perf/rendering-performance> |
+
+### 14.8 API 与包设计(dart-api-package-design)
+
+| 主题 | 链接 |
+|---|---|
+| Effective Dart · Design | <https://dart.dev/effective-dart/design> |
+| 创建 package | <https://dart.dev/tools/pub/create-packages> |
+| package 布局约定 | <https://dart.dev/tools/pub/package-layout> |
+| 发布 package | <https://dart.dev/tools/pub/publishing> |
+| pubspec 格式 | <https://dart.dev/tools/pub/pubspec> |
+| pub.dev 评分维度 | <https://pub.dev/help/scoring> |
+| `@Deprecated` | <https://api.dart.dev/stable/dart-core/Deprecated-class.html> |
+
+### 14.9 静态分析自动化(flutter-static-analysis)
+
+| 主题 | 链接 |
+|---|---|
+| 自定义静态分析(analysis_options) | <https://dart.dev/tools/analysis> |
+| `dart analyze` | <https://dart.dev/tools/dart-analyze> |
+| Linter rules 全表 | <https://dart.dev/tools/linter-rules> |
+| `flutter_lints` | <https://pub.dev/packages/flutter_lints> |
+| `lints`(Dart 官方) | <https://pub.dev/packages/lints> |
+| `very_good_analysis` | <https://pub.dev/packages/very_good_analysis> |
+| `custom_lint` | <https://pub.dev/packages/custom_lint> |
+
+### 14.10 多包 / monorepo(flutter-monorepo-melos)
+
+| 主题 | 链接 |
+|---|---|
+| Pub workspaces(monorepo) | <https://dart.dev/tools/pub/workspaces> |
+| melos 官网 | <https://melos.invertase.dev/> |
+| melos 快速开始 | <https://melos.invertase.dev/getting-started> |
+| melos 6→7 迁移(pub workspaces) | <https://melos.invertase.dev/~melos-latest/guides/migrations> |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。

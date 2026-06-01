@@ -32,6 +32,10 @@ CODE_DOMAIN_SKILLS = [
     "flutter-dependency-maintenance",
     "flutter-error-handling",
     "flutter-codegen",
+    "flutter-concurrency-isolates",
+    "dart-api-package-design",
+    "flutter-static-analysis",
+    "flutter-monorepo-melos",
 ]
 
 LENS_HEADER = "## 心智模型与诚实边界"

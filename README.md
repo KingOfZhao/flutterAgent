@@ -2,7 +2,7 @@
 
 一个本地运行的 **Flutter 需求精炼器**。所有工程主张都能在 [`REFERENCES.md`](./REFERENCES.md) 里找到官方文档 / pub.dev / 行业标准的出处。
 
-- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **40 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构,并用 [女娲 Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的五层蒸馏法提炼资深工程师“思维操作系统”——`flutter-skill-distillation` 把该蒸馏法本地化为可复用能力(支持“蒸馏指定专家”),并已蒸馏 5 位 Flutter 框架/实践专家为 `*-mindset` skill;19 个领域 skill 均补有精简的“心智模型 + 诚实边界”层;另有一组**代码领域**能力:地道写法 / 评审 / 重构 / 依赖养护 / 错误处理 / 代码生成)。
+- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **44 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构,并用 [女娲 Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的五层蒸馏法提炼资深工程师“思维操作系统”——`flutter-skill-distillation` 把该蒸馏法本地化为可复用能力(支持“蒸馏指定专家”),并已蒸馏 5 位 Flutter 框架/实践专家为 `*-mindset` skill;19 个领域 skill 均补有精简的“心智模型 + 诚实边界”层;另有一组**代码领域**能力:地道写法 / 评审 / 重构 / 依赖养护 / 错误处理 / 代码生成 / 并发隔离区 / API 包设计 / 静态分析 / monorepo)。
 - 把用户的一句话需求,经多阶段流水线(分类 → 规格 → 架构 → 任务拆解 → 验收 → 汇总 PRD),交给 任何 OpenAI 兼容模型去精炼(默认 DeepSeek v4 pro;可接 `deepseek-chat` / `deepseek-reasoner` / `gpt-4o` / Ollama 本地)。
 - **反幻觉层**:架构阶段产出的所有第三方包会在 pub.dev API 上被验证,不存在 / 已废弃 / 版本超前的包会被标警并在 PRD 顶部贴 warning。
 - **成本透明**:按 DeepSeek / OpenAI 公布价目实时估算 USD,累计到每个 stage 、整个运行以及 run history list。
@@ -26,7 +26,7 @@ flutterAgent/
 ├── scripts/
 │   ├── refine_cli.py            # 命令行直接调用精炼流水线
 │   └── export_openapi.py        # 导出 openapi.json 到磁盘
-├── skills/                      # Markdown 形式的 skill / spec(40 个)
+├── skills/                      # Markdown 形式的 skill / spec(44 个)
 │   ├── task-refinement/SKILL.md
 │   ├── architecture-design/SKILL.md
 │   ├── state-management/SKILL.md
@@ -66,7 +66,11 @@ flutterAgent/
 │   ├── flutter-refactoring/SKILL.md          # 代码: 安全重构(小步+测试护栏+常见手法)
 │   ├── flutter-dependency-maintenance/SKILL.md # 代码: 依赖养护(pub upgrade/破坏性升级/dart fix)
 │   ├── flutter-error-handling/SKILL.md       # 代码: 错误处理(Result/Either/错误边界/上报)
-│   └── flutter-codegen/SKILL.md              # 代码: 代码生成(build_runner/freezed/json/riverpod)
+│   ├── flutter-codegen/SKILL.md              # 代码: 代码生成(build_runner/freezed/json/riverpod)
+│   ├── flutter-concurrency-isolates/SKILL.md # 代码: 并发与隔离区(isolate/compute/Isolate.run)
+│   ├── dart-api-package-design/SKILL.md      # 代码: API/包设计(公共 API/SemVer/pub 发布)
+│   ├── flutter-static-analysis/SKILL.md      # 代码: 静态分析自动化(analysis_options/lints/custom_lint)
+│   └── flutter-monorepo-melos/SKILL.md       # 代码: 多包/monorepo(pub workspaces + melos)
 ├── logs/                        # runs.jsonl 自动写入(gitignored)
 ├── REFERENCES.md                # 全部官方/开源出处汇总
 ├── src/flutter_agent/
@@ -370,6 +374,10 @@ requirement
 | `flutter-dependency-maintenance` | 代码·依赖养护:pub outdated/upgrade / 破坏性升级 / dart fix / SemVer | dart.dev/tools/pub + semver.org |
 | `flutter-error-handling` | 代码·错误处理:Result/Either vs 异常 / 错误边界 / 日志上报 | docs.flutter.dev/testing/errors + dart.dev |
 | `flutter-codegen` | 代码·代码生成:build_runner / freezed / json_serializable / riverpod_generator | pub.dev + docs.flutter.dev/.../serialization/json |
+| `flutter-concurrency-isolates` | 代码·并发与隔离区:isolate / compute / Isolate.run / 消息传递 / 避免卡 UI | dart.dev/language/concurrency + api.flutter.dev/.../compute |
+| `dart-api-package-design` | 代码·API/包设计:公共 API 稳定性 / SemVer / pub 发布 | dart.dev/effective-dart/design + dart.dev/tools/pub/publishing |
+| `flutter-static-analysis` | 代码·静态分析自动化:analysis_options / lint 规则集 / custom_lint | dart.dev/tools/analysis + dart.dev/tools/linter-rules |
+| `flutter-monorepo-melos` | 代码·多包/monorepo:pub workspaces + melos 编排与发版 | dart.dev/tools/pub/workspaces + melos.invertase.dev |
 
 > 标「官方 skill 格式」的 skill 采用 [flutter/skills](https://github.com/flutter/skills) 的结构(`Contents / Core Concepts / Workflow + Task Progress / Conditional Logic / Examples / Troubleshooting`),同时保留本项目加载器所需的 front-matter 字段。
 
