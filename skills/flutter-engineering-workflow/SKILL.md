@@ -43,6 +43,11 @@ stage_hints: [breakdown, acceptance]
 > 登录与令牌(OAuth2/OIDC/PKCE/JWT/刷新/生物识别)用 `flutter-auth-protocols`。
 > (协议选型在先,客户端实现见 `flutter-network`,凭证安全见 `flutter-security`。)
 
+> **UI 识别与还原能力**(输入是设计稿/截图时):
+> 从图里提取规格(取色、字号等比换算、渐变方向、关键信息清单)用 `flutter-ui-from-image`;
+> 把提取出的 token 落成工程化主题(ColorScheme/TextTheme/ThemeData/亮暗)用 `flutter-design-tokens-theming`。
+> (先成规格 → 再成主题 → 再按 1B 实现 UI。)
+
 > 一句话原则:**改动越小越好,验证越足越好,文档跟着改动走。** 不发明不存在的包,不写伪代码,所有"为什么"都要能落到 `REFERENCES.md` 的官方出处。
 
 ---
@@ -89,6 +94,7 @@ stage_hints: [breakdown, acceptance]
 2. **领域先行**:先定 entity / usecase 的契约(纯 Dart,可单测),再填实现。
 3. **状态管理**:遵循仓库既有方案(Riverpod / BLoC,见 `state-management`),不要在同一仓库混用两套。
 4. **UI 接线**:widget 只消费 state,不放业务逻辑;空/加载/错误三态都要有。
+   - 若需求带**设计稿/截图**:先用 `flutter-ui-from-image` 读图成规格(取色/字号等比换算/渐变方向/关键信息),再用 `flutter-design-tokens-theming` 落成主题,widget 只消费主题 token,不硬编码色值字号。
 5. **依赖选型**:新引入的包必须 pub.dev 可查、活跃维护,并在 PR 写明理由(反幻觉,见 `architecture-design`)。
 6. **灰度/开关**:对有风险的功能加 feature flag,便于回滚。
 

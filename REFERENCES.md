@@ -540,4 +540,35 @@
 
 ---
 
+## 17. UI 识别与还原能力(设计稿/截图 → Flutter)
+
+### 17.1 从图片还原 UI(flutter-ui-from-image)
+
+| 主题 | 链接 |
+|---|---|
+| MediaQuery / 逻辑像素 | <https://api.flutter.dev/flutter/widgets/MediaQuery-class.html> |
+| 自适应与响应式设计 | <https://docs.flutter.dev/ui/adaptive-responsive> |
+| LayoutBuilder | <https://api.flutter.dev/flutter/widgets/LayoutBuilder-class.html> |
+| Color(含 withValues) | <https://api.flutter.dev/flutter/dart-ui/Color-class.html> |
+| Gradient(Linear/Radial/Sweep) | <https://api.flutter.dev/flutter/painting/Gradient-class.html> |
+| BoxDecoration(渐变/阴影/圆角) | <https://api.flutter.dev/flutter/painting/BoxDecoration-class.html> |
+| ShaderMask(渐变蒙版) | <https://api.flutter.dev/flutter/widgets/ShaderMask-class.html> |
+| TextScaler(文字缩放) | <https://api.flutter.dev/flutter/painting/TextScaler-class.html> |
+| 颜色对比度(WCAG) | <https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html> |
+| flutter_screenutil(可选) | <https://pub.dev/packages/flutter_screenutil> |
+
+### 17.2 设计 token 工程化主题(flutter-design-tokens-theming)
+
+| 主题 | 链接 |
+|---|---|
+| Material 3 主题化(Flutter) | <https://docs.flutter.dev/cookbook/design/themes> |
+| ThemeData | <https://api.flutter.dev/flutter/material/ThemeData-class.html> |
+| ColorScheme / fromSeed | <https://api.flutter.dev/flutter/material/ColorScheme-class.html> |
+| TextTheme | <https://api.flutter.dev/flutter/material/TextTheme-class.html> |
+| ThemeExtension(自定义 token) | <https://api.flutter.dev/flutter/material/ThemeExtension-class.html> |
+| Material Design 3 颜色系统 | <https://m3.material.io/styles/color/system/overview> |
+| 自定义字体 / google_fonts | <https://docs.flutter.dev/cookbook/design/fonts> · <https://pub.dev/packages/google_fonts> |
+
+---
+
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。
