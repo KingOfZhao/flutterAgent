@@ -560,6 +560,33 @@ async def test_static_consistency_drives_review_loop(settings, registry):
 
 
 @pytest.mark.asyncio
+async def test_review_history_records_each_pass(settings, registry):
+    """review_history has one entry per review evaluation, with source counts."""
+    client = _StaticGapMockClient()
+    pipeline = RefinementPipeline(settings=settings, client=client, registry=registry)
+
+    req = RefineRequest(
+        requirement="一个简单页面",
+        platforms=[Platform.mobile],
+        stages=[
+            Stage.classify, Stage.spec, Stage.architecture, Stage.breakdown,
+            Stage.implementation, Stage.review, Stage.acceptance, Stage.markdown,
+        ],
+        review_max_iterations=1,
+        validate_packages=False,
+    )
+
+    response = await pipeline.run(req)
+
+    # first review (blocking via static gap) + one re-review (clean) = 2 passes
+    assert len(response.review_history) == 2
+    first, second = response.review_history
+    assert first.iteration == 0 and first.blocking is True
+    assert first.by_source.get("static", 0) >= 1
+    assert second.iteration == 1 and second.blocking is False
+
+
+@pytest.mark.asyncio
 async def test_static_finding_surfaced_even_when_loop_disabled(settings, registry):
     """With the loop off, the deterministic finding is still merged into the
     review output as advisory (not acted upon)."""

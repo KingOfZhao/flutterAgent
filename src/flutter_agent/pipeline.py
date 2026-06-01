@@ -32,6 +32,7 @@ from .schemas import (
     Platform,
     RefineRequest,
     RefineResponse,
+    ReviewPass,
     SkillDetail,
     Stage,
     StageResult,
@@ -349,6 +350,36 @@ def _augment_review_with_consistency(prior: Dict[Stage, Dict[str, Any]]) -> int:
     return added
 
 
+def _summarize_review_pass(review: Optional[Dict[str, Any]], iteration: int) -> ReviewPass:
+    """Compact audit entry for one review evaluation."""
+    by_severity: Dict[str, int] = {}
+    by_source: Dict[str, int] = {}
+    total = 0
+    summary = None
+    if isinstance(review, dict):
+        s = review.get("summary")
+        if isinstance(s, str) and s.strip():
+            summary = s.strip()
+        findings = review.get("findings")
+        if isinstance(findings, list):
+            for f in findings:
+                if not isinstance(f, dict):
+                    continue
+                total += 1
+                sev = str(f.get("severity", "unknown")).lower()
+                by_severity[sev] = by_severity.get(sev, 0) + 1
+                src = str(f.get("source", "llm")).lower()
+                by_source[src] = by_source.get(src, 0) + 1
+    return ReviewPass(
+        iteration=iteration,
+        blocking=_review_is_blocking(review),
+        findings=total,
+        by_severity=by_severity,
+        by_source=by_source,
+        summary=summary,
+    )
+
+
 def _format_review_feedback(review: Dict[str, Any]) -> str:
     """Turn review findings into a concrete fix list fed back to implementation."""
     lines: List[str] = []
@@ -447,6 +478,7 @@ class RefinementPipeline:
         markdown_out: Optional[str] = None
         total_usage = TokenUsage()
         review_iterations = 0
+        review_history: List[ReviewPass] = []
 
         for stage in req.stages:
             stage_result = await self._run_stage(
@@ -486,6 +518,9 @@ class RefinementPipeline:
                 # findings as feedback and re-review, bounded by the request.
                 elif stage == Stage.review and Stage.implementation in req.stages:
                     _augment_review_with_consistency(prior)
+                    review_history.append(
+                        _summarize_review_pass(prior.get(Stage.review), 0)
+                    )
                     while (
                         review_iterations < req.review_max_iterations
                         and _review_is_blocking(prior.get(Stage.review))
@@ -521,6 +556,11 @@ class RefinementPipeline:
                             _augment_review_with_consistency(prior)
 
                         review_iterations += 1
+                        review_history.append(
+                            _summarize_review_pass(
+                                prior.get(Stage.review), review_iterations
+                            )
+                        )
 
         # ---- pub.dev package validation ---------------------------------
         validations: List[PackageValidation] = []
@@ -552,6 +592,7 @@ class RefinementPipeline:
             implementation=prior.get(Stage.implementation),
             review=prior.get(Stage.review),
             review_iterations=review_iterations,
+            review_history=review_history,
             acceptance=prior.get(Stage.acceptance),
             markdown=self._prepend_validation_warnings(markdown_out, validations),
             validations=validations,

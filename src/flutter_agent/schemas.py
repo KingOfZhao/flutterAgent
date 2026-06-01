@@ -212,6 +212,26 @@ class StageResult(BaseModel):
     )
 
 
+class ReviewPass(BaseModel):
+    """One evaluation of the review stage inside the closed loop, for audit."""
+
+    iteration: int = Field(
+        ..., description="0 = first review; 1+ = re-reviews driven by the loop."
+    )
+    blocking: bool = Field(
+        ..., description="Whether this pass was judged blocking (drove a re-implement)."
+    )
+    findings: int = Field(default=0, description="Total findings in this pass.")
+    by_severity: Dict[str, int] = Field(
+        default_factory=dict, description="Finding counts keyed by severity."
+    )
+    by_source: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Finding counts keyed by source ('llm' vs 'static').",
+    )
+    summary: Optional[str] = Field(default=None, description="Review summary text.")
+
+
 class RefineResponse(BaseModel):
     id: str = Field(..., description="Unique run id, also written to logs/runs.jsonl.")
     created_at: int = Field(..., description="Epoch seconds when the run finished.")
@@ -245,6 +265,14 @@ class RefineResponse(BaseModel):
             "Number of extra implementation→review passes the closed loop ran "
             "because the review flagged blocking findings. 0 = first review "
             "passed or the loop was disabled."
+        ),
+    )
+    review_history: List[ReviewPass] = Field(
+        default_factory=list,
+        description=(
+            "Per-pass audit of the closed loop: one entry per review evaluation "
+            "(first review + each re-review), with finding counts by severity "
+            "and source. Empty when the review stage did not run."
         ),
     )
     acceptance: Optional[Dict[str, Any]] = None
