@@ -201,7 +201,7 @@ def test_flutter_corpus_docs_are_retrievable(tmp_path):
         "isolate compute 不共享内存 消息深拷贝": "flutter-concurrency",
         "隐式动画 AnimationController Hero 转场": "flutter-animation-ux",
         "MethodChannel pigeon ffi PlatformView 原生": "flutter-platform-integration",
-        "流水线 pubspec.lock fastlane 缓存 runner": "flutter-cicd-engineering",
+        "pubspec.lock 入库 fastlane match 可复现构建": "flutter-cicd-engineering",
         "Crashlytics onError 符号化 面包屑 慢帧": "flutter-observability",
         "三棵树 RenderObject 约束下行 raster 线程": "flutter-rendering-pipeline",
         "ValueKey GlobalKey canUpdate 状态串了": "flutter-element-keys",
