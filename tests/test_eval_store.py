@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 
 from flutter_agent.eval_store import (
+    draft_from_candidate,
+    is_draft,
     is_sealed,
     load_samples,
     split_sealed,
@@ -87,6 +89,28 @@ def test_sealed_split_is_deterministic_and_stable():
     sealed_count = sum(first.values())
     # ratio 0.2 over 200 ids: loose bounds, deterministic so never flaky.
     assert 20 <= sealed_count <= 60
+
+
+def test_draft_from_candidate_carries_source_and_todo_rubric():
+    cand = {
+        "id": "run-9",
+        "created_at": 1234,
+        "requirement": "需求 X",
+        "selected_skills": ["skill-a"],
+        "reasons": ["final_review_blocking", "bad_package"],
+    }
+    draft = draft_from_candidate(cand)
+    assert draft["id"] == "cand-run-9"
+    assert draft["source"]["run_id"] == "run-9"
+    assert len(draft["rubric"]["hard_criteria"]) == 2
+    assert is_draft(draft)
+
+
+def test_completed_draft_is_not_draft():
+    draft = draft_from_candidate({"id": "run-1", "reasons": ["acceptance_gaps"]})
+    draft["rubric"]["hard_criteria"] = ["产出必须覆盖全部验收缺口"]
+    draft["rubric"]["quality_dims"] = ["验收标准可测"]
+    assert not is_draft(draft)
 
 
 def test_split_sealed_partitions_all_samples():

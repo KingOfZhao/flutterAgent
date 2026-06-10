@@ -15,6 +15,42 @@ from typing import List, Tuple
 
 SAMPLE_KINDS = ("regression", "smoke")
 
+DRAFT_MARKER = "TODO(判)"
+
+
+def draft_from_candidate(candidate: dict) -> dict:
+    """Turn a harvested failure candidate into a draft eval sample.
+
+    The rubric is intentionally a template: hard criteria and quality
+    dimensions must be written by a human (or strong-model-assisted) triage
+    pass before the sample counts toward the eval set. Drafts are excluded
+    by ``is_draft`` until every TODO marker is replaced.
+    """
+    reasons = list(candidate.get("reasons") or [])
+    return {
+        "id": f"cand-{candidate.get('id', '')}",
+        "kind": "regression",
+        "requirement": str(candidate.get("requirement", "")),
+        "source": {
+            "run_id": str(candidate.get("id", "")),
+            "created_at": int(candidate.get("created_at", 0) or 0),
+            "reasons": reasons,
+            "selected_skills": list(candidate.get("selected_skills") or []),
+        },
+        "rubric": {
+            "hard_criteria": [f"{DRAFT_MARKER}: 把失败机制写成可判定的否决项 (来源: {r})" for r in reasons]
+            or [f"{DRAFT_MARKER}: 写出至少一条否决项"],
+            "quality_dims": [f"{DRAFT_MARKER}: 写出 1-3 个打分维度"],
+        },
+    }
+
+
+def is_draft(sample: dict) -> bool:
+    """A sample is a draft while any rubric entry still carries the TODO marker."""
+    rubric = sample.get("rubric") or {}
+    entries = list(rubric.get("hard_criteria") or []) + list(rubric.get("quality_dims") or [])
+    return any(DRAFT_MARKER in str(e) for e in entries)
+
 
 def validate_sample(obj: dict) -> List[str]:
     """Return a list of human-readable problems; empty list means valid."""
