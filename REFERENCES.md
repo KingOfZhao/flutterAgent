@@ -647,6 +647,14 @@
 | OpenTelemetry / Dart | <https://opentelemetry.io/docs/> · <https://pub.dev/packages/opentelemetry> |
 | Dart 混淆与符号 | <https://docs.flutter.dev/deployment/obfuscate> |
 
+## 20. 通用:全面思考(comprehensive-thinking)
+
+| 主题 | 链接 |
+|---|---|
+| 全面思考 skill 上游仓库(Apache-2.0) | <https://github.com/syzkillall/comprehensive-thinking-skill> |
+| 上游 SKILL.md(五重审视框架原文) | <https://github.com/syzkillall/comprehensive-thinking-skill/blob/main/SKILL.md> |
+| 上游大师理论体系研究法(已内联进本仓库 skill 附录) | <https://github.com/syzkillall/comprehensive-thinking-skill/blob/main/references/master-theory-research.md> |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。

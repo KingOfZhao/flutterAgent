@@ -2,7 +2,7 @@
 
 一个本地运行的 **Flutter 需求精炼器**。所有工程主张都能在 [`REFERENCES.md`](./REFERENCES.md) 里找到官方文档 / pub.dev / 行业标准的出处。
 
-- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **59 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构,并用 [女娲 Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的五层蒸馏法提炼资深工程师“思维操作系统”——`flutter-skill-distillation` 把该蒸馏法本地化为可复用能力(支持“蒸馏指定专家”),并已蒸馏 5 位 Flutter 框架/实践专家为 `*-mindset` skill;19 个领域 skill 均补有精简的“心智模型 + 诚实边界”层;另有一组**代码领域**能力:地道写法 / 评审 / 重构 / 依赖养护 / 错误处理 / 代码生成 / 并发隔离区 / API 包设计 / 静态分析 / monorepo / 领域建模(让非法状态不可表达)/ 可测试性设计 / 异步与流;以及一组**平台 + 协议**能力:原生互操作(platform channel / Pigeon / FFI)、Android / iOS / 桌面三端工程层、通信协议(HTTP/gRPC/GraphQL/WebSocket/SSE/MQTT)与认证授权协议(OAuth2/OIDC/PKCE/JWT);还有一组**UI 识别与还原**能力:从设计稿/截图取色、字号等比换算、渐变方向识别、关键信息提取 → 落成 ColorScheme/TextTheme/ThemeData 主题,并有“设计稿→代码”端到端 playbook 与组件级还原范例库;以及一组**交付与运维**能力:CI/CD 深化(矩阵/缓存/产物归档/发布自动化)与可观测性(崩溃上报/日志/指标/追踪/行为分析))。
+- 用 **Markdown 形式的 Skills** 描述「Mobile / Desktop / 跨端 / 动画 / 导航 / 数据持久化 / 测试 / 性能 / a11y / i18n / CI-CD / 安全」Flutter 工程规范,以及一套「修复 / 新增 / 自测 / 文档 / 交付」的工程闭环框架 + 「环境 / 打包 / 性能」实战 SOP(默认 **60 个 skill**,均附官方出处;部分 skill 采用 [flutter 官方 skill](https://github.com/flutter/skills) 的结构,并用 [女娲 Skill 造人术](https://github.com/alchaincyf/nuwa-skill) 的五层蒸馏法提炼资深工程师“思维操作系统”——`flutter-skill-distillation` 把该蒸馏法本地化为可复用能力(支持“蒸馏指定专家”),并已蒸馏 5 位 Flutter 框架/实践专家为 `*-mindset` skill;19 个领域 skill 均补有精简的“心智模型 + 诚实边界”层;另有一组**代码领域**能力:地道写法 / 评审 / 重构 / 依赖养护 / 错误处理 / 代码生成 / 并发隔离区 / API 包设计 / 静态分析 / monorepo / 领域建模(让非法状态不可表达)/ 可测试性设计 / 异步与流;以及一组**平台 + 协议**能力:原生互操作(platform channel / Pigeon / FFI)、Android / iOS / 桌面三端工程层、通信协议(HTTP/gRPC/GraphQL/WebSocket/SSE/MQTT)与认证授权协议(OAuth2/OIDC/PKCE/JWT);还有一组**UI 识别与还原**能力:从设计稿/截图取色、字号等比换算、渐变方向识别、关键信息提取 → 落成 ColorScheme/TextTheme/ThemeData 主题,并有“设计稿→代码”端到端 playbook 与组件级还原范例库;以及一组**交付与运维**能力:CI/CD 深化(矩阵/缓存/产物归档/发布自动化)与可观测性(崩溃上报/日志/指标/追踪/行为分析);以及一项**通用思维**能力:`comprehensive-thinking` 全面思考(五重审视复杂判断框架,接入自 [comprehensive-thinking-skill](https://github.com/syzkillall/comprehensive-thinking-skill),Apache-2.0),在高复杂度/高代价/高不确定性的架构、策略与根因判断中强制大师理论体系 × 关键事实 × 最强反方 × 前提辩证分析 × 可验证收束)。
 - 把用户的一句话需求,经多阶段流水线(分类 → 规格 → 架构 → 任务拆解 → 实现骨架 → 代码自检 → 验收 → 汇总 PRD),交给 任何 OpenAI 兼容模型去精炼(默认 DeepSeek v4 pro;可接 `deepseek-chat` / `deepseek-reasoner` / `gpt-4o` / Ollama 本地)。
 - **反幻觉层**:架构阶段产出的所有第三方包会在 pub.dev API 上被验证,不存在 / 已废弃 / 版本超前的包会被标警并在 PRD 顶部贴 warning。
 - **成本透明**:按 DeepSeek / OpenAI 公布价目实时估算 USD,累计到每个 stage 、整个运行以及 run history list。
@@ -28,8 +28,9 @@ flutterAgent/
 ├── scripts/
 │   ├── refine_cli.py            # 命令行直接调用精炼流水线
 │   └── export_openapi.py        # 导出 openapi.json 到磁盘
-├── skills/                      # Markdown 形式的 skill / spec(59 个)
+├── skills/                      # Markdown 形式的 skill / spec(60 个)
 │   ├── task-refinement/SKILL.md
+│   ├── comprehensive-thinking/SKILL.md       # 通用: 全面思考(五重审视复杂判断框架,Apache-2.0 引入)
 │   ├── architecture-design/SKILL.md
 │   ├── state-management/SKILL.md
 │   ├── flutter-mobile/SKILL.md
@@ -451,6 +452,7 @@ curl -X POST http://127.0.0.1:8765/v1/ingest \
 | ID | 主题 | 依据主要源 |
 |---|---|---|
 | `task-refinement` | 需求精炼流水线的元 SOP | Atlassian / BDD / INVEST |
+| `comprehensive-thinking` | 通用·全面思考:五重审视 / 大师理论体系 / 最强反方 / 前提辩证分析 / 可验证收束 | github.com/syzkillall/comprehensive-thinking-skill(Apache-2.0) |
 | `architecture-design` | Clean Architecture / feature-first | docs.flutter.dev/app-architecture |
 | `state-management` | Riverpod vs BLoC 选型 | docs.flutter.dev/data-and-backend/state-mgmt |
 | `flutter-mobile` | iOS / Android 工程规范 | flutter.dev + pub.dev |
