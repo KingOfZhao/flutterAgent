@@ -1,0 +1,97 @@
+"""Tests for eval_store (eval-set loading, validation, sealed split)."""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from flutter_agent.eval_store import (
+    is_sealed,
+    load_samples,
+    split_sealed,
+    validate_sample,
+)
+
+
+def _sample(sample_id: str, **overrides) -> dict:
+    base = {
+        "id": sample_id,
+        "kind": "regression",
+        "requirement": "需求 " + sample_id,
+        "rubric": {
+            "hard_criteria": ["输出为合法 JSON"],
+            "quality_dims": ["验收标准可测"],
+        },
+    }
+    base.update(overrides)
+    return base
+
+
+def _write(path: Path, samples: list[dict]) -> None:
+    path.write_text(
+        "\n".join(json.dumps(s, ensure_ascii=False) for s in samples) + "\n",
+        encoding="utf-8",
+    )
+
+
+def test_valid_sample_has_no_errors():
+    assert validate_sample(_sample("s-1")) == []
+
+
+def test_validation_catches_missing_fields():
+    errors = validate_sample({"id": "", "rubric": {}})
+    assert "missing id" in errors
+    assert "missing requirement" in errors
+    assert any("hard_criteria" in e for e in errors)
+
+
+def test_unknown_kind_rejected():
+    assert any("kind" in e for e in validate_sample(_sample("s-1", kind="vibe")))
+
+
+def test_load_skips_invalid_rows(tmp_path: Path):
+    p = tmp_path / "samples.jsonl"
+    p.write_text(
+        json.dumps(_sample("good")) + "\nnot-json\n" + json.dumps({"id": "bad"}) + "\n",
+        encoding="utf-8",
+    )
+    samples = load_samples(p)
+    assert [s["id"] for s in samples] == ["good"]
+
+
+def test_load_strict_raises(tmp_path: Path):
+    p = tmp_path / "samples.jsonl"
+    p.write_text(json.dumps({"id": "bad"}) + "\n", encoding="utf-8")
+    try:
+        load_samples(p, strict=True)
+    except ValueError as exc:
+        assert "missing requirement" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
+
+
+def test_load_rejects_duplicate_ids(tmp_path: Path):
+    p = tmp_path / "samples.jsonl"
+    _write(p, [_sample("dup"), _sample("dup")])
+    assert len(load_samples(p)) == 1
+
+
+def test_missing_file_returns_empty(tmp_path: Path):
+    assert load_samples(tmp_path / "nope.jsonl") == []
+
+
+def test_sealed_split_is_deterministic_and_stable():
+    ids = [f"s-{i}" for i in range(200)]
+    first = {i: is_sealed(i) for i in ids}
+    second = {i: is_sealed(i) for i in ids}
+    assert first == second
+    sealed_count = sum(first.values())
+    # ratio 0.2 over 200 ids: loose bounds, deterministic so never flaky.
+    assert 20 <= sealed_count <= 60
+
+
+def test_split_sealed_partitions_all_samples():
+    samples = [_sample(f"s-{i}") for i in range(50)]
+    working, sealed = split_sealed(samples)
+    assert len(working) + len(sealed) == 50
+    overlap = {s["id"] for s in working} & {s["id"] for s in sealed}
+    assert overlap == set()
