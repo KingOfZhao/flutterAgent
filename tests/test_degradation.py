@@ -141,6 +141,43 @@ def test_diff_no_alert_within_budget(tmp_path: Path):
     assert not diff_corpus(snapshot_corpus(old_dir), snapshot_corpus(new_dir))["alert"]
 
 
+def test_model_change_ignores_empty_model_and_missing_stages():
+    runs = [
+        {"id": "x", "created_at": 1, "stages": None},
+        {"id": "y", "created_at": 2, "stages": [{"stage": "s", "model": "  "}]},
+        _run("z"),
+    ]
+    report = detect_model_change(runs)
+    assert not report["alert"]
+    assert report["models_seen"] == ["deepseek-chat"]
+
+
+def test_failure_rate_handles_window_larger_than_history():
+    report = detect_failure_rate_shift([_run("a")], window=100)
+    assert not report["alert"]
+    assert report["prior_runs"] == 0
+
+
+def test_cache_staleness_empty_runs_no_alert():
+    report = detect_cache_staleness([], window=10)
+    assert not report["alert"]
+    assert report["cached_share"] == 0.0
+
+
+def test_diff_corpus_zero_baseline_no_division_error(tmp_path: Path):
+    new_dir = _corpus(tmp_path / "new", {"a": "xxx"})
+    report = diff_corpus({"skills": {}, "total_chars": 0}, snapshot_corpus(new_dir))
+    assert report["growth_ratio"] == 0.0
+    assert report["added"] == ["a"]
+    assert not report["alert"]
+
+
+def test_run_all_detectors_empty_input():
+    summary = run_all_detectors([])
+    assert summary["total_runs"] == 0
+    assert summary["alerts"] == []
+
+
 def test_load_runs_skips_bad_lines(tmp_path: Path):
     p = tmp_path / "runs.jsonl"
     p.write_text(json.dumps(_run("ok")) + "\nnot-json\n", encoding="utf-8")
