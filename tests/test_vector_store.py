@@ -21,6 +21,8 @@ from flutter_agent.vector_store import (
     VectorStore,
     build_index,
     chunk_markdown,
+    docs_from_memory,
+    format_grounding,
     docs_from_knowledge,
     docs_from_skills,
 )
@@ -97,6 +99,69 @@ def test_store_upsert_replaces(tmp_path):
     store.add([VectorDoc("d", "skill", "t", "s", 0, "second text")])
     assert store.count() == 1
     store.close()
+
+
+# ---------------------------------------------------------------------------
+# Runtime memory notes + grounding
+# ---------------------------------------------------------------------------
+
+def test_memory_docs_survive_rebuild(tmp_path):
+    store = VectorStore(tmp_path / "m.sqlite3")
+    store.add(docs_from_memory("note-1", "偏好", "用户偏好 Riverpod 状态管理 离线优先"))
+    assert store.count() >= 1
+    build_index(store, skills_dir=ROOT / "skills", knowledge_dir=ROOT / "knowledge")
+    hits = store.search("Riverpod 状态管理", top_k=3, kind="memory")
+    assert hits and hits[0].doc_id == "note-1"
+    listed = store.list_docs(kind="memory")
+    assert [d["doc_id"] for d in listed] == ["note-1"]
+    assert store.delete_doc("note-1") >= 1
+    assert store.list_docs(kind="memory") == []
+    store.close()
+
+
+def test_format_grounding_filters_noise():
+    from flutter_agent.vector_store import SearchHit
+
+    good = SearchHit("d", "memory", "t", "memory:d", 0, 0.6, "离线同步要点")
+    noise = SearchHit("n", "skill", "t", "skills/n", 0, 0.01, "无关")
+    block = format_grounding([good, noise])
+    assert "memory:d" in block and "无关" not in block
+    assert format_grounding([noise]) == ""
+
+
+def test_memory_api_write_list_delete(tmp_path):
+    from flutter_agent.main import app
+
+    store = VectorStore(tmp_path / "mem.sqlite3")
+    app.state.vector_store = store
+    try:
+        with TestClient(app) as client:
+            resp = client.post(
+                "/v1/vector/memory",
+                json={"text": "项目约定: 提交信息用中文", "doc_id": "conv-1"},
+            )
+            assert resp.status_code == 200, resp.text
+            body = resp.json()
+            assert body["doc_id"] == "conv-1" and body["chunks"] >= 1
+
+            resp = client.get("/v1/vector/memory")
+            assert resp.status_code == 200
+            assert any(m["doc_id"] == "conv-1" for m in resp.json()["memories"])
+
+            resp = client.post(
+                "/v1/vector/search",
+                json={"query": "提交信息 中文", "kind": "memory"},
+            )
+            assert resp.status_code == 200
+            assert any(h["doc_id"] == "conv-1" for h in resp.json()["hits"])
+
+            resp = client.delete("/v1/vector/memory/conv-1")
+            assert resp.status_code == 200
+            resp = client.delete("/v1/vector/memory/conv-1")
+            assert resp.status_code == 404
+    finally:
+        store.close()
+        del app.state.vector_store
 
 
 # ---------------------------------------------------------------------------

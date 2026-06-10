@@ -359,11 +359,14 @@ requirement
 | `GET` | `/v1/runs?limit=N` | 列出最近 N 次运行(每项带 `cost` + `bad_packages`) |
 | `GET` | `/v1/runs/{id}` | 取某次运行的完整 `RefineResponse` |
 | `GET` | `/v1/metrics` | 聚合统计(总 runs、tokens、cost、阶段成功率、高频 skill) |
-| `POST` | `/v1/agents/collaborate` | 多 Agent 协作:`solo` / `debate`(提案↔评审迭代)/ `committee`(多提案+裁判综合)/ `peer_review`(匿名交叉打分判优),返回完整 transcript/scoreboard,详见 `knowledge/agent-collaboration-protocol.md` |
+| `POST` | `/v1/agents/collaborate` | 多 Agent 协作:`solo` / `debate`(提案↔评审迭代)/ `committee`(多提案+裁判综合)/ `peer_review`(匿名交叉打分判优),返回完整 transcript/scoreboard;`ground=true` 先检索本地向量库并前置可引用来源(检索接地),详见 `knowledge/agent-collaboration-protocol.md` |
 | `GET` | `/v1/agents/providers` | 已配置 AI 提供商列表(不含密钥) |
 | `GET` | `/v1/agents/collaborations` | 协作运行审计日志尾部(`?limit=`,最多 200 条) |
-| `POST` | `/v1/vector/search` | 本地向量库语义检索(skills + knowledge,零依赖离线,详见下节) |
-| `POST` | `/v1/vector/rebuild` | 从磁盘重建向量索引 |
+| `POST` | `/v1/vector/search` | 本地向量库语义检索(skills + knowledge + memory,零依赖离线,详见下节) |
+| `POST` | `/v1/vector/memory` | 运行时写入记忆笔记(增量编码入库,同 `doc_id` 重写即替换) |
+| `GET` | `/v1/vector/memory` | 列出运行时记忆笔记 |
+| `DELETE` | `/v1/vector/memory/{id}` | 删除一条记忆笔记(插件式装卸) |
+| `POST` | `/v1/vector/rebuild` | 从磁盘重建向量索引(运行时记忆保留) |
 | `GET` | `/v1/vector/stats` | 向量索引统计(chunks/documents/dim) |
 | `GET` | `/healthz` | 健康检查 |
 | `GET` | `/openapi.json` | OpenAPI 3.x 规范 |
@@ -376,6 +379,8 @@ requirement
 - **零新增依赖、完全离线**:embedding 为确定性特征哈希向量(ASCII 词 + 中文字/二字组,log-TF 加权,L2 归一化),SQLite 持久化(`data/vector_store.sqlite3`,已 gitignore);无需下载模型或调用外部 API
 - **可插拔 embedder**:任何实现 `embed(texts)` + `dim` 的对象可替换默认 embedder(如 OpenAI 兼容 `/v1/embeddings`),存储层不变
 - **语料**:`skills/**/SKILL.md`(含 front-matter 词汇)+ `knowledge/*.md`(如 Claude 前沿模型调研、模型能力演进必要条件),按标题分段 + 滑窗切块
+- **运行时记忆(`kind="memory"`)**:`POST /v1/vector/memory` 把新知识写进可检索外部库而非模型权重——持续学习而不遗忘的外挂记忆方案(RAG);记忆在 `rebuild` 时保留,可按 `doc_id` 替换或删除,理论依据与边界见 `knowledge/memory-and-grounding.md`
+- **检索接地**:`/v1/agents/collaborate` 带 `ground=true` 时先检索向量库,把带编号的来源前置进任务并要求引用、资料不足时明说不知道(低于相似度阈值不接地,避免在噪声上接地)
 
 ```bash
 # 构建索引

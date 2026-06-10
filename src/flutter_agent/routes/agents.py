@@ -2,6 +2,8 @@
 
   * GET  /v1/agents/providers       key-free view of configured providers
   * POST /v1/agents/collaborate     run solo / debate / committee collaboration
+                                    (``ground=true`` prepends citable sources
+                                    retrieved from the local vector store)
   * GET  /v1/agents/collaborations  tail of the JSONL audit log
 """
 from __future__ import annotations
@@ -17,6 +19,7 @@ from ..collaboration import AgentSpec, AgentTeam, CollaborationResult
 from ..deepseek_client import UpstreamError
 from ..deps import get_settings, require_api_key
 from ..config import Settings
+from ..vector_store import VectorStore, build_index, format_grounding
 
 router = APIRouter(prefix="/v1/agents", tags=["agents"])
 
@@ -37,6 +40,14 @@ class CollaborateRequest(BaseModel):
         description="Optional explicit roster; sensible defaults per mode.",
     )
     max_rounds: Optional[int] = Field(default=None, ge=1, le=5)
+    ground: bool = Field(
+        default=False,
+        description=(
+            "Retrieve from the local vector store (skills/knowledge/memory) "
+            "and prepend citable sources to the task before agents see it."
+        ),
+    )
+    ground_top_k: int = Field(default=4, ge=1, le=20)
 
 
 @router.get(
@@ -88,9 +99,24 @@ async def collaborate(
     settings: Settings = Depends(get_settings),
 ) -> CollaborationResult:
     team = get_team(request)
+    task = body.task
+    if body.ground:
+        store = getattr(request.app.state, "vector_store", None)
+        if store is None:
+            store = VectorStore(settings.vector_db_file)
+            request.app.state.vector_store = store
+        if store.count() == 0:
+            build_index(
+                store,
+                skills_dir=settings.skills_path,
+                knowledge_dir=settings.knowledge_path,
+            )
+        context = format_grounding(store.search(task, top_k=body.ground_top_k))
+        if context:
+            task = f"{context}\n\n任务:\n{task}"
     try:
         return await team.run(
-            body.task, body.mode, agents=body.agents, max_rounds=body.max_rounds
+            task, body.mode, agents=body.agents, max_rounds=body.max_rounds
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

@@ -61,6 +61,40 @@ def test_collaborate_solo_with_stubbed_team():
     assert len(data["transcript"]) == 1
 
 
+def test_collaborate_ground_prepends_retrieved_sources(tmp_path):
+    from flutter_agent.vector_store import VectorStore, docs_from_memory
+
+    captured = {}
+
+    class _StubTeam:
+        registry = None
+
+        async def run(self, task, mode, agents=None, max_rounds=None):
+            from flutter_agent.collaboration import CollaborationResult
+
+            captured["task"] = task
+            return CollaborationResult(mode=mode, final_answer="ok", rounds_used=1)
+
+    store = VectorStore(tmp_path / "g.sqlite3")
+    store.add(docs_from_memory("note-g", "约定", "离线同步采用 增量队列 与 冲突合并 策略"))
+    with TestClient(app) as client:
+        original = app.state.agent_team
+        app.state.agent_team = _StubTeam()
+        app.state.vector_store = store
+        try:
+            resp = client.post(
+                "/v1/agents/collaborate",
+                json={"task": "离线同步怎么做 冲突合并", "mode": "solo", "ground": True},
+            )
+        finally:
+            app.state.agent_team = original
+            store.close()
+            del app.state.vector_store
+    assert resp.status_code == 200, resp.text
+    assert "memory:note-g" in captured["task"]
+    assert captured["task"].endswith("离线同步怎么做 冲突合并")
+
+
 def test_list_collaborations_reads_audit_log(tmp_path):
     import json
 

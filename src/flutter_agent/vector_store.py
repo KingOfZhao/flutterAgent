@@ -130,7 +130,7 @@ class VectorDoc:
     """One chunk to index."""
 
     doc_id: str
-    kind: str  # "skill" | "knowledge"
+    kind: str  # "skill" | "knowledge" | "memory"
     title: str
     source: str  # relative path on disk
     chunk_index: int
@@ -191,10 +191,43 @@ class VectorStore:
     def close(self) -> None:
         self._conn.close()
 
-    def clear(self) -> None:
+    def clear(self, *, keep_kinds: Sequence[str] = ()) -> None:
         with self._lock:
-            self._conn.execute("DELETE FROM chunks")
+            if keep_kinds:
+                placeholders = ",".join("?" for _ in keep_kinds)
+                self._conn.execute(
+                    f"DELETE FROM chunks WHERE kind NOT IN ({placeholders})",
+                    tuple(keep_kinds),
+                )
+            else:
+                self._conn.execute("DELETE FROM chunks")
             self._conn.commit()
+
+    def delete_doc(self, doc_id: str) -> int:
+        with self._lock:
+            cur = self._conn.execute("DELETE FROM chunks WHERE doc_id = ?", (doc_id,))
+            self._conn.commit()
+        return cur.rowcount
+
+    def list_docs(self, *, kind: Optional[str] = None) -> List[dict]:
+        sql = (
+            "SELECT doc_id, kind, title, source, COUNT(*), MIN(created_at) "
+            "FROM chunks"
+        )
+        params: tuple = ()
+        if kind:
+            sql += " WHERE kind = ?"
+            params = (kind,)
+        sql += " GROUP BY doc_id ORDER BY MIN(created_at) DESC, doc_id"
+        with self._lock:
+            rows = self._conn.execute(sql, params).fetchall()
+        return [
+            {
+                "doc_id": r[0], "kind": r[1], "title": r[2], "source": r[3],
+                "chunks": int(r[4]), "created_at": int(r[5]),
+            }
+            for r in rows
+        ]
 
     def count(self) -> int:
         with self._lock:
@@ -342,11 +375,48 @@ def safe_semantic_scores(store: Optional[VectorStore], query: str) -> dict:
         return {}
 
 
+def docs_from_memory(doc_id: str, title: str, text: str) -> List[VectorDoc]:
+    """Chunk one runtime memory note into ``kind="memory"`` VectorDocs.
+
+    Memory notes are write-time knowledge consolidation: new knowledge lands
+    in the retrievable store instead of model weights (RAG as external
+    memory), so it can be added and removed like a plugin.
+    """
+    pieces = chunk_markdown(text) or [text.strip()]
+    return [
+        VectorDoc(
+            doc_id=doc_id, kind="memory", title=title,
+            source=f"memory:{doc_id}", chunk_index=i, text=piece,
+        )
+        for i, piece in enumerate(pieces)
+        if piece
+    ]
+
+
+def format_grounding(hits: Sequence[SearchHit], *, min_score: float = 0.05) -> str:
+    """Render search hits as a citable context block for grounded prompting.
+
+    Returns an empty string when nothing clears ``min_score`` so callers can
+    say "no sources found" instead of grounding on noise.
+    """
+    lines: List[str] = []
+    for i, h in enumerate(hits, 1):
+        if h.score < min_score:
+            continue
+        lines.append(f"[{i}] ({h.kind}:{h.source}) {h.snippet}")
+    if not lines:
+        return ""
+    return (
+        "可用资料(检索接地,回答中引用来源编号;资料不足以回答时明说不知道):\n"
+        + "\n".join(lines)
+    )
+
+
 def build_index(
     store: VectorStore, *, skills_dir: Path, knowledge_dir: Path
 ) -> dict:
-    """(Re)build the full index. Returns stats for reporting."""
-    store.clear()
+    """(Re)build the disk-derived index; runtime memory notes are preserved."""
+    store.clear(keep_kinds=("memory",))
     skill_docs = docs_from_skills(skills_dir)
     knowledge_docs = docs_from_knowledge(knowledge_dir)
     added = store.add(skill_docs) + store.add(knowledge_docs)

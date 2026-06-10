@@ -5,14 +5,17 @@ The index is built lazily on first use (or explicitly via ``POST /v1/vector/rebu
 """
 from __future__ import annotations
 
-from typing import List, Optional
+import re
+import time
 
-from fastapi import APIRouter, Depends, Request
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from ..config import Settings, get_settings
 from ..deps import require_api_key
-from ..vector_store import VectorStore, build_index
+from ..vector_store import VectorStore, build_index, docs_from_memory
 
 router = APIRouter(prefix="/v1/vector", tags=["vector"])
 
@@ -102,6 +105,56 @@ async def vector_rebuild(request: Request) -> VectorStatsResponse:
         embedder=store.embedder.name,
         db_path=str(settings.vector_db_file),
     )
+
+
+class MemoryWriteRequest(BaseModel):
+    text: str = Field(min_length=1, description="Note body (markdown ok).")
+    title: str = Field(default="", description="Optional human title.")
+    doc_id: str = Field(
+        default="",
+        pattern=r"^[A-Za-z0-9_-]*$",
+        description="Stable id; rewriting the same id replaces the note.",
+    )
+
+
+@router.post(
+    "/memory",
+    summary="Write a runtime memory note (incremental embed, survives rebuild)",
+    dependencies=[Depends(require_api_key)],
+)
+async def memory_write(req: MemoryWriteRequest, request: Request) -> Dict[str, Any]:
+    settings = get_settings()
+    store = _get_store(request, settings)
+    doc_id = req.doc_id or f"mem-{int(time.time())}-{abs(hash(req.text)) % 10000:04d}"
+    title = req.title or re.sub(r"\s+", " ", req.text.strip())[:60]
+    store.delete_doc(doc_id)  # replace semantics: no stale chunks left behind
+    added = store.add(docs_from_memory(doc_id, title, req.text))
+    return {"doc_id": doc_id, "title": title, "chunks": added}
+
+
+@router.get(
+    "/memory",
+    summary="List runtime memory notes",
+    dependencies=[Depends(require_api_key)],
+)
+async def memory_list(request: Request) -> Dict[str, Any]:
+    settings = get_settings()
+    store = _get_store(request, settings)
+    return {"memories": store.list_docs(kind="memory")}
+
+
+@router.delete(
+    "/memory/{doc_id}",
+    summary="Delete one runtime memory note (unplug like a module)",
+    dependencies=[Depends(require_api_key)],
+)
+async def memory_delete(doc_id: str, request: Request) -> Dict[str, Any]:
+    settings = get_settings()
+    store = _get_store(request, settings)
+    removed = store.delete_doc(doc_id)
+    if removed == 0:
+        raise HTTPException(status_code=404, detail=f"memory {doc_id!r} not found")
+    return {"doc_id": doc_id, "removed_chunks": removed}
 
 
 @router.get(

@@ -728,6 +728,17 @@
 | OWASP LLM Top 10:Prompt Injection(界定与缓解手段,明确无根治方案) | <https://owasp.org/www-project-top-10-for-large-language-model-applications/> | agent-collaboration-protocol §2提示注入防护"缓解非根治"措辞 |
 | ChatGPT 代码生成非确定性实证(temperature=0 仍有残余非确定) | <https://arxiv.org/abs/2308.02828> | agent-collaboration-protocol §3(temperature=0 只"提高"可复现性,不承诺确定) |
 
+## 24. 运行时记忆与检索接地(knowledge/memory-and-grounding.md + vector_store memory/ground)
+
+| 主题 | 链接 | 在本仓库何处引用 |
+|---|---|---|
+| RAG(检索增强生成,外挂记忆的奠基论文) | <https://arxiv.org/abs/2005.11401> | memory-and-grounding §1(写入向量库而非改权重) |
+| 灾难性遗忘与 EWC(弹性权重巩固) | <https://arxiv.org/abs/1612.00796> | memory-and-grounding §1(为何选外挂记忆而非持续微调) |
+| LoRA(参数高效微调,插件式新知识) | <https://arxiv.org/abs/2106.09685> | memory-and-grounding §1(可装卸记忆的权重侧对照) |
+| Self-Consistency(多次采样一致性核查) | <https://arxiv.org/abs/2203.11171> | memory-and-grounding §2(幻觉缓解分层) |
+| Tree-of-Thoughts(多路径推理对抗过早收敛) | <https://arxiv.org/abs/2305.10601> | memory-and-grounding §3 |
+| MemGPT(分层记忆管理,海马体/皮层类比的工程化) | <https://arxiv.org/abs/2310.08560> | memory-and-grounding §1(运行时记忆 kind="memory" 设计参照) |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。
