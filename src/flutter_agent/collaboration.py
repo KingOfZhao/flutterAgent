@@ -1,0 +1,395 @@
+"""Multi-agent collaboration on top of the provider registry.
+
+Three modes, all returning a full transcript so the caller can audit every
+hop (constraining-layer discipline: nothing is hidden inside the orchestration):
+
+  * ``solo``      one agent answers the task.
+  * ``debate``    proposer drafts -> reviewer critiques -> proposer revises,
+                  for up to ``collab_max_rounds`` rounds. The reviewer should
+                  run on a *different* provider where possible so critique is
+                  not self-confirmation (verifier/policy isolation; see
+                  knowledge/model-theory-deepdive.md §4.3).
+  * ``committee`` N proposers answer in parallel -> a judge synthesizes the
+                  final answer from all proposals.
+  * ``peer_review`` N proposers answer in parallel, then every agent scores
+                  the *other* agents' proposals on a shared rubric
+                  (correctness / completeness / risk, 0-10). Proposals are
+                  anonymized before scoring so agents cannot favour
+                  themselves by name, an agent never scores its own
+                  proposal, and the highest aggregate score wins. The full
+                  scoreboard is returned for audit.
+
+The message format (``TranscriptEntry``) and the peer-review rubric together
+form the inter-agent collaboration protocol; the human-readable spec lives in
+``knowledge/agent-collaboration-protocol.md``.
+"""
+from __future__ import annotations
+
+import asyncio
+import json
+import re
+import time
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
+
+from .config import Settings
+from .deepseek_client import DeepSeekClient
+from .providers import ProviderRegistry
+
+_APPROVE_TOKEN = "APPROVE"
+
+_DEFAULT_PROPOSER_SYSTEM = (
+    "你是一个严谨的资深工程师。直接给出对任务的最优解答,"
+    "明确列出关键假设;不要寒暄。"
+)
+_DEFAULT_REVIEWER_SYSTEM = (
+    "你是一个挑剔的评审者。指出方案中的错误、风险与遗漏,按严重程度排序;"
+    f"若方案可以接受,仅输出 {_APPROVE_TOKEN}。不要复述方案。"
+)
+_DEFAULT_JUDGE_SYSTEM = (
+    "你是一个公正的裁判。综合多个候选方案的长处,输出一个最终方案,"
+    "并简述每个候选被采纳/否决的理由。"
+)
+_PEER_SCORE_SYSTEM = (
+    "你是一个公正的技术评审。对给定的匿名候选方案,按以下三个维度独立打分"
+    "(0-10 整数):correctness(正确性)、completeness(完整性)、"
+    "risk_control(风险控制)。只输出一个 JSON 对象,格式:\n"
+    '{"correctness": 0-10, "completeness": 0-10, "risk_control": 0-10, '
+    '"justification": "一句话理由"}\n'
+    "不要输出任何其他文字。"
+)
+
+_SCORE_DIMENSIONS = ("correctness", "completeness", "risk_control")
+
+
+class AgentSpec(BaseModel):
+    """One participant: a name, a provider routing ref, and a system prompt."""
+
+    name: str = Field(min_length=1)
+    provider: str = Field(
+        default="",
+        description="Routing ref: 'provider', 'provider:model' or '@role'.",
+    )
+    system_prompt: str = Field(default="")
+    role: str = Field(
+        default="proposer",
+        pattern=r"^(proposer|reviewer|judge)$",
+    )
+
+
+class TranscriptEntry(BaseModel):
+    agent: str
+    role: str
+    round: int
+    content: str
+    usage: Dict[str, int] = Field(default_factory=dict)
+    elapsed_ms: int = 0
+
+
+class PeerScore(BaseModel):
+    """One agent's rubric score for one (anonymized) candidate proposal."""
+
+    judge: str
+    candidate: str
+    scores: Dict[str, int] = Field(default_factory=dict)
+    total: int = 0
+    justification: str = ""
+    parse_ok: bool = True
+
+
+class ScoreboardRow(BaseModel):
+    agent: str
+    aggregate: float
+    votes: int
+
+
+class CollaborationResult(BaseModel):
+    mode: str
+    final_answer: str
+    rounds_used: int
+    approved: Optional[bool] = None
+    winner: Optional[str] = None
+    scoreboard: List[ScoreboardRow] = Field(default_factory=list)
+    peer_scores: List[PeerScore] = Field(default_factory=list)
+    transcript: List[TranscriptEntry] = Field(default_factory=list)
+
+
+def _parse_score_json(text: str) -> Optional[Dict[str, Any]]:
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        return None
+    try:
+        data = json.loads(match.group(0))
+    except ValueError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _default_system(role: str) -> str:
+    return {
+        "proposer": _DEFAULT_PROPOSER_SYSTEM,
+        "reviewer": _DEFAULT_REVIEWER_SYSTEM,
+        "judge": _DEFAULT_JUDGE_SYSTEM,
+    }[role]
+
+
+class AgentTeam:
+    """Executes collaboration modes against a ``ProviderRegistry``."""
+
+    def __init__(self, settings: Settings, registry: ProviderRegistry):
+        self._settings = settings
+        self._registry = registry
+
+    @property
+    def registry(self) -> ProviderRegistry:
+        return self._registry
+
+    async def _ask(
+        self,
+        spec: AgentSpec,
+        messages: List[Dict[str, str]],
+        round_no: int,
+    ) -> TranscriptEntry:
+        client, model = self._registry.resolve(spec.provider or None)
+        system = spec.system_prompt or _default_system(spec.role)
+        start = time.monotonic()
+        completion = await client.chat(
+            [{"role": "system", "content": system}, *messages], model=model
+        )
+        return TranscriptEntry(
+            agent=spec.name,
+            role=spec.role,
+            round=round_no,
+            content=DeepSeekClient.extract_text(completion),
+            usage=DeepSeekClient.extract_usage(completion),
+            elapsed_ms=int((time.monotonic() - start) * 1000),
+        )
+
+    # ---------------------------------------------------------------- modes
+
+    async def run_solo(self, task: str, agent: AgentSpec) -> CollaborationResult:
+        entry = await self._ask(agent, [{"role": "user", "content": task}], 1)
+        return CollaborationResult(
+            mode="solo", final_answer=entry.content, rounds_used=1, transcript=[entry]
+        )
+
+    async def run_debate(
+        self,
+        task: str,
+        proposer: AgentSpec,
+        reviewer: AgentSpec,
+        max_rounds: Optional[int] = None,
+    ) -> CollaborationResult:
+        rounds = min(max_rounds or self._settings.collab_max_rounds,
+                     self._settings.collab_max_rounds)
+        transcript: List[TranscriptEntry] = []
+        draft_entry = await self._ask(
+            proposer, [{"role": "user", "content": task}], 1
+        )
+        transcript.append(draft_entry)
+        answer = draft_entry.content
+        approved = False
+
+        for round_no in range(1, rounds + 1):
+            review_entry = await self._ask(
+                reviewer,
+                [
+                    {"role": "user", "content": f"任务:\n{task}\n\n候选方案:\n{answer}"},
+                ],
+                round_no,
+            )
+            transcript.append(review_entry)
+            verdict = review_entry.content.strip()
+            if verdict.upper().startswith(_APPROVE_TOKEN):
+                approved = True
+                break
+            revise_entry = await self._ask(
+                proposer,
+                [
+                    {
+                        "role": "user",
+                        "content": (
+                            f"任务:\n{task}\n\n你此前的方案:\n{answer}\n\n"
+                            f"评审意见:\n{verdict}\n\n请输出修订后的完整方案。"
+                        ),
+                    },
+                ],
+                round_no,
+            )
+            transcript.append(revise_entry)
+            answer = revise_entry.content
+
+        return CollaborationResult(
+            mode="debate",
+            final_answer=answer,
+            rounds_used=max(e.round for e in transcript),
+            approved=approved,
+            transcript=transcript,
+        )
+
+    async def run_committee(
+        self,
+        task: str,
+        proposers: List[AgentSpec],
+        judge: AgentSpec,
+    ) -> CollaborationResult:
+        entries = await asyncio.gather(
+            *(self._ask(p, [{"role": "user", "content": task}], 1) for p in proposers)
+        )
+        transcript = list(entries)
+        proposals = "\n\n".join(
+            f"### 候选 {i + 1}(来自 {e.agent})\n{e.content}"
+            for i, e in enumerate(entries)
+        )
+        judge_entry = await self._ask(
+            judge,
+            [{"role": "user", "content": f"任务:\n{task}\n\n候选方案:\n\n{proposals}"}],
+            2,
+        )
+        transcript.append(judge_entry)
+        return CollaborationResult(
+            mode="committee",
+            final_answer=judge_entry.content,
+            rounds_used=2,
+            transcript=transcript,
+        )
+
+    async def run_peer_review(
+        self,
+        task: str,
+        proposers: List[AgentSpec],
+    ) -> CollaborationResult:
+        """Propose in parallel, then cross-score anonymized proposals.
+
+        Anti-bias measures (protocol §3, agent-collaboration-protocol.md):
+        proposals are relabeled 候选A/B/... before scoring, an agent never
+        scores its own proposal, and every raw score row is returned.
+        """
+        if len(proposers) < 2:
+            raise ValueError("peer_review requires at least 2 proposers")
+        entries = await asyncio.gather(
+            *(self._ask(p, [{"role": "user", "content": task}], 1) for p in proposers)
+        )
+        transcript = list(entries)
+        labels = [chr(ord("A") + i) for i in range(len(entries))]
+
+        async def score(judge: AgentSpec, cand_idx: int) -> PeerScore:
+            cand = entries[cand_idx]
+            scorer = AgentSpec(
+                name=judge.name,
+                provider=judge.provider,
+                system_prompt=_PEER_SCORE_SYSTEM,
+                role="reviewer",
+            )
+            entry = await self._ask(
+                scorer,
+                [
+                    {
+                        "role": "user",
+                        "content": (
+                            f"任务:\n{task}\n\n候选方案 {labels[cand_idx]}(匿名):\n"
+                            f"{cand.content}"
+                        ),
+                    },
+                ],
+                2,
+            )
+            transcript.append(entry)
+            data = _parse_score_json(entry.content)
+            if data is None:
+                return PeerScore(
+                    judge=judge.name,
+                    candidate=cand.agent,
+                    parse_ok=False,
+                    justification=entry.content[:200],
+                )
+            scores = {
+                dim: max(0, min(10, int(data.get(dim, 0) or 0)))
+                for dim in _SCORE_DIMENSIONS
+            }
+            return PeerScore(
+                judge=judge.name,
+                candidate=cand.agent,
+                scores=scores,
+                total=sum(scores.values()),
+                justification=str(data.get("justification", "")),
+            )
+
+        jobs = [
+            score(judge, idx)
+            for j, judge in enumerate(proposers)
+            for idx in range(len(entries))
+            if idx != j  # never score one's own proposal
+        ]
+        peer_scores = list(await asyncio.gather(*jobs))
+
+        scoreboard: List[ScoreboardRow] = []
+        for entry in entries:
+            rows = [s for s in peer_scores if s.candidate == entry.agent and s.parse_ok]
+            aggregate = (
+                round(sum(s.total for s in rows) / len(rows), 2) if rows else 0.0
+            )
+            scoreboard.append(
+                ScoreboardRow(agent=entry.agent, aggregate=aggregate, votes=len(rows))
+            )
+        scoreboard.sort(key=lambda r: r.aggregate, reverse=True)
+        winner = scoreboard[0].agent
+        final = next(e.content for e in entries if e.agent == winner)
+
+        return CollaborationResult(
+            mode="peer_review",
+            final_answer=final,
+            rounds_used=2,
+            winner=winner,
+            scoreboard=scoreboard,
+            peer_scores=peer_scores,
+            transcript=transcript,
+        )
+
+    # ------------------------------------------------------------- dispatch
+
+    async def run(
+        self,
+        task: str,
+        mode: str,
+        agents: Optional[List[AgentSpec]] = None,
+        max_rounds: Optional[int] = None,
+    ) -> CollaborationResult:
+        agents = agents or []
+        if len(agents) > self._settings.collab_max_agents:
+            raise ValueError(
+                f"too many agents: {len(agents)} > {self._settings.collab_max_agents}"
+            )
+        if mode == "solo":
+            agent = agents[0] if agents else AgentSpec(name="solo")
+            return await self.run_solo(task, agent)
+        if mode == "debate":
+            proposer = next((a for a in agents if a.role == "proposer"), None)
+            reviewer = next((a for a in agents if a.role == "reviewer"), None)
+            proposer = proposer or AgentSpec(name="proposer", role="proposer")
+            reviewer = reviewer or AgentSpec(
+                name="reviewer", role="reviewer", provider="@reviewer"
+            )
+            return await self.run_debate(task, proposer, reviewer, max_rounds)
+        if mode == "committee":
+            proposers = [a for a in agents if a.role == "proposer"]
+            judge = next((a for a in agents if a.role == "judge"), None)
+            if not proposers:
+                proposers = [
+                    AgentSpec(name=f"proposer-{n}", role="proposer", provider=n)
+                    for n in self._registry.names
+                ][: self._settings.collab_max_agents - 1] or [
+                    AgentSpec(name="proposer", role="proposer")
+                ]
+            judge = judge or AgentSpec(name="judge", role="judge", provider="@judge")
+            return await self.run_committee(task, proposers, judge)
+        if mode == "peer_review":
+            proposers = [a for a in agents if a.role == "proposer"]
+            if not proposers:
+                proposers = [
+                    AgentSpec(name=f"agent-{n}", role="proposer", provider=n)
+                    for n in self._registry.names
+                ][: self._settings.collab_max_agents]
+            return await self.run_peer_review(task, proposers)
+        raise ValueError(f"unknown collaboration mode: {mode!r}")

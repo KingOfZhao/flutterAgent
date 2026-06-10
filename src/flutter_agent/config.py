@@ -37,6 +37,30 @@ class Settings(BaseSettings):
         description="Optional dedicated model for planning/classify stage.",
     )
 
+    # ---- Multi-provider routing ----
+    model_providers: str = Field(
+        default="",
+        description="JSON list of extra OpenAI-compatible providers (see providers.py).",
+    )
+    providers_config_path: str = Field(
+        default="data/providers.json",
+        description="Optional JSON file declaring extra providers.",
+    )
+
+    # ---- Agent collaboration ----
+    collab_max_agents: int = Field(
+        default=4,
+        ge=1,
+        le=16,
+        description="Upper bound on agents in one collaboration request.",
+    )
+    collab_max_rounds: int = Field(
+        default=2,
+        ge=1,
+        le=5,
+        description="Upper bound on debate revision rounds.",
+    )
+
     # ---- Local server ----
     host: str = Field(default="127.0.0.1")
     port: int = Field(default=8765)
@@ -120,6 +144,11 @@ class Settings(BaseSettings):
     @property
     def ingestion_seen_file(self) -> Path:
         p = Path(self.ingestion_seen_path)
+        return p if p.is_absolute() else (REPO_ROOT / p)
+
+    @property
+    def providers_config_file(self) -> Path:
+        p = Path(self.providers_config_path)
         return p if p.is_absolute() else (REPO_ROOT / p)
 
     @property

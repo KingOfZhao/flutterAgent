@@ -25,10 +25,11 @@ from . import __version__
 from .cache import RunCache
 from .config import get_settings
 from .log_setup import configure_logging
-from .deepseek_client import DeepSeekClient
 from .pipeline import RefinementPipeline
 from .pub_validator import PubValidator
-from .routes import ingest, metrics, openai_compat, refine, runs, skills, vector
+from .collaboration import AgentTeam
+from .providers import MultiProviderClient, ProviderRegistry
+from .routes import agents, ingest, metrics, openai_compat, refine, runs, skills, vector
 from .run_store import RunStore
 from .schemas import HealthResponse
 from .skill_loader import SkillRegistry
@@ -43,7 +44,9 @@ async def lifespan(app: FastAPI):
     configure_logging(settings)
     registry = SkillRegistry(settings.skills_path)
     registry.reload()
-    client = DeepSeekClient(settings)
+    provider_registry = ProviderRegistry(settings)
+    client = MultiProviderClient(provider_registry)
+    agent_team = AgentTeam(settings, provider_registry)
     run_store = RunStore(settings.runs_log_file)
     run_cache = RunCache(settings.runs_log_file)
     run_cache.load()
@@ -80,6 +83,8 @@ async def lifespan(app: FastAPI):
     app.state.settings = settings
     app.state.registry = registry
     app.state.client = client
+    app.state.provider_registry = provider_registry
+    app.state.agent_team = agent_team
     app.state.pipeline = pipeline
     app.state.run_store = run_store
     app.state.run_cache = run_cache
@@ -88,9 +93,10 @@ async def lifespan(app: FastAPI):
         app.state.vector_store = vector_store
 
     logger.info(
-        "flutter-agent ready: model=%s base=%s skills=%d cache_entries=%d",
+        "flutter-agent ready: model=%s base=%s providers=%s skills=%d cache_entries=%d",
         settings.deepseek_model,
         settings.deepseek_base_url,
+        provider_registry.names,
         len(registry),
         len(run_cache),
     )
@@ -153,6 +159,8 @@ a{{color:#2563eb}}</style></head>
   <li><code>GET  /v1/skills</code> — list loaded skill docs</li>
   <li><code>POST /v1/skills/reload</code> — hot-reload <code>SKILL.md</code> files</li>
   <li><code>POST /v1/ingest</code> — discover open-source dev signals (HF models + arXiv papers)</li>
+  <li><code>POST /v1/agents/collaborate</code> — multi-agent solo/debate/committee/peer_review collaboration across providers</li>
+  <li><code>GET  /v1/agents/providers</code> — configured AI providers (key-free view)</li>
   <li><code>POST /v1/vector/search</code> — local semantic search over skills + knowledge (offline vector DB)</li>
   <li><code>GET  /v1/runs</code> &middot; <code>GET /v1/runs/{{id}}</code> — audit log of past pipelines</li>
   <li><code>GET  /v1/metrics</code> — aggregate run statistics (tokens, cost, success rate)</li>
@@ -184,3 +192,4 @@ app.include_router(runs.router)
 app.include_router(openai_compat.router)
 app.include_router(metrics.router)
 app.include_router(vector.router)
+app.include_router(agents.router)

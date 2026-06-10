@@ -716,6 +716,15 @@
 | vLLM 仓库(82k★@2026-06,推理基础设施共有化) | <https://github.com/vllm-project/vllm> | model-theory-deepdive §10.1 |
 | CrewAI 仓库(53k★@2026-06,约束性编排需求) | <https://github.com/crewAIInc/crewAI> | model-theory-deepdive §10.1 反例检查 |
 
+## 23. 多 Agent 协作协议(knowledge/agent-collaboration-protocol.md + collaboration.py)
+
+| 主题 | 链接 | 在本仓库何处引用 |
+|---|---|---|
+| LLM 评审位置偏差(评分顺序/位置影响判优,需匿名化+结构化评分) | <https://arxiv.org/abs/2305.17926> | agent-collaboration-protocol §3(匿名化、统一 JSON 评分准则) |
+| LLM 自我偏好偏差(评审者偏好自己/同族模型的输出) | <https://arxiv.org/abs/2404.13076> | agent-collaboration-protocol §3(禁自评、跨提供商路由) |
+| MT-Bench / LLM-as-a-judge(互评判优范式与其局限) | <https://arxiv.org/abs/2306.05685> | agent-collaboration-protocol §3(已知局限:互评≠客观正确性) |
+| Multi-agent debate 提升事实性与推理 | <https://arxiv.org/abs/2305.14325> | collaboration.py debate 模式设计依据 |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。

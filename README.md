@@ -299,6 +299,11 @@ see_also: [flutter-android-platform]          # 相关 skill 交叉引用(可选
 | `LOCAL_API_KEY` | 本地 API 鉴权 token,空则关闭 | (空) |
 | `HOST` / `PORT` | 监听地址 | `127.0.0.1` / `8765` |
 | `SKILLS_DIR` | skills 目录 | `skills` |
+| `MODEL_PROVIDERS` | 额外 AI 提供商(JSON 列表,见 `knowledge/agent-collaboration-protocol.md` §5) | (空) |
+| `PROVIDERS_CONFIG_PATH` | 提供商声明文件 | `data/providers.json` |
+| `COLLAB_MAX_AGENTS` / `COLLAB_MAX_ROUNDS` | 协作 Agent 数 / debate 轮数上限 | `4` / `2` |
+
+> **多提供商路由**:配置多个提供商后,任何接受模型名的地方(含 `DEEPSEEK_PLANNER_MODEL`)都支持 `provider:model`、`@role` 引用语法;未配置时行为与单提供商完全一致。
 
 ## 流水线阶段
 
@@ -352,6 +357,8 @@ requirement
 | `GET` | `/v1/runs?limit=N` | 列出最近 N 次运行(每项带 `cost` + `bad_packages`) |
 | `GET` | `/v1/runs/{id}` | 取某次运行的完整 `RefineResponse` |
 | `GET` | `/v1/metrics` | 聚合统计(总 runs、tokens、cost、阶段成功率、高频 skill) |
+| `POST` | `/v1/agents/collaborate` | 多 Agent 协作:`solo` / `debate`(提案↔评审迭代)/ `committee`(多提案+裁判综合)/ `peer_review`(匿名交叉打分判优),返回完整 transcript/scoreboard,详见 `knowledge/agent-collaboration-protocol.md` |
+| `GET` | `/v1/agents/providers` | 已配置 AI 提供商列表(不含密钥) |
 | `POST` | `/v1/vector/search` | 本地向量库语义检索(skills + knowledge,零依赖离线,详见下节) |
 | `POST` | `/v1/vector/rebuild` | 从磁盘重建向量索引 |
 | `GET` | `/v1/vector/stats` | 向量索引统计(chunks/documents/dim) |
