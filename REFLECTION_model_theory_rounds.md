@@ -105,3 +105,18 @@
 - deepdive 各线"天花板"小节构成路线图第 11 条(下一个瓶颈论证)的机制依据草稿;
 - prediction-tracker 不变(本期无新模型发布,无证据可回填;含义 1-3 为机制预测,
   留在 deepdive 内不混入趋势预测表)。
+
+## 附:向量库语料反思填充五轮(2026-06-10)
+
+| 轮 | 反思出的缺口 | 填充 | 检索断言 |
+|---|---|---|---|
+| 1 | 选型类语料缺架构维度,"项目怎么分层"无接地依据 | flutter-app-architecture(官方 MVVM 两层/feature-first/依赖规则) | "项目结构分层 repository 单一事实源" |
+| 2 | 路由/深链高频需求只有 skill 无知识语料 | flutter-navigation-deeplink(选型/守卫 redirect/App Links 验证) | "go_router 深链 redirect 守卫" |
+| 3 | 离线同步语料假设网络层已做对,请求层本身无支撑 | flutter-networking-api(超时三件套/幂等重试/错误建模/无反射序列化) | "dio 超时重试 幂等 json_serializable" |
+| 4 | 安全是接地答错代价最高的领域,只有一句"客户端无真密钥" | flutter-mobile-security(OWASP 威胁分级/加密存储/pinning 风险/混淆边界) | "secure storage 证书锁定 混淆 keystore" |
+| 5 | 前九篇全是"功能做出来",可用性合规(i18n/a11y)零覆盖 | flutter-i18n-accessibility(ARB+ICU 复数/RTL/语义树/guideline CI 断言) | "国际化 arb 复数 读屏 无障碍 对比度" |
+
+元发现:**给向量库填语料,反思的正确对象是"检索失败面"而非"内容是否正确"**——
+每轮缺口都来自问"哪类高频中文查询现在会召回噪声或空集",填充后立即把该查询固化为
+检索回归断言(test_flutter_corpus_docs_are_retrievable),语料质量从主观判断
+变成可执行检验。每条结论仍按仓库纪律带 REFERENCES §26 可点击来源。

@@ -782,6 +782,10 @@
 | flutter_secure_storage(Keychain/Keystore 加密存储) | <https://pub.dev/packages/flutter_secure_storage> | flutter-mobile-security §2 |
 | OWASP:证书锁定的收益与风险(pin 轮换/自拒绝服务) | <https://cheatsheetseries.owasp.org/cheatsheets/Pinning_Cheat_Sheet.html> | flutter-mobile-security §3 |
 | Flutter 官方:Dart 代码混淆(--obfuscate 能力与边界) | <https://docs.flutter.dev/deployment/obfuscate> | flutter-mobile-security §4 |
+| Flutter 官方:国际化指南(ARB/gen-l10n/ICU 复数) | <https://docs.flutter.dev/ui/accessibility-and-internationalization/internationalization> | flutter-i18n-accessibility §1 |
+| intl 包(DateFormat/NumberFormat 按 locale 格式化) | <https://pub.dev/packages/intl> | flutter-i18n-accessibility §1 |
+| Flutter 官方:无障碍指南(语义树/对比度/点击目标/guideline 断言) | <https://docs.flutter.dev/ui/accessibility-and-internationalization/accessibility> | flutter-i18n-accessibility §2 |
+| WCAG 2.x:文本对比度最低标准(1.4.3) | <https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html> | flutter-i18n-accessibility §2 |
 
 ---
 
