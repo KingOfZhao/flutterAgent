@@ -16,3 +16,9 @@ logs/
 *.log
 data/
 skills/flutter-watch-*/
+
+# eval working files (runtime-generated)
+eval/candidates.jsonl
+eval/drafts.jsonl
+eval/samples.jsonl
+eval/results_*.jsonl

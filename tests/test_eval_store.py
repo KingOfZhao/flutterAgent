@@ -91,6 +91,14 @@ def test_sealed_split_is_deterministic_and_stable():
     assert 20 <= sealed_count <= 60
 
 
+def test_committed_smoke_samples_are_valid():
+    repo_root = Path(__file__).resolve().parents[1]
+    samples = load_samples(repo_root / "eval" / "smoke_samples.jsonl", strict=True)
+    assert len(samples) == 3
+    assert all(s["kind"] == "smoke" for s in samples)
+    assert not any(is_draft(s) for s in samples)
+
+
 def test_draft_from_candidate_carries_source_and_todo_rubric():
     cand = {
         "id": "run-9",
