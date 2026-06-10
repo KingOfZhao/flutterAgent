@@ -773,6 +773,11 @@
 | go_router 官方文档(redirect/refreshListenable/ShellRoute) | <https://pub.dev/documentation/go_router/latest/topics/Get%20started-topic.html> | flutter-navigation-deeplink §2 |
 | Flutter 官方:深链接入(App Links / Universal Links) | <https://docs.flutter.dev/ui/navigation/deep-linking> | flutter-navigation-deeplink §3 |
 | Android 官方:App Links 验证(assetlinks.json) | <https://developer.android.com/training/app-links/verify-android-applinks> | flutter-navigation-deeplink §3 |
+| Flutter 官方:网络请求指南(http 包与平台原生引擎) | <https://docs.flutter.dev/data-and-backend/networking> | flutter-networking-api §1 |
+| dio 官方文档(拦截器/超时/CancelToken) | <https://pub.dev/packages/dio> | flutter-networking-api §1/§2 |
+| RFC 9110:幂等方法与重试语义 | <https://www.rfc-editor.org/rfc/rfc9110#name-idempotent-methods> | flutter-networking-api §2 |
+| Flutter 官方:JSON 序列化(无反射,代码生成 json_serializable) | <https://docs.flutter.dev/data-and-backend/serialization/json> | flutter-networking-api §3 |
+| freezed(不可变模型与 sealed 类错误建模) | <https://pub.dev/packages/freezed> | flutter-networking-api §3 |
 
 ---
 
