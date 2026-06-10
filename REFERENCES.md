@@ -665,6 +665,25 @@
 | 上游 SKILL.md(五重审视框架原文) | <https://github.com/syzkillall/comprehensive-thinking-skill/blob/main/SKILL.md> |
 | 上游大师理论体系研究法(已内联进本仓库 skill 附录) | <https://github.com/syzkillall/comprehensive-thinking-skill/blob/main/references/master-theory-research.md> |
 
+## 22. 模型理解与能力固化(knowledge/ 知识库)
+
+支撑 `knowledge/capability-fixation.md`、`knowledge/capability-degradation-taxonomy.md`、
+`knowledge/claude-eval-methodology.md` 等文档的理论出处。
+
+| 主题 | 链接 | 在何处引用 |
+|---|---|---|
+| 灾难性遗忘(原始论述) | McCloskey & Cohen 1989, *Catastrophic Interference in Connectionist Networks* | capability-fixation §1.1 |
+| 持续学习综述(遗忘的现代处理) | <https://arxiv.org/abs/1802.07569> | capability-fixation §1.1 |
+| Goodhart 定律的形式化分类 | <https://arxiv.org/abs/1803.04585> | capability-fixation §1.2 / taxonomy D6 |
+| 数据集漂移(经典专著) | Quiñonero-Candela et al. 2009, *Dataset Shift in Machine Learning*, MIT Press | capability-fixation §1.3 / taxonomy D7 |
+| Lehman 软件演化定律 | Lehman 1980, *Programs, Life Cycles, and Laws of Software Evolution*, Proc. IEEE | capability-fixation §1.4 |
+| SPRT 序贯检验(门禁统计原型) | Wald 1945, *Sequential Tests of Statistical Hypotheses* | capability-fixation §2 |
+| fishtest(棘轮门禁的工程实践) | <https://github.com/official-stockfish/fishtest> | capability-fixation §2 |
+| LLM-as-judge 的偏差实证 | <https://arxiv.org/abs/2306.05685> | claude-eval-methodology §1.4 |
+| 长上下文中部信息丢失(lost in the middle) | <https://arxiv.org/abs/2307.03172> | taxonomy D4 |
+| Reflexion(语言强化,飞轮的学术原型) | <https://arxiv.org/abs/2303.11366> | capability-fixation §8 |
+| METR 任务时长测量 | <https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/> | prediction-tracker 预测 2 |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。
