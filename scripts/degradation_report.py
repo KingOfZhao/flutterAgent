@@ -23,7 +23,12 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from flutter_agent.degradation import DEFAULT_WINDOW, load_runs, run_all_detectors  # noqa: E402
+from flutter_agent.degradation import (  # noqa: E402
+    DEFAULT_WINDOW,
+    load_runs,
+    load_thresholds,
+    run_all_detectors,
+)
 
 
 def main(
@@ -31,8 +36,15 @@ def main(
         ROOT / "logs" / "runs.jsonl", "--runs", help="Path to runs.jsonl."
     ),
     window: int = typer.Option(DEFAULT_WINDOW, "--window", help="Runs per comparison window."),
+    thresholds: Path = typer.Option(
+        ROOT / "eval" / "degradation_thresholds.json",
+        "--thresholds",
+        help="Thresholds file with calibration metadata.",
+    ),
 ) -> None:
-    summary = run_all_detectors(load_runs(runs), window=window)
+    summary = run_all_detectors(
+        load_runs(runs), window=window, thresholds=load_thresholds(thresholds)
+    )
     typer.echo(json.dumps(summary, ensure_ascii=False, indent=2))
     raise typer.Exit(code=1 if summary["alerts"] else 0)
 

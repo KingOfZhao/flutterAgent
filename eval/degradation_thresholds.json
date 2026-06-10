@@ -1,0 +1,8 @@
+{
+  "window": null,
+  "failure_rate_delta": 0.10,
+  "max_cached_share": 0.80,
+  "max_corpus_growth_ratio": 0.10,
+  "calibrated_at": null,
+  "basis": "prior"
+}

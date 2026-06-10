@@ -10,6 +10,7 @@ from flutter_agent.degradation import (
     detect_model_change,
     diff_corpus,
     load_runs,
+    load_thresholds,
     run_all_detectors,
     snapshot_corpus,
 )
@@ -76,6 +77,37 @@ def test_run_all_detectors_aggregates_alerts():
     assert "D1" in summary["alerts"]
     assert "D1/D2" in summary["alerts"]
     assert summary["total_runs"] == 20
+
+
+def test_load_thresholds_merges_and_rejects_unknown(tmp_path: Path):
+    p = tmp_path / "th.json"
+    p.write_text(json.dumps({"failure_rate_delta": 0.2, "calibrated_at": "2026-06-10", "basis": "calibrated"}), encoding="utf-8")
+    th = load_thresholds(p)
+    assert th["failure_rate_delta"] == 0.2
+    assert th["max_cached_share"] == 0.80
+    assert th["basis"] == "calibrated"
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({"nope": 1}), encoding="utf-8")
+    import pytest
+
+    with pytest.raises(ValueError):
+        load_thresholds(bad)
+
+
+def test_run_all_detectors_uses_thresholds():
+    prior = [_run(f"p{i}") for i in range(10)]
+    recent = [_run(f"r{i}", failing=i < 2) for i in range(10)]  # 0.2 failure rate
+    loose = run_all_detectors(prior + recent, window=10, thresholds={"failure_rate_delta": 0.5})
+    strict = run_all_detectors(prior + recent, window=10, thresholds={"failure_rate_delta": 0.1})
+    assert "D1/D2" not in loose["alerts"]
+    assert "D1/D2" in strict["alerts"]
+    assert loose["thresholds"]["basis"] == "prior"
+
+
+def test_committed_thresholds_file_loads():
+    path = Path(__file__).resolve().parents[1] / "eval" / "degradation_thresholds.json"
+    th = load_thresholds(path)
+    assert th["basis"] == "prior"
 
 
 def _corpus(tmp_path: Path, skills: dict) -> Path:

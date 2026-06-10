@@ -17,6 +17,32 @@ from .run_store import _failure_reasons
 
 DEFAULT_WINDOW = 50
 
+DEFAULT_THRESHOLDS = {
+    "window": None,
+    "failure_rate_delta": 0.10,
+    "max_cached_share": 0.80,
+    "max_corpus_growth_ratio": 0.10,
+    "calibrated_at": None,
+    "basis": "prior",
+}
+
+
+def load_thresholds(path: Path) -> dict:
+    """Merge a thresholds file over the priors; unknown keys are rejected.
+
+    The file carries its own calibration metadata (``calibrated_at``,
+    ``basis``) so every threshold in a report is auditable — a number
+    without a calibration date is a prior, not a measurement.
+    """
+    merged = dict(DEFAULT_THRESHOLDS)
+    if path.exists():
+        data = json.loads(path.read_text(encoding="utf-8"))
+        unknown = set(data) - set(DEFAULT_THRESHOLDS)
+        if unknown:
+            raise ValueError(f"unknown threshold keys: {sorted(unknown)}")
+        merged.update(data)
+    return merged
+
 
 def load_runs(path: Path) -> List[dict]:
     if not path.exists():
@@ -156,15 +182,33 @@ def diff_corpus(
     }
 
 
-def run_all_detectors(runs: List[dict], *, window: int = DEFAULT_WINDOW) -> dict:
+def run_all_detectors(
+    runs: List[dict],
+    *,
+    window: int = DEFAULT_WINDOW,
+    thresholds: dict | None = None,
+) -> dict:
+    th = dict(DEFAULT_THRESHOLDS)
+    if thresholds:
+        th.update(thresholds)
+    if th.get("window"):
+        window = int(th["window"])
     reports = [
         detect_model_change(runs, window=window),
-        detect_failure_rate_shift(runs, window=window),
-        detect_cache_staleness(runs, window=window),
+        detect_failure_rate_shift(
+            runs, window=window, threshold=float(th["failure_rate_delta"])
+        ),
+        detect_cache_staleness(
+            runs, window=window, max_cached_share=float(th["max_cached_share"])
+        ),
     ]
     return {
         "total_runs": len(runs),
         "window": window,
+        "thresholds": {
+            "calibrated_at": th.get("calibrated_at"),
+            "basis": th.get("basis"),
+        },
         "alerts": [r["source"] for r in reports if r["alert"]],
         "reports": reports,
     }
