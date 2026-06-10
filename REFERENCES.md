@@ -798,6 +798,10 @@
 | Flutter 官方:动画教程(AnimationController/Ticker/dispose) | <https://docs.flutter.dev/ui/animations/tutorial> | flutter-animation-ux §1 |
 | Flutter 官方:Hero 共享元素动画 | <https://docs.flutter.dev/ui/animations/hero-animations> | flutter-animation-ux §1 |
 | Material Design:动效时长与缓动规范 | <https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration> | flutter-animation-ux §2 |
+| Flutter 官方:平台通道(MethodChannel/EventChannel/线程规则) | <https://docs.flutter.dev/platform-integration/platform-channels> | flutter-platform-integration §2 |
+| pigeon(类型安全的双端通道代码生成) | <https://pub.dev/packages/pigeon> | flutter-platform-integration §2 |
+| Dart 官方:dart:ffi C 互操作(ffigen/NativeFinalizer) | <https://dart.dev/interop/c-interop> | flutter-platform-integration §3 |
+| Flutter 官方:在 Android 嵌入原生视图(PlatformView 合成模式与代价) | <https://docs.flutter.dev/platform-integration/android/platform-views> | flutter-platform-integration §4 |
 
 ---
 
