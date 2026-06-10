@@ -60,6 +60,15 @@ class Settings(BaseSettings):
         le=5,
         description="Upper bound on debate revision rounds.",
     )
+    collab_token_budget: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Soft cap on total tokens one collaboration run may spend. "
+            "0 disables the cap. Checked between debate rounds; the run "
+            "stops early with budget_exhausted=true instead of failing."
+        ),
+    )
 
     # ---- Local server ----
     host: str = Field(default="127.0.0.1")

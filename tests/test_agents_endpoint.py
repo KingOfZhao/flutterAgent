@@ -61,6 +61,49 @@ def test_collaborate_solo_with_stubbed_team():
     assert len(data["transcript"]) == 1
 
 
+def test_list_collaborations_reads_audit_log(tmp_path):
+    import json
+
+    from flutter_agent.config import Settings
+    from flutter_agent.deps import get_settings
+
+    log = tmp_path / "collab.jsonl"
+    log.write_text(
+        json.dumps({"mode": "solo", "winner": None}) + "\n"
+        + json.dumps({"mode": "peer_review", "winner": "alpha"}) + "\n",
+        encoding="utf-8",
+    )
+    app.dependency_overrides[get_settings] = lambda: Settings(
+        deepseek_api_key="", local_api_key="", collab_log_path=str(log)
+    )
+    try:
+        with TestClient(app) as client:
+            resp = client.get("/v1/agents/collaborations", params={"limit": 1})
+    finally:
+        app.dependency_overrides.pop(get_settings, None)
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["enabled"] is True
+    assert len(data["records"]) == 1
+    assert data["records"][0]["mode"] == "peer_review"
+
+
+def test_list_collaborations_disabled(tmp_path):
+    from flutter_agent.config import Settings
+    from flutter_agent.deps import get_settings
+
+    app.dependency_overrides[get_settings] = lambda: Settings(
+        deepseek_api_key="", local_api_key="", collab_log_path=""
+    )
+    try:
+        with TestClient(app) as client:
+            resp = client.get("/v1/agents/collaborations")
+    finally:
+        app.dependency_overrides.pop(get_settings, None)
+    assert resp.status_code == 200, resp.text
+    assert resp.json() == {"enabled": False, "records": []}
+
+
 def test_collaborate_without_upstream_key_returns_502():
     """No API key configured: upstream call must fail cleanly as 502."""
     with TestClient(app) as client:

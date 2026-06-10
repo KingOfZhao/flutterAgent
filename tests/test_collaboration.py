@@ -370,6 +370,78 @@ def test_audit_log_written(tmp_path) -> None:
     assert record["total_usage"]["total_tokens"] == 2
 
 
+def test_debate_token_budget_stops_early() -> None:
+    default = FakeClient(["v1", "v2", "v3"])
+    reviewer = FakeClient(["bad", "bad", "bad"])
+    team = _team(
+        {"default": default, "reviewer": reviewer},
+        collab_max_rounds=3,
+        collab_token_budget=1,  # draft alone (2 tokens) exceeds it
+    )
+    result = asyncio.run(team.run("task", "debate"))
+    assert result.budget_exhausted is True
+    assert result.approved is False
+    assert len(result.transcript) == 1  # only the draft ran
+
+
+def test_debate_no_budget_by_default() -> None:
+    default = FakeClient(["v1"])
+    reviewer = FakeClient(["APPROVE"])
+    team = _team({"default": default, "reviewer": reviewer})
+    result = asyncio.run(team.run("task", "debate"))
+    assert result.budget_exhausted is False
+    assert result.approved is True
+
+
+def test_peer_review_score_calls_request_json_mode() -> None:
+    a = FakeClient([
+        "proposal A",
+        '{"correctness": 5, "completeness": 5, "risk_control": 5}',
+    ])
+    b = FakeClient([
+        "proposal B",
+        '{"correctness": 6, "completeness": 6, "risk_control": 6}',
+    ])
+    team = _team({"default": a, "b": b})
+    agents = [
+        AgentSpec(name="alpha", role="proposer", provider="default"),
+        AgentSpec(name="beta", role="proposer", provider="b"),
+    ]
+    asyncio.run(team.run("task", "peer_review", agents=agents))
+    assert "response_format" not in a.call_kwargs[0]  # proposal: free-form
+    assert a.call_kwargs[1]["response_format"] == {"type": "json_object"}
+    assert b.call_kwargs[1]["response_format"] == {"type": "json_object"}
+
+
+def test_score_falls_back_when_json_mode_rejected() -> None:
+    from flutter_agent.deepseek_client import UpstreamError
+
+    class NoJsonModeClient(FakeClient):
+        async def chat(self, messages, *, model=None, **kwargs):
+            if kwargs.get("response_format") is not None:
+                raise UpstreamError("response_format unsupported", status_code=400)
+            return await super().chat(messages, model=model, **kwargs)
+
+    a = NoJsonModeClient([
+        "proposal A",
+        '{"correctness": 5, "completeness": 5, "risk_control": 5}',
+    ])
+    b = FakeClient([
+        "proposal B",
+        '{"correctness": 6, "completeness": 6, "risk_control": 6}',
+    ])
+    team = _team({"default": a, "b": b})
+    agents = [
+        AgentSpec(name="alpha", role="proposer", provider="default"),
+        AgentSpec(name="beta", role="proposer", provider="b"),
+    ]
+    result = asyncio.run(team.run("task", "peer_review", agents=agents))
+    # alpha's judge call fell back to free-form and still produced a score.
+    beta_row = next(r for r in result.scoreboard if r.agent == "beta")
+    assert beta_row.votes == 1
+    assert beta_row.aggregate == 15.0
+
+
 def test_agent_cap_enforced() -> None:
     team = _team({"default": FakeClient([])}, collab_max_agents=2)
     agents = [AgentSpec(name=f"a{i}") for i in range(3)]

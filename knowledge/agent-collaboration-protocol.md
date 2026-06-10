@@ -1,13 +1,15 @@
 # 多 AI 协作协议 (Agent Collaboration Protocol)
 
 > 实现:`src/flutter_agent/collaboration.py` + `src/flutter_agent/providers.py`
-> 接口:`POST /v1/agents/collaborate`、`GET /v1/agents/providers`
+> 接口:`POST /v1/agents/collaborate`、`GET /v1/agents/providers`、`GET /v1/agents/collaborations`
 > 设计依据:`knowledge/model-theory-deepdive.md` §4.3(验证器/策略隔离)、§6.3(补偿性/约束性两分法)
 
 ## 1. 设计原则
 
 1. **约束性层永不省略**:所有 AI 间通信走统一结构化消息并全程留痕(transcript),
-   预算上限(`COLLAB_MAX_AGENTS`、`COLLAB_MAX_ROUNDS`)由配置硬性约束——这些是
+   预算上限(`COLLAB_MAX_AGENTS`、`COLLAB_MAX_ROUNDS`、可选的 token 软预算
+   `COLLAB_TOKEN_BUDGET`,超限时 debate 提前收敛并标 `budget_exhausted=true`)
+   由配置硬性约束——这些是
    两分法中的"约束性"层,不随模型变强而减薄。
 2. **编排保持薄**:协作拓扑只有四种最小原语(solo/debate/committee/peer_review),
    不做复杂的工作流引擎——"补偿性"编排应随模型代际减薄,厚编排会被框架/模型收编
@@ -23,7 +25,7 @@
    `MAX_CONCURRENT_UPSTREAM` 信号量,不会无界爆发。
 6. **运行级留痕**:每次协作运行追加一行 JSONL 审计摘要到
    `logs/collaborations.jsonl`(`COLLAB_LOG_PATH`,置空可关):时间/模式/参与者/
-   提供商/胜者/失败/总用量。
+   提供商/胜者/失败/总用量;`GET /v1/agents/collaborations?limit=N` 可直接查询尾部。
 
 ## 2. 消息格式 (TranscriptEntry)
 
@@ -61,7 +63,8 @@
     "justification": "一句话理由"}
    ```
 
-   分值在解析时被截断到 [0,10];无法解析的打分记 `parse_ok=false` 并**从聚合中剔除**
+   打分调用附 `response_format={"type":"json_object"}` 请求上游 JSON 模式以降低
+   解析失败率(提供商不支持时自动回退自由文本);分值在解析时被截断到 [0,10];无法解析的打分记 `parse_ok=false` 并**从聚合中剔除**
    (而非按 0 分计入,避免格式失败惩罚被评者);
 4. **聚合判优**:每个候选的聚合分 = 有效打分 total 的平均;打分调用固定
    `temperature=0` 以提高可复现性;排序为确定性三级键(聚合分降序→票数降序→

@@ -140,6 +140,7 @@ class CollaborationResult(BaseModel):
     approved: Optional[bool] = None
     winner: Optional[str] = None
     winner_tied: bool = False
+    budget_exhausted: bool = False
     scoreboard: List[ScoreboardRow] = Field(default_factory=list)
     peer_scores: List[PeerScore] = Field(default_factory=list)
     failures: List[AgentFailure] = Field(default_factory=list)
@@ -196,12 +197,15 @@ class AgentTeam:
         messages: List[Dict[str, str]],
         round_no: int,
         temperature: Optional[float] = None,
+        response_format: Optional[Dict[str, Any]] = None,
     ) -> TranscriptEntry:
         provider, client, model = self._registry.resolve_named(spec.provider or None)
         system = spec.system_prompt or _default_system(spec.role)
         kwargs: Dict[str, Any] = {"model": model}
         if temperature is not None:
             kwargs["temperature"] = temperature
+        if response_format is not None:
+            kwargs["response_format"] = response_format
         start = time.monotonic()
         async with self._upstream_sem:
             completion = await client.chat(
@@ -259,6 +263,7 @@ class AgentTeam:
     ) -> CollaborationResult:
         rounds = min(max_rounds or self._settings.collab_max_rounds,
                      self._settings.collab_max_rounds)
+        budget = self._settings.collab_token_budget
         transcript: List[TranscriptEntry] = []
         draft_entry = await self._ask(
             proposer, [{"role": "user", "content": task}], 1
@@ -266,8 +271,18 @@ class AgentTeam:
         transcript.append(draft_entry)
         answer = draft_entry.content
         approved = False
+        budget_exhausted = False
+
+        def _over_budget() -> bool:
+            if not budget:
+                return False
+            spent = sum(e.usage.get("total_tokens", 0) for e in transcript)
+            return spent >= budget
 
         for round_no in range(1, rounds + 1):
+            if _over_budget():
+                budget_exhausted = True
+                break
             review_entry = await self._ask(
                 reviewer,
                 [
@@ -279,6 +294,9 @@ class AgentTeam:
             verdict = review_entry.content.strip()
             if verdict.upper().startswith(_APPROVE_TOKEN):
                 approved = True
+                break
+            if _over_budget():
+                budget_exhausted = True
                 break
             revise_entry = await self._ask(
                 proposer,
@@ -301,6 +319,7 @@ class AgentTeam:
             final_answer=answer,
             rounds_used=max(e.round for e in transcript),
             approved=approved,
+            budget_exhausted=budget_exhausted,
             transcript=transcript,
         ).finalize_usage()
 
@@ -371,21 +390,31 @@ class AgentTeam:
                 system_prompt=_PEER_SCORE_SYSTEM,
                 role="reviewer",
             )
+            score_messages = [
+                {
+                    "role": "user",
+                    "content": (
+                        f"任务:\n{task}\n\n候选方案 {labels[cand_idx]}(匿名):\n"
+                        f"{_fence(cand.content)}"
+                    ),
+                },
+            ]
             try:
-                entry = await self._ask(
-                    scorer,
-                    [
-                        {
-                            "role": "user",
-                            "content": (
-                                f"任务:\n{task}\n\n候选方案 {labels[cand_idx]}(匿名):\n"
-                                f"{_fence(cand.content)}"
-                            ),
-                        },
-                    ],
-                    2,
-                    temperature=0.0,  # scoring must be as deterministic as possible
-                )
+                try:
+                    entry = await self._ask(
+                        scorer,
+                        score_messages,
+                        2,
+                        temperature=0.0,  # scoring must be as deterministic as possible
+                        response_format={"type": "json_object"},
+                    )
+                except UpstreamError as exc:
+                    if exc.status_code != 400:
+                        raise
+                    # Provider rejects JSON mode: fall back to free-form text.
+                    entry = await self._ask(
+                        scorer, score_messages, 2, temperature=0.0
+                    )
             except UpstreamError as exc:
                 return PeerScore(
                     judge=judge.name,
@@ -472,6 +501,7 @@ class AgentTeam:
             "approved": result.approved,
             "winner": result.winner,
             "winner_tied": result.winner_tied,
+            "budget_exhausted": result.budget_exhausted,
             "agents": sorted({e.agent for e in result.transcript}),
             "providers": sorted({e.provider for e in result.transcript if e.provider}),
             "failures": [f.model_dump() for f in result.failures],

@@ -1,13 +1,16 @@
 """Multi-provider listing and multi-agent collaboration endpoints.
 
-  * GET  /v1/agents/providers    key-free view of configured providers
-  * POST /v1/agents/collaborate  run solo / debate / committee collaboration
+  * GET  /v1/agents/providers       key-free view of configured providers
+  * POST /v1/agents/collaborate     run solo / debate / committee collaboration
+  * GET  /v1/agents/collaborations  tail of the JSONL audit log
 """
 from __future__ import annotations
 
+import json
+
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from ..collaboration import AgentSpec, AgentTeam, CollaborationResult
@@ -43,6 +46,35 @@ class CollaborateRequest(BaseModel):
 async def list_providers(request: Request) -> Dict[str, Any]:
     team: AgentTeam = get_team(request)
     return {"providers": team.registry.describe()}
+
+
+@router.get(
+    "/collaborations",
+    dependencies=[Depends(require_api_key)],
+)
+async def list_collaborations(
+    settings: Settings = Depends(get_settings),
+    limit: int = Query(default=20, ge=1, le=200),
+) -> Dict[str, Any]:
+    """Return the last ``limit`` audit records (newest last)."""
+    path = settings.collab_log_file
+    if path is None:
+        return {"enabled": False, "records": []}
+    records: List[Dict[str, Any]] = []
+    try:
+        with path.open("r", encoding="utf-8") as fh:
+            lines = fh.readlines()
+    except FileNotFoundError:
+        return {"enabled": True, "records": []}
+    for line in lines[-limit:]:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            records.append(json.loads(line))
+        except ValueError:
+            continue
+    return {"enabled": True, "records": records}
 
 
 @router.post(
