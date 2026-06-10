@@ -858,6 +858,10 @@
 | FlutterFire:后台消息处理(headless isolate/顶层函数要求) | <https://firebase.flutter.dev/docs/messaging/usage/#background-messages> | flutter-push-background §3 |
 | workmanager(WorkManager/BGTaskScheduler 封装) | <https://pub.dev/packages/workmanager> | flutter-push-background §3 |
 | Android 官方:Doze 与 App Standby(后台限制) | <https://developer.android.com/training/monitoring-device-state/doze-standby> | flutter-push-background §3 |
+| Flutter 官方:Use themes to share colors and font styles | <https://docs.flutter.dev/cookbook/design/themes> | flutter-theming-design-system §1 |
+| Flutter API:ThemeExtension(自定义 design token) | <https://api.flutter.dev/flutter/material/ThemeExtension-class.html> | flutter-theming-design-system §2 |
+| Flutter API:ColorScheme.fromSeed(Material 3 种子色) | <https://api.flutter.dev/flutter/material/ColorScheme/ColorScheme.fromSeed.html> | flutter-theming-design-system §1/§3 |
+| dynamic_color(Material You 动态取色) | <https://pub.dev/packages/dynamic_color> | flutter-theming-design-system §3 |
 
 ---
 
