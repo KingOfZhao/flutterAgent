@@ -111,6 +111,9 @@ class PeerScore(BaseModel):
     total: int = 0
     justification: str = ""
     parse_ok: bool = True
+    same_provider: bool = False
+    """Judge and candidate resolved to the same provider — weaker isolation
+    (verifier/policy isolation, model-theory-deepdive.md §4.3)."""
 
 
 class ScoreboardRow(BaseModel):
@@ -355,6 +358,8 @@ class AgentTeam:
 
         async def score(judge: AgentSpec, cand_idx: int) -> PeerScore:
             cand = entries[cand_idx]
+            judge_provider, _, _ = self._registry.resolve_named(judge.provider or None)
+            same_provider = judge_provider == cand.provider
             scorer = AgentSpec(
                 name=judge.name,
                 provider=judge.provider,
@@ -381,6 +386,7 @@ class AgentTeam:
                     judge=judge.name,
                     candidate=cand.agent,
                     parse_ok=False,
+                    same_provider=same_provider,
                     justification=f"upstream error: {exc}",
                 )
             transcript.append(entry)
@@ -390,6 +396,7 @@ class AgentTeam:
                     judge=judge.name,
                     candidate=cand.agent,
                     parse_ok=False,
+                    same_provider=same_provider,
                     justification=entry.content[:200],
                 )
             scores = {
@@ -401,6 +408,7 @@ class AgentTeam:
                 candidate=cand.agent,
                 scores=scores,
                 total=sum(scores.values()),
+                same_provider=same_provider,
                 justification=str(data.get("justification", "")),
             )
 
