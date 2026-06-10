@@ -34,7 +34,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from .config import Settings
-from .deepseek_client import DeepSeekClient
+from .deepseek_client import DeepSeekClient, UpstreamError
 from .providers import ProviderRegistry
 
 _APPROVE_TOKEN = "APPROVE"
@@ -104,6 +104,13 @@ class ScoreboardRow(BaseModel):
     votes: int
 
 
+class AgentFailure(BaseModel):
+    """A participant whose upstream call failed; excluded but recorded."""
+
+    agent: str
+    error: str
+
+
 class CollaborationResult(BaseModel):
     mode: str
     final_answer: str
@@ -112,6 +119,7 @@ class CollaborationResult(BaseModel):
     winner: Optional[str] = None
     scoreboard: List[ScoreboardRow] = Field(default_factory=list)
     peer_scores: List[PeerScore] = Field(default_factory=list)
+    failures: List[AgentFailure] = Field(default_factory=list)
     transcript: List[TranscriptEntry] = Field(default_factory=list)
 
 
@@ -165,6 +173,30 @@ class AgentTeam:
             usage=DeepSeekClient.extract_usage(completion),
             elapsed_ms=int((time.monotonic() - start) * 1000),
         )
+
+    async def _gather_proposals(
+        self, task: str, proposers: List[AgentSpec]
+    ) -> tuple[List[TranscriptEntry], List[AgentFailure]]:
+        """Run proposals in parallel; one provider failing must not sink the rest."""
+        results = await asyncio.gather(
+            *(self._ask(p, [{"role": "user", "content": task}], 1) for p in proposers),
+            return_exceptions=True,
+        )
+        entries: List[TranscriptEntry] = []
+        failures: List[AgentFailure] = []
+        for spec, res in zip(proposers, results):
+            if isinstance(res, BaseException):
+                if not isinstance(res, Exception):
+                    raise res
+                failures.append(AgentFailure(agent=spec.name, error=str(res)))
+            else:
+                entries.append(res)
+        if not entries:
+            raise UpstreamError(
+                "all proposers failed: "
+                + "; ".join(f"{f.agent}: {f.error}" for f in failures)
+            )
+        return entries, failures
 
     # ---------------------------------------------------------------- modes
 
@@ -234,9 +266,7 @@ class AgentTeam:
         proposers: List[AgentSpec],
         judge: AgentSpec,
     ) -> CollaborationResult:
-        entries = await asyncio.gather(
-            *(self._ask(p, [{"role": "user", "content": task}], 1) for p in proposers)
-        )
+        entries, failures = await self._gather_proposals(task, proposers)
         transcript = list(entries)
         proposals = "\n\n".join(
             f"### 候选 {i + 1}(来自 {e.agent})\n{e.content}"
@@ -252,6 +282,7 @@ class AgentTeam:
             mode="committee",
             final_answer=judge_entry.content,
             rounds_used=2,
+            failures=failures,
             transcript=transcript,
         )
 
@@ -268,10 +299,22 @@ class AgentTeam:
         """
         if len(proposers) < 2:
             raise ValueError("peer_review requires at least 2 proposers")
-        entries = await asyncio.gather(
-            *(self._ask(p, [{"role": "user", "content": task}], 1) for p in proposers)
-        )
+        entries, failures = await self._gather_proposals(task, proposers)
         transcript = list(entries)
+        if len(entries) == 1:
+            # Only one proposal survived upstream failures: it wins by default.
+            survivor = entries[0]
+            return CollaborationResult(
+                mode="peer_review",
+                final_answer=survivor.content,
+                rounds_used=1,
+                winner=survivor.agent,
+                scoreboard=[ScoreboardRow(agent=survivor.agent, aggregate=0.0, votes=0)],
+                failures=failures,
+                transcript=transcript,
+            )
+        alive = {e.agent for e in entries}
+        proposers = [p for p in proposers if p.name in alive]
         labels = [chr(ord("A") + i) for i in range(len(entries))]
 
         async def score(judge: AgentSpec, cand_idx: int) -> PeerScore:
@@ -282,19 +325,27 @@ class AgentTeam:
                 system_prompt=_PEER_SCORE_SYSTEM,
                 role="reviewer",
             )
-            entry = await self._ask(
-                scorer,
-                [
-                    {
-                        "role": "user",
-                        "content": (
-                            f"任务:\n{task}\n\n候选方案 {labels[cand_idx]}(匿名):\n"
-                            f"{cand.content}"
-                        ),
-                    },
-                ],
-                2,
-            )
+            try:
+                entry = await self._ask(
+                    scorer,
+                    [
+                        {
+                            "role": "user",
+                            "content": (
+                                f"任务:\n{task}\n\n候选方案 {labels[cand_idx]}(匿名):\n"
+                                f"{cand.content}"
+                            ),
+                        },
+                    ],
+                    2,
+                )
+            except UpstreamError as exc:
+                return PeerScore(
+                    judge=judge.name,
+                    candidate=cand.agent,
+                    parse_ok=False,
+                    justification=f"upstream error: {exc}",
+                )
             transcript.append(entry)
             data = _parse_score_json(entry.content)
             if data is None:
@@ -344,6 +395,7 @@ class AgentTeam:
             winner=winner,
             scoreboard=scoreboard,
             peer_scores=peer_scores,
+            failures=failures,
             transcript=transcript,
         )
 

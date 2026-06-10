@@ -196,6 +196,54 @@ def test_score_clamping() -> None:
     assert beta_score.total == 20
 
 
+class FailingClient:
+    async def chat(self, messages, *, model=None, **kwargs):
+        from flutter_agent.deepseek_client import UpstreamError
+
+        raise UpstreamError("provider down")
+
+
+def test_committee_survives_one_proposer_failure() -> None:
+    good = FakeClient(["proposal A"])
+    judge = FakeClient(["final"])
+    team = _team({"default": good, "bad": FailingClient(), "judge": judge})  # type: ignore[dict-item]
+    agents = [
+        AgentSpec(name="alpha", role="proposer", provider="default"),
+        AgentSpec(name="broken", role="proposer", provider="bad"),
+        AgentSpec(name="judge", role="judge", provider="judge"),
+    ]
+    result = asyncio.run(team.run("task", "committee", agents=agents))
+    assert result.final_answer == "final"
+    assert [f.agent for f in result.failures] == ["broken"]
+    assert "provider down" in result.failures[0].error
+
+
+def test_peer_review_single_survivor_wins_by_default() -> None:
+    good = FakeClient(["proposal A"])
+    team = _team({"default": good, "bad": FailingClient()})  # type: ignore[dict-item]
+    agents = [
+        AgentSpec(name="alpha", role="proposer", provider="default"),
+        AgentSpec(name="broken", role="proposer", provider="bad"),
+    ]
+    result = asyncio.run(team.run("task", "peer_review", agents=agents))
+    assert result.winner == "alpha"
+    assert result.scoreboard[0].votes == 0
+    assert [f.agent for f in result.failures] == ["broken"]
+
+
+def test_all_proposers_failed_raises_upstream() -> None:
+    from flutter_agent.deepseek_client import UpstreamError
+
+    team = _team({"default": FailingClient()})  # type: ignore[dict-item]
+    agents = [
+        AgentSpec(name="a", role="proposer"),
+        AgentSpec(name="b", role="proposer"),
+        AgentSpec(name="judge", role="judge"),
+    ]
+    with pytest.raises(UpstreamError, match="all proposers failed"):
+        asyncio.run(team.run("task", "committee", agents=agents))
+
+
 def test_agent_cap_enforced() -> None:
     team = _team({"default": FakeClient([])}, collab_max_agents=2)
     agents = [AgentSpec(name=f"a{i}") for i in range(3)]
