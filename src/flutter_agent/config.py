@@ -88,6 +88,15 @@ class Settings(BaseSettings):
         description="Append-only JSONL file recording every /v1/refine call.",
     )
 
+    # ---- Collaboration audit ----
+    collab_log_path: str = Field(
+        default="logs/collaborations.jsonl",
+        description=(
+            "Append-only JSONL audit of every collaboration run (summary, "
+            "not full transcript). Empty string disables logging."
+        ),
+    )
+
     # ---- Open-source ingestion ----
     ingestion_seen_path: str = Field(
         default="data/ingestion_seen.json",
@@ -144,6 +153,13 @@ class Settings(BaseSettings):
     @property
     def ingestion_seen_file(self) -> Path:
         p = Path(self.ingestion_seen_path)
+        return p if p.is_absolute() else (REPO_ROOT / p)
+
+    @property
+    def collab_log_file(self) -> Optional[Path]:
+        if not self.collab_log_path.strip():
+            return None
+        p = Path(self.collab_log_path)
         return p if p.is_absolute() else (REPO_ROOT / p)
 
     @property

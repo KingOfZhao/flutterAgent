@@ -61,6 +61,7 @@ class FakeRegistry:
 
 
 def _team(clients: Dict[str, FakeClient], **settings_kwargs) -> AgentTeam:
+    settings_kwargs.setdefault("collab_log_path", "")  # no audit file in tests
     s = Settings(deepseek_api_key="k", **settings_kwargs)
     return AgentTeam(s, FakeRegistry(clients))  # type: ignore[arg-type]
 
@@ -353,6 +354,20 @@ def test_upstream_concurrency_capped() -> None:
     ] + [AgentSpec(name="judge", role="judge", provider="default")]
     asyncio.run(team.run("task", "committee", agents=agents))
     assert tracker.peak == 1
+
+
+def test_audit_log_written(tmp_path) -> None:
+    import json as _json
+
+    log = tmp_path / "collab.jsonl"
+    team = _team({"default": FakeClient(["answer"])}, collab_log_path=str(log))
+    asyncio.run(team.run("task", "solo"))
+    lines = log.read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 1
+    record = _json.loads(lines[0])
+    assert record["mode"] == "solo"
+    assert record["agents"] == ["solo"]
+    assert record["total_usage"]["total_tokens"] == 2
 
 
 def test_agent_cap_enforced() -> None:

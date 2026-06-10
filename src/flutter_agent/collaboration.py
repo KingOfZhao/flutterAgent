@@ -27,8 +27,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import re
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
@@ -36,6 +38,8 @@ from pydantic import BaseModel, Field
 from .config import Settings
 from .deepseek_client import DeepSeekClient, UpstreamError
 from .providers import ProviderRegistry
+
+logger = logging.getLogger(__name__)
 
 _APPROVE_TOKEN = "APPROVE"
 
@@ -180,6 +184,7 @@ class AgentTeam:
         # peer scores) must respect the same global in-flight cap as the
         # pipeline instead of bursting unboundedly.
         self._upstream_sem = asyncio.Semaphore(settings.max_concurrent_upstream)
+        self._audit_lock = asyncio.Lock()
 
     @property
     def registry(self) -> ProviderRegistry:
@@ -454,7 +459,49 @@ class AgentTeam:
 
     # ------------------------------------------------------------- dispatch
 
+    async def _audit(self, result: CollaborationResult) -> None:
+        """Append a one-line JSONL summary of the run (constraining-layer
+        留痕, model-theory-deepdive.md §6.3). Failures only log a warning."""
+        path = self._settings.collab_log_file
+        if path is None:
+            return
+        record = {
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "mode": result.mode,
+            "rounds_used": result.rounds_used,
+            "approved": result.approved,
+            "winner": result.winner,
+            "winner_tied": result.winner_tied,
+            "agents": sorted({e.agent for e in result.transcript}),
+            "providers": sorted({e.provider for e in result.transcript if e.provider}),
+            "failures": [f.model_dump() for f in result.failures],
+            "total_usage": result.total_usage,
+        }
+        line = json.dumps(record, ensure_ascii=False) + "\n"
+        async with self._audit_lock:
+            try:
+                await asyncio.to_thread(self._append_line, path, line)
+            except OSError as exc:
+                logger.warning("collaboration audit log write failed: %s", exc)
+
+    @staticmethod
+    def _append_line(path: Path, line: str) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(line)
+
     async def run(
+        self,
+        task: str,
+        mode: str,
+        agents: Optional[List[AgentSpec]] = None,
+        max_rounds: Optional[int] = None,
+    ) -> CollaborationResult:
+        result = await self._dispatch(task, mode, agents, max_rounds)
+        await self._audit(result)
+        return result
+
+    async def _dispatch(
         self,
         task: str,
         mode: str,
