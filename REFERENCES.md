@@ -850,6 +850,10 @@
 | Material 3:Window size classes(compact/medium/expanded 断点) | <https://m3.material.io/foundations/layout/applying-layout/window-size-classes> | flutter-web-desktop-adaptive §1 |
 | Flutter 官方:Web renderers(CanvasKit/wasm 路线) | <https://docs.flutter.dev/platform-integration/web/renderers> | flutter-web-desktop-adaptive §3 |
 | Flutter API:Shortcuts/Actions(Intent 快捷键体系) | <https://api.flutter.dev/flutter/widgets/Shortcuts-class.html> | flutter-web-desktop-adaptive §2 |
+| Flutter API:ResizeImage(解码层降采样) | <https://api.flutter.dev/flutter/painting/ResizeImage-class.html> | flutter-images-media §1 |
+| cached_network_image(磁盘缓存层) | <https://pub.dev/packages/cached_network_image> | flutter-images-media §2 |
+| Flutter API:FadeInImage(占位渐进加载) | <https://api.flutter.dev/flutter/widgets/FadeInImage-class.html> | flutter-images-media §3 |
+| video_player(原生侧 controller 资源语义) | <https://pub.dev/packages/video_player> | flutter-images-media §4 |
 
 ---
 
