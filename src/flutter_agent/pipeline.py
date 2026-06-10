@@ -47,6 +47,7 @@ from .schemas import (
 )
 from .skill_loader import SkillRegistry
 from .skill_ranker import build_families, rank_skills, select_within_budget
+from .vector_store import VectorStore, safe_semantic_scores
 from .stage_schemas import validate_stage_output
 
 logger = logging.getLogger(__name__)
@@ -345,6 +346,7 @@ class RefinementPipeline:
         cache: Optional[RunCache] = None,
         pub_validator: Optional[PubValidator] = None,
         run_store: Optional[RunStore] = None,
+        vector_store: Optional["VectorStore"] = None,
     ):
         self._settings = settings
         self._client = client
@@ -352,6 +354,7 @@ class RefinementPipeline:
         self._cache = cache
         self._pub_validator = pub_validator
         self._run_store = run_store
+        self._vector_store = vector_store
 
     # ------------------------------------------------------------------ API
 
@@ -612,10 +615,9 @@ class RefinementPipeline:
         always_ids = _resolve_foundational_ids(req.requirement, platforms)
 
         ranked = rank_skills(
-            requirement=req.requirement,
-            skills=all_skills,
-            platforms=platforms,
+            requirement=req.requirement, skills=all_skills, platforms=platforms,
             always_include=always_ids,
+            semantic_scores=safe_semantic_scores(self._vector_store, req.requirement),
         )
         families = build_families(all_skills)
         picked = select_within_budget(

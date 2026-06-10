@@ -32,6 +32,7 @@ from .routes import ingest, metrics, openai_compat, refine, runs, skills, vector
 from .run_store import RunStore
 from .schemas import HealthResponse
 from .skill_loader import SkillRegistry
+from .vector_store import VectorStore, build_index
 
 logger = logging.getLogger("flutter_agent")
 
@@ -47,6 +48,25 @@ async def lifespan(app: FastAPI):
     run_cache = RunCache(settings.runs_log_file)
     run_cache.load()
     pub_validator = PubValidator()
+
+    # Local vector store for semantic skill recall. A pre-set store (tests)
+    # is reused; otherwise open the on-disk index, building it when empty.
+    vector_store = getattr(app.state, "vector_store", None)
+    owns_vector_store = vector_store is None
+    if vector_store is None:
+        try:
+            vector_store = VectorStore(settings.vector_db_file)
+            if vector_store.count() == 0:
+                build_index(
+                    vector_store,
+                    skills_dir=settings.skills_path,
+                    knowledge_dir=settings.knowledge_path,
+                )
+        except Exception:  # noqa: BLE001 - semantic recall is optional
+            logger.exception("vector store unavailable; keyword-only ranking")
+            vector_store = None
+            owns_vector_store = False
+
     pipeline = RefinementPipeline(
         settings,
         client,
@@ -54,6 +74,7 @@ async def lifespan(app: FastAPI):
         cache=run_cache,
         pub_validator=pub_validator,
         run_store=run_store,
+        vector_store=vector_store,
     )
 
     app.state.settings = settings
@@ -63,6 +84,8 @@ async def lifespan(app: FastAPI):
     app.state.run_store = run_store
     app.state.run_cache = run_cache
     app.state.pub_validator = pub_validator
+    if vector_store is not None:
+        app.state.vector_store = vector_store
 
     logger.info(
         "flutter-agent ready: model=%s base=%s skills=%d cache_entries=%d",
@@ -76,6 +99,10 @@ async def lifespan(app: FastAPI):
     finally:
         await client.aclose()
         await pub_validator.aclose()
+        if owns_vector_store and vector_store is not None:
+            vector_store.close()
+            if getattr(app.state, "vector_store", None) is vector_store:
+                del app.state.vector_store
 
 
 app = FastAPI(

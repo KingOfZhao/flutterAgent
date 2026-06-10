@@ -12,6 +12,7 @@ if str(_ROOT / "src") not in sys.path:
 os.environ.setdefault("DEEPSEEK_API_KEY", "")
 os.environ.setdefault("LOCAL_API_KEY", "")
 
+import pytest
 from fastapi.testclient import TestClient
 
 from flutter_agent.vector_store import (
@@ -162,6 +163,57 @@ def test_vector_api_search_and_stats(tmp_path):
             assert resp.status_code == 200
             stats = resp.json()
             assert stats["chunks"] > 0 and stats["documents"] >= 63
+    finally:
+        store.close()
+        del app.state.vector_store
+
+
+# ---------------------------------------------------------------------------
+# Semantic blending into the skill ranker
+# ---------------------------------------------------------------------------
+
+def test_semantic_skill_scores_and_ranker_blend(tmp_path):
+    from flutter_agent.schemas import SkillDetail
+    from flutter_agent.skill_ranker import SEMANTIC_WEIGHT, rank_skills
+    from flutter_agent.vector_store import semantic_skill_scores
+
+    store = VectorStore(tmp_path / "sem.sqlite3")
+    build_index(
+        store,
+        skills_dir=_ROOT / "skills",
+        knowledge_dir=_ROOT / "knowledge",
+    )
+    scores = semantic_skill_scores(store, "请全面思考这个架构判断")
+    assert scores and all(v > 0 for v in scores.values())
+    assert "comprehensive-thinking" in scores
+    store.close()
+
+    def mk(sid: str) -> SkillDetail:
+        return SkillDetail(
+            id=sid, name=sid, version="1.0", platforms=["all"],
+            tags=[], applies_when="", stage_hints=[], body="x",
+            path=f"skills/{sid}/SKILL.md",
+        )
+
+    a, b = mk("skill-a"), mk("skill-b")
+    ranked = rank_skills("无关词", [a, b], [], semantic_scores={"skill-b": 0.4})
+    assert ranked[0][0].id == "skill-b"
+    assert ranked[0][1] - ranked[1][1] == pytest.approx(0.4 * SEMANTIC_WEIGHT)
+
+
+def test_reload_endpoint_reindexes_vector_store(tmp_path):
+    from flutter_agent.main import app
+
+    store = VectorStore(tmp_path / "reload.sqlite3")
+    app.state.vector_store = store
+    try:
+        with TestClient(app) as client:
+            resp = client.post("/v1/skills/reload")
+            assert resp.status_code == 200
+            body = resp.json()
+            assert body["loaded"] >= 61
+            assert body["reindexed_chunks"] > 0
+            assert store.doc_count() >= 63
     finally:
         store.close()
         del app.state.vector_store

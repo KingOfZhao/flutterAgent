@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from ..deps import get_registry, require_api_key
 from ..pipeline import _platforms_to_strs, _resolve_foundational_ids
@@ -16,6 +16,7 @@ from ..schemas import (
     SkillSummary,
 )
 from ..skill_loader import SkillRegistry
+from ..vector_store import build_index, safe_semantic_scores
 from ..skill_ranker import (
     DEFAULT_SKILL_TOKEN_BUDGET,
     build_families,
@@ -66,10 +67,22 @@ async def get_skill(
     dependencies=[Depends(require_api_key)],
 )
 async def reload_skills(
+    request: Request,
     registry: SkillRegistry = Depends(get_registry),
 ) -> dict:
     count = registry.reload()
-    return {"loaded": count}
+    # Keep the semantic index in sync with what just got (re)loaded.
+    store = getattr(request.app.state, "vector_store", None)
+    reindexed = None
+    if store is not None:
+        settings = request.app.state.settings
+        stats = build_index(
+            store,
+            skills_dir=settings.skills_path,
+            knowledge_dir=settings.knowledge_path,
+        )
+        reindexed = stats["chunks"]
+    return {"loaded": count, "reindexed_chunks": reindexed}
 
 
 @router.post(
@@ -80,6 +93,7 @@ async def reload_skills(
 )
 async def rank_skills_for_requirement(
     payload: SkillRankRequest,
+    request: Request,
     registry: SkillRegistry = Depends(get_registry),
 ) -> SkillRankResponse:
     """Explain which skills would be injected for a requirement and why.
@@ -95,11 +109,16 @@ async def rank_skills_for_requirement(
     foundational = _resolve_foundational_ids(payload.requirement, platforms)
     budget = payload.token_budget or DEFAULT_SKILL_TOKEN_BUDGET
 
+    semantic = safe_semantic_scores(
+        getattr(request.app.state, "vector_store", None), payload.requirement
+    )
+
     ranked = rank_skills(
         requirement=payload.requirement,
         skills=all_skills,
         platforms=platforms,
         always_include=foundational,
+        semantic_scores=semantic,
     )
     families = build_families(all_skills)
     selected = select_within_budget(

@@ -17,6 +17,7 @@ Design goals (mirroring the rest of this repo):
 from __future__ import annotations
 
 import hashlib
+import logging
 import math
 import re
 import sqlite3
@@ -26,6 +27,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence
+
+logger = logging.getLogger(__name__)
 
 _WORD_RE = re.compile(r"[a-z0-9_]+")
 _CJK_RE = re.compile(r"[\u4e00-\u9fff\u3400-\u4dbf]")
@@ -314,6 +317,29 @@ def docs_from_knowledge(knowledge_dir: Path) -> List[VectorDoc]:
                 )
             )
     return out
+
+
+def semantic_skill_scores(
+    store: VectorStore, query: str, *, limit: int = 20
+) -> dict:
+    """Best cosine score per skill id for a query (for ranker blending)."""
+    scores: dict = {}
+    for hit in store.search(query, top_k=limit, kind="skill"):
+        if hit.score > scores.get(hit.doc_id, 0.0):
+            scores[hit.doc_id] = hit.score
+    return scores
+
+
+def safe_semantic_scores(store: Optional[VectorStore], query: str) -> dict:
+    """Like ``semantic_skill_scores`` but never raises: semantic recall is an
+    optional enhancement, so callers degrade to keyword-only ranking."""
+    if store is None:
+        return {}
+    try:
+        return semantic_skill_scores(store, query)
+    except Exception:  # noqa: BLE001
+        logger.exception("semantic scoring failed; keyword-only ranking")
+        return {}
 
 
 def build_index(

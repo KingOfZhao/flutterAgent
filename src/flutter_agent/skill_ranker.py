@@ -26,6 +26,11 @@ _CHARS_PER_TOKEN = 2.8
 # 88k for user prompt + model output.  This is conservative and configurable.
 DEFAULT_SKILL_TOKEN_BUDGET = 40_000
 
+# Weight applied to semantic (vector cosine) scores when blended into ranking.
+# Cosine scores from the hashing embedder typically land in 0.1–0.45 for real
+# matches, so this scales them to be comparable with 1–2 specific bigram hits.
+SEMANTIC_WEIGHT = 8.0
+
 # Tokenizer: split on whitespace, punctuation, CJK boundaries.
 _WORD_RE = re.compile(r"[\u4e00-\u9fff]|[a-zA-Z0-9_]+", re.UNICODE)
 
@@ -101,6 +106,7 @@ def rank_skills(
     platforms: List[str],
     *,
     always_include: Optional[List[str]] = None,
+    semantic_scores: Optional[Dict[str, float]] = None,
 ) -> List[Tuple[SkillDetail, float]]:
     """Return skills sorted by descending relevance score.
 
@@ -114,12 +120,17 @@ def rank_skills(
         Requested target platforms (e.g. ["mobile", "desktop"]).
     always_include : list or None
         Skill IDs that must always be included regardless of score.
+    semantic_scores : dict or None
+        Optional ``skill_id -> cosine score`` from the local vector store
+        (see ``vector_store.semantic_skill_scores``). Blended additively so
+        keyword ranking still works when the vector index is unavailable.
 
     Returns
     -------
     list of (SkillDetail, score) sorted descending.
     """
     always = set(always_include or [])
+    semantic = semantic_scores or {}
     req_tokens = _tokenize(requirement)
     req_specific = _bigram_tokens(requirement)
     platform_set = {p.lower() for p in platforms}
@@ -154,7 +165,11 @@ def rank_skills(
         elif skill_plats & platform_set:
             score += 3.0
 
-        # 5. Always-include skills get top priority
+        # 5. Semantic similarity from the vector store (synonym/paraphrase
+        #    recall that keyword overlap misses).
+        score += semantic.get(skill.id, 0.0) * SEMANTIC_WEIGHT
+
+        # 6. Always-include skills get top priority
         if skill.id in always:
             score += 100.0
 

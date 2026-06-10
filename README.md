@@ -283,6 +283,10 @@ see_also: [flutter-android-platform]          # 相关 skill 交叉引用(可选
 3. **基础 skill 条件注入**:`architecture-design` / `state-management` 不再无条件置顶——
    仅当需求含**结构/状态信号**时才强制注入;**纯运维任务**(打包/签名/CI/性能剖析)不注入,
    把预算让给真正相关的 skill;完全无信号的通用需求才回退到注入两者(见 `pipeline._resolve_foundational_ids`)。
+4. **语义召回(向量库混排)**:本地向量库对需求做语义检索,每个 skill 取最佳 chunk 余弦分,
+   以 `SEMANTIC_WEIGHT=8.0` 加性混入关键词分——补回同义改写漏召回,但不盖过精确关键词命中;
+   向量库不可用时自动降级为纯关键词排名(`vector_store.safe_semantic_scores`)。
+   `/v1/skills/rank` dry-run 与 pipeline 使用完全相同的混排逻辑。
 
 ## 配置项(.env)
 
@@ -344,7 +348,7 @@ requirement
 | `GET` | `/v1/skills` | 列出已加载 skill |
 | `POST` | `/v1/skills/rank` | **选用 dry-run**(零模型调用):对给定需求返回每个 skill 的得分、是否入选、是否被基础 skill 钉住、族根与 token 估算,解释 ranker 为什么选了这些 |
 | `GET` | `/v1/skills/{id}` | 取单个 skill(含 markdown body) |
-| `POST` | `/v1/skills/reload` | 热重载磁盘上的 SKILL.md |
+| `POST` | `/v1/skills/reload` | 热重载磁盘上的 SKILL.md(并同步重建向量索引,返回 `reindexed_chunks`) |
 | `GET` | `/v1/runs?limit=N` | 列出最近 N 次运行(每项带 `cost` + `bad_packages`) |
 | `GET` | `/v1/runs/{id}` | 取某次运行的完整 `RefineResponse` |
 | `GET` | `/v1/metrics` | 聚合统计(总 runs、tokens、cost、阶段成功率、高频 skill) |
@@ -357,7 +361,7 @@ requirement
 
 ## 本地向量数据库(vector_store)
 
-把全部 skill 与 `knowledge/` 下的知识文档向量化,提供语义检索,作为 ranker 字面匹配的补充:
+把全部 skill 与 `knowledge/` 下的知识文档向量化,提供语义检索,并**直接混入 skill ranker 的打分**(见上节第 4 条;服务启动时若索引为空会自动构建):
 
 - **零新增依赖、完全离线**:embedding 为确定性特征哈希向量(ASCII 词 + 中文字/二字组,log-TF 加权,L2 归一化),SQLite 持久化(`data/vector_store.sqlite3`,已 gitignore);无需下载模型或调用外部 API
 - **可插拔 embedder**:任何实现 `embed(texts)` + `dim` 的对象可替换默认 embedder(如 OpenAI 兼容 `/v1/embeddings`),存储层不变
