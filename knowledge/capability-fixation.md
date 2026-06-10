@@ -188,6 +188,8 @@ runs.jsonl(全量运行,含 review_history 与验收缺口)
 | 不可博弈的测量:封存集 | `eval_store.is_sealed`(sha256 确定性分桶,样本永不迁移) | eval-gate-operations §3 |
 | 变更门禁:不劣于+噪声判平 | `eval_gate.gate`(hard 回归/覆盖丢失一票否决;±noise 判平) | eval-gate-operations §2 |
 | 防 Goodhart:平局不计提升 | verdict 三值 blocked/tie/improved,只有越过噪声带才记 improved | §2/§4 |
+| 退化是默认走向:主动探测 | `degradation.py` 检测器 + `scripts/degradation_report.py`/`corpus_drift.py`(第 21-28 轮) | taxonomy 落码总表 |
+| 监控器自身可审计 | 阈值文件 `eval/degradation_thresholds.json`(标定元数据,改动走 git) | 本文 §10 |
 
 ## 10. 碰撞:监控器自身的退化——递归在哪里终止?
 
