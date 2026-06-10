@@ -794,6 +794,10 @@
 | Dart 官方:并发概述(事件循环/isolate 不共享内存/消息深拷贝) | <https://dart.dev/language/concurrency> | flutter-concurrency §1/§3 |
 | Dart 官方:Isolate.run 与长驻 isolate 模式 | <https://dart.dev/language/isolates> | flutter-concurrency §2/§3 |
 | Flutter 官方:后台 isolate 调用平台通道(BackgroundIsolateBinaryMessenger) | <https://docs.flutter.dev/perf/isolates> | flutter-concurrency §3 |
+| Flutter 官方:动画选型决策树(隐式/显式/第三方资产) | <https://docs.flutter.dev/ui/animations> | flutter-animation-ux §1 |
+| Flutter 官方:动画教程(AnimationController/Ticker/dispose) | <https://docs.flutter.dev/ui/animations/tutorial> | flutter-animation-ux §1 |
+| Flutter 官方:Hero 共享元素动画 | <https://docs.flutter.dev/ui/animations/hero-animations> | flutter-animation-ux §1 |
+| Material Design:动效时长与缓动规范 | <https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration> | flutter-animation-ux §2 |
 
 ---
 

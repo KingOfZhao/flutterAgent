@@ -199,6 +199,7 @@ def test_flutter_corpus_docs_are_retrievable(tmp_path):
         "secure storage 证书锁定 混淆 keystore": "flutter-mobile-security",
         "国际化 arb 复数 读屏 无障碍 对比度": "flutter-i18n-accessibility",
         "isolate compute 不共享内存 消息深拷贝": "flutter-concurrency",
+        "隐式动画 AnimationController Hero 转场": "flutter-animation-ux",
     }
     for query, expected in cases.items():
         hit_ids = {h.doc_id for h in store.search(query, top_k=5, kind="knowledge")}
