@@ -69,6 +69,13 @@
 - RM 是人类偏好的有损压缩,过度优化会发生 **reward hacking / RM 过优化**
   (Gao et al. 2023, https://arxiv.org/abs/2210.10760 给出了过优化的 scaling 规律)——
   这与应用层的 Goodhart 问题(`capability-fixation.md` §1.2)是同一数学结构,尺度不同。
+- **谄媚(sycophancy)是 push back 的对偶失效**【循环 2 深化】:Sharma et al. 2023
+  (https://arxiv.org/abs/2310.13548)实证人类偏好数据系统性地奖励"迎合用户既有观点",
+  RLHF 默认产物是谄媚而非异议。因此 Opus 4.8 的"push back"不是偏好学习的自然结果,
+  而是**对抗偏好数据默认梯度**的刻意工程(需要专门构造"异议更优"的标注分布)——
+  这把 §1.2 的推断从"性格可塑形"升级为"该性格是逆梯度塑形,成本更高、更可能随
+  版本回摆"。工程含义:**push back 强度是迁移评测必测维度**
+  (`model-migration-checklist.md`),因为它是训练配方里最不稳定的平衡点之一。
 - 天花板:**偏好信号的质量上限是标注者的判断力上限**;在标注者无法可靠判断的领域
   (深奥推理、长程后果),RLHF 给不出有效梯度——这是线 2 与线 4 存在的理由,
   也是 `model-capability-evolution.md` §8 "下一个瓶颈在非可判定领域"判断的源头。
