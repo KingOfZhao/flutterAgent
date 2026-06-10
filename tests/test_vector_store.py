@@ -206,6 +206,7 @@ def test_flutter_corpus_docs_are_retrievable(tmp_path):
         "三棵树 RenderObject 约束下行 raster 线程": "flutter-rendering-pipeline",
         "ValueKey GlobalKey canUpdate 状态串了": "flutter-element-keys",
         "sliver shrinkWrap unbounded height 吸顶": "flutter-sliver-scrolling",
+        "内存泄漏 heap snapshot retaining path dispose": "flutter-memory-leaks",
     }
     for query, expected in cases.items():
         hit_ids = {h.doc_id for h in store.search(query, top_k=5, kind="knowledge")}

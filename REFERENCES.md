@@ -829,6 +829,10 @@
 | Flutter API:ListView(shrinkWrap 取消惰性/itemExtent 优化语义) | <https://api.flutter.dev/flutter/widgets/ListView-class.html> | flutter-sliver-scrolling §2/§4 |
 | Flutter API:NestedScrollView(内外 ScrollPosition 协调) | <https://api.flutter.dev/flutter/widgets/NestedScrollView-class.html> | flutter-sliver-scrolling §2 |
 | Flutter API:AutomaticKeepAliveClientMixin(放弃回收的代价) | <https://api.flutter.dev/flutter/widgets/AutomaticKeepAliveClientMixin-mixin.html> | flutter-sliver-scrolling §4 |
+| Dart VM:GC 分代设计(scavenger 新生代/标记清除老生代) | <https://github.com/dart-lang/sdk/blob/main/runtime/docs/gc.md> | flutter-memory-leaks §1 |
+| Flutter DevTools:Memory 视图(heap snapshot/retaining path) | <https://docs.flutter.dev/tools/devtools/memory> | flutter-memory-leaks §3 |
+| leak_tracker(widget 测试中断言无未 dispose 对象) | <https://pub.dev/packages/leak_tracker> | flutter-memory-leaks §3 |
+| Flutter API:ImageCache 与 cacheWidth/cacheHeight 解码层缩小 | <https://api.flutter.dev/flutter/painting/ImageCache-class.html> | flutter-memory-leaks §2 |
 
 ---
 
