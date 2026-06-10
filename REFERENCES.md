@@ -647,7 +647,17 @@
 | OpenTelemetry / Dart | <https://opentelemetry.io/docs/> · <https://pub.dev/packages/opentelemetry> |
 | Dart 混淆与符号 | <https://docs.flutter.dev/deployment/obfuscate> |
 
-## 20. 通用:全面思考(comprehensive-thinking)
+## 20. AI 工程师 mindset(devin-ai-engineer-mindset)
+
+| 主题 | 链接 |
+|---|---|
+| Devin 产品与工作流文档 | <https://docs.devin.ai> |
+| 女娲 · Skill 造人术(蒸馏方法论母本) | <https://github.com/alchaincyf/nuwa-skill> |
+| Google 工程实践:小 CL / 评审 | <https://google.github.io/eng-practices/review/developer/small-cls.html> |
+| Flutter 调试与测试(复现优先) | <https://docs.flutter.dev/testing/debugging> |
+| INVEST 任务拆解 | <https://www.atlassian.com/agile/project-management/user-stories> |
+
+## 21. 通用:全面思考(comprehensive-thinking)
 
 | 主题 | 链接 |
 |---|---|

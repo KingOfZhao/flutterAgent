@@ -57,6 +57,7 @@ EXPERT_SKILLS = [
     "tim-sneath-mindset",
     "andrea-bizzotto-mindset",
     "filip-hracek-mindset",
+    "devin-ai-engineer-mindset",
 ]
 
 EXPERT_LAYERS = (

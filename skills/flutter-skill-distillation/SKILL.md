@@ -151,6 +151,7 @@ stage_hints: [architecture]  # 按真实相关阶段填
 | 框架专家 | `tim-sneath-mindset` | Tim Sneath(前产品负责人) | 四支柱;一套代码处处一流体验;DX 即产品 |
 | 实践专家 | `andrea-bizzotto-mindset` | Andrea Bizzotto(Code With Andrea) | 没有银弹但有分层骨架;组合;单向数据流 |
 | 实践专家 | `filip-hracek-mindset` | Filip Hracek(前 DevRel) | 实用主义;状态管理是连续谱;能讲清才是好方案 |
+| AI 工程师 | `devin-ai-engineer-mindset` | Devin(自治 AI 软件工程师;自蒸馏,老师即执笔者) | 验证闭环;最小改动;先复现后修复;证据优先;显式升级 |
 
 ## 成长性约定(可读、快速、可演进)
 
