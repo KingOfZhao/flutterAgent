@@ -157,6 +157,67 @@ class RunStore:
         }
 
 
+    def harvest_failures(self, *, limit: int = 100) -> List[dict]:
+        """Scan all runs and return candidate regression samples.
+
+        A run is a candidate when the pipeline itself recorded unresolved
+        problems: a still-blocking final review pass, deterministic
+        acceptance gaps, failed package validations, or an invalid stage.
+        Output rows carry the failure reasons so a reviewer can decide
+        which candidates deserve a rubric and a place in the eval set.
+        """
+        if not self.path.exists():
+            return []
+        rows: List[dict] = []
+        for line in self.path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if obj.get("cached"):
+                continue
+            reasons = _failure_reasons(obj)
+            if reasons:
+                rows.append(
+                    {
+                        "id": str(obj.get("id", "")),
+                        "created_at": int(obj.get("created_at", 0) or 0),
+                        "requirement": str(obj.get("requirement", "")),
+                        "selected_skills": list(obj.get("selected_skills") or []),
+                        "reasons": reasons,
+                    }
+                )
+        rows.reverse()
+        return rows[:limit]
+
+
+def _failure_reasons(obj: dict) -> List[str]:
+    reasons: List[str] = []
+    history = obj.get("review_history") or []
+    if history:
+        last = history[-1]
+        if isinstance(last, dict) and last.get("blocking"):
+            reasons.append("final_review_blocking")
+    if obj.get("acceptance_gaps"):
+        reasons.append("acceptance_gaps")
+    for v in obj.get("validations") or []:
+        if isinstance(v, dict) and (
+            not v.get("exists")
+            or v.get("is_discontinued")
+            or v.get("constraint_ok") is False
+        ):
+            reasons.append("bad_package")
+            break
+    for s in obj.get("stages") or []:
+        if isinstance(s, dict) and s.get("stage_valid", True) is False:
+            reasons.append("invalid_stage")
+            break
+    return reasons
+
+
 def _summarise(obj: dict) -> RunSummary:
     elapsed = sum(int(s.get("elapsed_ms", 0) or 0) for s in obj.get("stages", []))
     validations = obj.get("validations") or []
