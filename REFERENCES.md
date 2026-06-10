@@ -739,6 +739,29 @@
 | Tree-of-Thoughts(多路径推理对抗过早收敛) | <https://arxiv.org/abs/2305.10601> | memory-and-grounding §3 |
 | MemGPT(分层记忆管理,海马体/皮层类比的工程化) | <https://arxiv.org/abs/2310.08560> | memory-and-grounding §1(运行时记忆 kind="memory" 设计参照) |
 
+## 25. 向量库优质语料(knowledge/flutter-*.md 五篇)
+
+| 主题 | 链接 | 在本仓库何处引用 |
+|---|---|---|
+| Flutter 官方:状态管理方案清单 | <https://docs.flutter.dev/data-and-backend/state-mgmt/options> | flutter-state-management §1 |
+| Flutter 官方:ephemeral vs app state 分法 | <https://docs.flutter.dev/data-and-backend/state-mgmt/ephemeral-vs-app> | flutter-state-management §1 |
+| Riverpod 官方文档(编译期安全、可测试性) | <https://riverpod.dev/docs/introduction/why_riverpod> | flutter-state-management §1 |
+| bloc 库官方文档(事件→状态显式建模) | <https://bloclibrary.dev/architecture/> | flutter-state-management §1 |
+| drift 官方文档(类型安全 SQLite ORM、响应式查询) | <https://drift.simonbinder.eu/> | flutter-offline-sync §1 |
+| Firestore 离线持久化(自动同步,LWW 冲突) | <https://firebase.google.com/docs/firestore/manage-data/enable-offline> | flutter-offline-sync §1 |
+| CRDT 奠基论文(Shapiro et al. 2011) | <https://inria.hal.science/inria-00555588> | flutter-offline-sync §2(冲突解决三档) |
+| 混合逻辑时钟 HLC(Kulkarni et al. 2014) | <https://cse.buffalo.edu/tech-reports/2014-04.pdf> | flutter-offline-sync §2(时钟不可信) |
+| connectivity_plus(接口状态≠服务可达,官方明示) | <https://pub.dev/packages/connectivity_plus> | flutter-offline-sync §3 |
+| Flutter 官方:性能最佳实践 | <https://docs.flutter.dev/perf/best-practices> | flutter-performance §2/§3 |
+| Flutter 官方:profile 模式与 DevTools 诊断 | <https://docs.flutter.dev/perf/ui-performance> | flutter-performance §1 |
+| Flutter 官方:Impeller(消除着色器编译卡顿) | <https://docs.flutter.dev/perf/impeller> | flutter-performance §3 |
+| Flutter 官方:包体积分析与缩减 | <https://docs.flutter.dev/perf/app-size> | flutter-performance §4 |
+| Flutter 官方:测试三层分类(unit/widget/integration) | <https://docs.flutter.dev/testing/overview> | flutter-testing-strategy §1 |
+| Flutter 官方:integration_test 指南 | <https://docs.flutter.dev/testing/integration-tests> | flutter-testing-strategy §1 |
+| Flutter 官方:Android 发布(签名/AAB/版本号) | <https://docs.flutter.dev/deployment/android> | flutter-release-engineering §1 |
+| Flutter 官方:iOS 发布 | <https://docs.flutter.dev/deployment/ios> | flutter-release-engineering §1 |
+| Play Console:分阶段发布(staged rollout) | <https://support.google.com/googleplay/android-developer/answer/6346149> | flutter-release-engineering §3 |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。

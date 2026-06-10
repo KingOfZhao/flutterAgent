@@ -184,6 +184,22 @@ def test_docs_from_knowledge_indexes_corpus():
     assert all(d.kind == "knowledge" for d in docs)
 
 
+def test_flutter_corpus_docs_are_retrievable(tmp_path):
+    store = VectorStore(tmp_path / "c.sqlite3")
+    build_index(store, skills_dir=ROOT / "skills", knowledge_dir=ROOT / "knowledge")
+    cases = {
+        "状态管理选 riverpod 还是 bloc": "flutter-state-management",
+        "离线同步 冲突解决 增量队列": "flutter-offline-sync",
+        "掉帧 卡顿 着色器编译 profile": "flutter-performance",
+        "widget 测试 pumpAndSettle 金字塔": "flutter-testing-strategy",
+        "签名 上架 灰度发布 崩溃监控": "flutter-release-engineering",
+    }
+    for query, expected in cases.items():
+        hit_ids = {h.doc_id for h in store.search(query, top_k=5, kind="knowledge")}
+        assert expected in hit_ids, (query, hit_ids)
+    store.close()
+
+
 def test_build_index_and_semantic_search_end_to_end(tmp_path):
     store = VectorStore(tmp_path / "v.sqlite3")
     stats = build_index(

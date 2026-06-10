@@ -127,7 +127,7 @@ async def memory_write(req: MemoryWriteRequest, request: Request) -> Dict[str, A
     store = _get_store(request, settings)
     doc_id = req.doc_id or f"mem-{int(time.time())}-{abs(hash(req.text)) % 10000:04d}"
     title = req.title or re.sub(r"\s+", " ", req.text.strip())[:60]
-    store.delete_doc(doc_id)  # replace semantics: no stale chunks left behind
+    store.delete_doc(doc_id, kind="memory")  # replace semantics: no stale chunks
     added = store.add(docs_from_memory(doc_id, title, req.text))
     return {"doc_id": doc_id, "title": title, "chunks": added}
 
@@ -151,7 +151,7 @@ async def memory_list(request: Request) -> Dict[str, Any]:
 async def memory_delete(doc_id: str, request: Request) -> Dict[str, Any]:
     settings = get_settings()
     store = _get_store(request, settings)
-    removed = store.delete_doc(doc_id)
+    removed = store.delete_doc(doc_id, kind="memory")
     if removed == 0:
         raise HTTPException(status_code=404, detail=f"memory {doc_id!r} not found")
     return {"doc_id": doc_id, "removed_chunks": removed}

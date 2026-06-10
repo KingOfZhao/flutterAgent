@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS chunks (
     dim         INTEGER NOT NULL,
     embedder    TEXT NOT NULL,
     created_at  INTEGER NOT NULL,
-    PRIMARY KEY (doc_id, chunk_index)
+    PRIMARY KEY (kind, doc_id, chunk_index)
 );
 """
 
@@ -186,6 +186,18 @@ class VectorStore:
         self._lock = threading.Lock()
         with self._lock:
             self._conn.execute(_SCHEMA)
+            # Older DBs keyed chunks by (doc_id, chunk_index) only, letting a
+            # knowledge doc silently overwrite a same-named skill. Rebuild the
+            # table when the legacy key is detected; the index repopulates
+            # lazily on first use.
+            pk_cols = [
+                row[1]
+                for row in self._conn.execute("PRAGMA table_info(chunks)")
+                if row[5] > 0
+            ]
+            if "kind" not in pk_cols:
+                self._conn.execute("DROP TABLE chunks")
+                self._conn.execute(_SCHEMA)
             self._conn.commit()
 
     def close(self) -> None:
@@ -203,9 +215,14 @@ class VectorStore:
                 self._conn.execute("DELETE FROM chunks")
             self._conn.commit()
 
-    def delete_doc(self, doc_id: str) -> int:
+    def delete_doc(self, doc_id: str, *, kind: Optional[str] = None) -> int:
+        sql = "DELETE FROM chunks WHERE doc_id = ?"
+        params: tuple = (doc_id,)
+        if kind:
+            sql += " AND kind = ?"
+            params = (doc_id, kind)
         with self._lock:
-            cur = self._conn.execute("DELETE FROM chunks WHERE doc_id = ?", (doc_id,))
+            cur = self._conn.execute(sql, params)
             self._conn.commit()
         return cur.rowcount
 
