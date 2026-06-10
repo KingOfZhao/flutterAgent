@@ -148,6 +148,10 @@ class AgentTeam:
     def __init__(self, settings: Settings, registry: ProviderRegistry):
         self._settings = settings
         self._registry = registry
+        # Constraining layer: collaboration fan-out (N proposals + N*(N-1)
+        # peer scores) must respect the same global in-flight cap as the
+        # pipeline instead of bursting unboundedly.
+        self._upstream_sem = asyncio.Semaphore(settings.max_concurrent_upstream)
 
     @property
     def registry(self) -> ProviderRegistry:
@@ -162,9 +166,10 @@ class AgentTeam:
         client, model = self._registry.resolve(spec.provider or None)
         system = spec.system_prompt or _default_system(spec.role)
         start = time.monotonic()
-        completion = await client.chat(
-            [{"role": "system", "content": system}, *messages], model=model
-        )
+        async with self._upstream_sem:
+            completion = await client.chat(
+                [{"role": "system", "content": system}, *messages], model=model
+            )
         return TranscriptEntry(
             agent=spec.name,
             role=spec.role,

@@ -244,6 +244,28 @@ def test_all_proposers_failed_raises_upstream() -> None:
         asyncio.run(team.run("task", "committee", agents=agents))
 
 
+def test_upstream_concurrency_capped() -> None:
+    class TrackingClient:
+        def __init__(self) -> None:
+            self.in_flight = 0
+            self.peak = 0
+
+        async def chat(self, messages, *, model=None, **kwargs):
+            self.in_flight += 1
+            self.peak = max(self.peak, self.in_flight)
+            await asyncio.sleep(0)
+            self.in_flight -= 1
+            return _completion("ok")
+
+    tracker = TrackingClient()
+    team = _team({"default": tracker}, max_concurrent_upstream=1)  # type: ignore[dict-item]
+    agents = [
+        AgentSpec(name=f"p{i}", role="proposer", provider="default") for i in range(3)
+    ] + [AgentSpec(name="judge", role="judge", provider="default")]
+    asyncio.run(team.run("task", "committee", agents=agents))
+    assert tracker.peak == 1
+
+
 def test_agent_cap_enforced() -> None:
     team = _team({"default": FakeClient([])}, collab_max_agents=2)
     agents = [AgentSpec(name=f"a{i}") for i in range(3)]
