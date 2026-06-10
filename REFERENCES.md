@@ -854,6 +854,10 @@
 | cached_network_image(磁盘缓存层) | <https://pub.dev/packages/cached_network_image> | flutter-images-media §2 |
 | Flutter API:FadeInImage(占位渐进加载) | <https://api.flutter.dev/flutter/widgets/FadeInImage-class.html> | flutter-images-media §3 |
 | video_player(原生侧 controller 资源语义) | <https://pub.dev/packages/video_player> | flutter-images-media §4 |
+| FlutterFire:FCM 消息类型与接收(notification vs data) | <https://firebase.google.com/docs/cloud-messaging/flutter/receive> | flutter-push-background §1/§2 |
+| FlutterFire:后台消息处理(headless isolate/顶层函数要求) | <https://firebase.flutter.dev/docs/messaging/usage/#background-messages> | flutter-push-background §3 |
+| workmanager(WorkManager/BGTaskScheduler 封装) | <https://pub.dev/packages/workmanager> | flutter-push-background §3 |
+| Android 官方:Doze 与 App Standby(后台限制) | <https://developer.android.com/training/monitoring-device-state/doze-standby> | flutter-push-background §3 |
 
 ---
 
