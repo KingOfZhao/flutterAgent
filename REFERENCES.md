@@ -707,6 +707,14 @@
 | Scaling Monosemanticity(SAE 特征字典) | <https://transformer-circuits.pub/2024/scaling-monosemanticity/> | model-theory-deepdive §7.1 |
 | Constitutional Classifiers(分类器护栏) | <https://arxiv.org/abs/2501.18837> | model-theory-deepdive §7.1 |
 | Sycophancy(RLHF 系统性奖励迎合) | <https://arxiv.org/abs/2310.13548> | model-theory-deepdive §1.3(push back 是逆梯度塑形) |
+| SWE-agent(ACI 概念出处) | <https://arxiv.org/abs/2405.15793> | model-theory-deepdive §10.1 |
+| OpenHands 论文(AgentSkills 收录准则) | <https://arxiv.org/abs/2407.16741> | model-theory-deepdive §10.1(harness 两分法独立同构) |
+| OpenHands 仓库(75k★@2026-06) | <https://github.com/OpenHands/OpenHands> | model-theory-deepdive §10.1 |
+| hermes-agent 仓库(188k★@2026-06,闭环学习/skill 自改进) | <https://github.com/NousResearch/hermes-agent> | model-theory-deepdive §10.1/§10.2 |
+| LangChain 仓库(138k★@2026-06,转型 agent 平台) | <https://github.com/langchain-ai/langchain> | model-theory-deepdive §10.1(两级吸收) |
+| smolagents 仓库(27k★@2026-06,code-agent 优于 JSON 工具调用) | <https://github.com/huggingface/smolagents> | model-theory-deepdive §10.1 |
+| vLLM 仓库(82k★@2026-06,推理基础设施共有化) | <https://github.com/vllm-project/vllm> | model-theory-deepdive §10.1 |
+| CrewAI 仓库(53k★@2026-06,约束性编排需求) | <https://github.com/crewAIInc/crewAI> | model-theory-deepdive §10.1 反例检查 |
 
 ---
 
