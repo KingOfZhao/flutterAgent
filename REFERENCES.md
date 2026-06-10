@@ -833,6 +833,10 @@
 | Flutter DevTools:Memory 视图(heap snapshot/retaining path) | <https://docs.flutter.dev/tools/devtools/memory> | flutter-memory-leaks §3 |
 | leak_tracker(widget 测试中断言无未 dispose 对象) | <https://pub.dev/packages/leak_tracker> | flutter-memory-leaks §3 |
 | Flutter API:ImageCache 与 cacheWidth/cacheHeight 解码层缩小 | <https://api.flutter.dev/flutter/painting/ImageCache-class.html> | flutter-memory-leaks §2 |
+| Flutter API:AppLifecycleListener(生命周期状态语义) | <https://api.flutter.dev/flutter/widgets/AppLifecycleListener-class.html> | flutter-lifecycle-state-restoration §1 |
+| Flutter API:RestorationManager(进程死亡后恢复的系统机制) | <https://api.flutter.dev/flutter/services/RestorationManager-class.html> | flutter-lifecycle-state-restoration §3 |
+| Flutter 官方:State restoration 指南(RestorationMixin/测试方法) | <https://docs.flutter.dev/platform-integration/android/restore-state-android> | flutter-lifecycle-state-restoration §2/§3 |
+| Android 官方:进程与应用生命周期(后台进程回收规则) | <https://developer.android.com/guide/components/activities/process-lifecycle> | flutter-lifecycle-state-restoration §2 |
 
 ---
 

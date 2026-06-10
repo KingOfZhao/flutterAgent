@@ -136,3 +136,24 @@
 即检索失败,改用文档实词后通过。推论:给本仓库向量库写语料时,应主动把用户
 可能用的常见说法写进正文(如同段并写"卡顿/掉帧"),这是无模型嵌入器下的
 召回率工程;也再次说明检索断言不是形式主义——它真的能抓住"写了但搜不到"。
+
+## 附:向量库语料·机制层深入五轮(2026-06-10)
+
+| 轮 | 反思出的缺口 | 填充 | 检索断言 |
+|---|---|---|---|
+| 11 | 性能语料只有"做法",无"为什么有效"的机制层 | flutter-rendering-pipeline(三棵树/单遍 layout/双线程诊断映射) | "三棵树 RenderObject 约束下行 raster 线程" |
+| 12 | "状态串了加 key"是口诀,不解释机制答不了深问题 | flutter-element-keys(canUpdate 推导/key 选型/加了 key 仍不行的三坑) | "ValueKey GlobalKey canUpdate 状态串了" |
+| 13 | unbounded height/嵌套滚动需协议层解释 | flutter-sliver-scrolling(Sliver 协议/shrinkWrap 取消惰性/吸顶机制) | "sliver shrinkWrap unbounded height 吸顶" |
+| 14 | OOM/内存爬升的"缓慢死亡"无机制语料 | flutter-memory-leaks(GC 分代/四大根因/retaining path 取证) | "内存泄漏 heap snapshot retaining path dispose" |
+| 15 | 进程死亡是测试环境不复现的状态丢失源,零覆盖 | flutter-lifecycle-state-restoration(生命周期语义/restoration 两层/dispose 非保存时机) | "进程死亡 RestorationMixin paused 落盘" |
+
+第三批元发现(两条):
+1. **机制层语料的价值在"症状→机制→工具"的映射表**:做法类语料回答
+   "怎么做",机制类语料回答"为什么/坏了怎么查"——后者必须显式建
+   症状到机制位置的映射(轮11 §4、轮14 §3),否则机制知识检索回来
+   也用不上。
+2. **召回随语料密度退化**:轮 14 入库后,轮 9 的泛词查询("流水线/缓存/
+   runner")被新文档挤出 top5——语料越多,断言查询越要用目标文档的
+   **独有**实词,而非领域共享词。这说明检索回归断言的另一重价值:
+   它能在语料增长时自动暴露"旧文档被新文档遮蔽"的召回退化,
+   这是没有断言的向量库静默发生的问题。
