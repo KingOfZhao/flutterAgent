@@ -8,6 +8,7 @@ time, is what gives the comparison statistical footing.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import List
@@ -105,6 +106,53 @@ def detect_cache_staleness(
         "cached_share": round(share, 4),
         "max_cached_share": max_cached_share,
         "recent_runs": len(recent),
+    }
+
+
+def snapshot_corpus(skills_dir: Path) -> dict:
+    """D3 baseline: per-skill content hashes plus corpus size totals."""
+    skills: dict = {}
+    total_chars = 0
+    for md in sorted(skills_dir.glob("*/SKILL.md")):
+        text = md.read_text(encoding="utf-8")
+        total_chars += len(text)
+        skills[md.parent.name] = {
+            "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            "chars": len(text),
+        }
+    return {"skill_count": len(skills), "total_chars": total_chars, "skills": skills}
+
+
+def diff_corpus(
+    old: dict, new: dict, *, max_growth_ratio: float = 0.10
+) -> dict:
+    """D3: compare two corpus snapshots; alert on silent growth beyond ratio.
+
+    Per-skill changes are listed regardless — D3 is patch-style drift, so the
+    valuable output is *which* skills changed, not just that the total grew.
+    """
+    old_skills = old.get("skills") or {}
+    new_skills = new.get("skills") or {}
+    added = sorted(set(new_skills) - set(old_skills))
+    removed = sorted(set(old_skills) - set(new_skills))
+    changed = sorted(
+        name
+        for name in set(old_skills) & set(new_skills)
+        if old_skills[name]["sha256"] != new_skills[name]["sha256"]
+    )
+    old_total = int(old.get("total_chars", 0) or 0)
+    new_total = int(new.get("total_chars", 0) or 0)
+    growth = (new_total - old_total) / old_total if old_total else 0.0
+    return {
+        "source": "D3",
+        "alert": growth > max_growth_ratio,
+        "added": added,
+        "removed": removed,
+        "changed": changed,
+        "old_total_chars": old_total,
+        "new_total_chars": new_total,
+        "growth_ratio": round(growth, 4),
+        "max_growth_ratio": max_growth_ratio,
     }
 
 

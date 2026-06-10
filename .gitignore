@@ -22,3 +22,5 @@ eval/candidates.jsonl
 eval/drafts.jsonl
 eval/samples.jsonl
 eval/results_*.jsonl
+
+eval/corpus_baseline.json
