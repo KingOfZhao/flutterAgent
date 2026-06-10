@@ -824,6 +824,11 @@
 | Flutter API:Key/ValueKey/GlobalKey(选型与 GlobalKey 代价) | <https://api.flutter.dev/flutter/widgets/GlobalKey-class.html> | flutter-element-keys §3 |
 | Flutter 官方:When to Use Keys(状态串位机制讲解) | <https://www.youtube.com/watch?v=kn0EOS-ZiIc> | flutter-element-keys §2 |
 | Flutter API:PageStorageKey(滚动位置桶标识) | <https://api.flutter.dev/flutter/widgets/PageStorageKey-class.html> | flutter-element-keys §3 |
+| Flutter 官方:Slivers 概念(为什么需要 sliver 协议) | <https://docs.flutter.dev/ui/layout/scrolling/slivers> | flutter-sliver-scrolling §1 |
+| Flutter API:SliverConstraints/SliverGeometry(滚动维度的约束协商) | <https://api.flutter.dev/flutter/rendering/SliverConstraints-class.html> | flutter-sliver-scrolling §1/§3 |
+| Flutter API:ListView(shrinkWrap 取消惰性/itemExtent 优化语义) | <https://api.flutter.dev/flutter/widgets/ListView-class.html> | flutter-sliver-scrolling §2/§4 |
+| Flutter API:NestedScrollView(内外 ScrollPosition 协调) | <https://api.flutter.dev/flutter/widgets/NestedScrollView-class.html> | flutter-sliver-scrolling §2 |
+| Flutter API:AutomaticKeepAliveClientMixin(放弃回收的代价) | <https://api.flutter.dev/flutter/widgets/AutomaticKeepAliveClientMixin-mixin.html> | flutter-sliver-scrolling §4 |
 
 ---
 
