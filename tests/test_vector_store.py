@@ -194,6 +194,7 @@ def test_flutter_corpus_docs_are_retrievable(tmp_path):
         "widget 测试 pumpAndSettle 金字塔": "flutter-testing-strategy",
         "签名 上架 灰度发布 崩溃监控": "flutter-release-engineering",
         "项目结构分层 repository 单一事实源": "flutter-app-architecture",
+        "go_router 深链 redirect 守卫": "flutter-navigation-deeplink",
     }
     for query, expected in cases.items():
         hit_ids = {h.doc_id for h in store.search(query, top_k=5, kind="knowledge")}

@@ -769,6 +769,10 @@
 | Flutter 官方:应用架构指南(MVVM、UI/Data 两层) | <https://docs.flutter.dev/app-architecture/guide> | flutter-app-architecture §1 |
 | Flutter 官方:架构设计建议(单一事实源、可选 domain 层) | <https://docs.flutter.dev/app-architecture/recommendations> | flutter-app-architecture §1/§3 |
 | Code With Andrea:feature-first vs layer-first 项目结构 | <https://codewithandrea.com/articles/flutter-project-structure/> | flutter-app-architecture §2 |
+| Flutter 官方:导航与路由概述(Navigator/Router/go_router 选型) | <https://docs.flutter.dev/ui/navigation> | flutter-navigation-deeplink §1 |
+| go_router 官方文档(redirect/refreshListenable/ShellRoute) | <https://pub.dev/documentation/go_router/latest/topics/Get%20started-topic.html> | flutter-navigation-deeplink §2 |
+| Flutter 官方:深链接入(App Links / Universal Links) | <https://docs.flutter.dev/ui/navigation/deep-linking> | flutter-navigation-deeplink §3 |
+| Android 官方:App Links 验证(assetlinks.json) | <https://developer.android.com/training/app-links/verify-android-applinks> | flutter-navigation-deeplink §3 |
 
 ---
 
