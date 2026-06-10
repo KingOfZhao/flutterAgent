@@ -806,6 +806,10 @@
 | dart.dev:pubspec.lock 入库准则(应用入库/库不入) | <https://dart.dev/guides/libraries/private-files#pubspeclock> | flutter-cicd-engineering §2 |
 | FVM(Flutter SDK 版本钉死) | <https://fvm.app/documentation> | flutter-cicd-engineering §2 |
 | fastlane match(iOS 证书集中管理) | <https://docs.fastlane.tools/actions/match/> | flutter-cicd-engineering §3 |
+| Flutter 官方:错误处理(FlutterError.onError/PlatformDispatcher.onError) | <https://docs.flutter.dev/testing/errors> | flutter-observability §1 |
+| Firebase Crashlytics Flutter 接入(四类错误出口/recordError) | <https://firebase.google.com/docs/crashlytics/get-started?platform=flutter> | flutter-observability §1 |
+| Sentry Flutter(符号上传/面包屑/性能采集) | <https://docs.sentry.io/platforms/dart/guides/flutter/> | flutter-observability §2/§3 |
+| Firebase Performance Monitoring Flutter(冷启动/慢帧线上指标) | <https://firebase.google.com/docs/perf-mon/flutter/get-started> | flutter-observability §3 |
 
 ---
 

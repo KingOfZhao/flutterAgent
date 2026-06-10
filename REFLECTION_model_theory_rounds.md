@@ -120,3 +120,19 @@
 每轮缺口都来自问"哪类高频中文查询现在会召回噪声或空集",填充后立即把该查询固化为
 检索回归断言(test_flutter_corpus_docs_are_retrievable),语料质量从主观判断
 变成可执行检验。每条结论仍按仓库纪律带 REFERENCES §26 可点击来源。
+
+## 附:向量库语料反思填充第二批五轮(2026-06-10)
+
+| 轮 | 反思出的缺口 | 填充 | 检索断言 |
+|---|---|---|---|
+| 6 | "async 够用还是必须 isolate"的判断链无语料 | flutter-concurrency(等 vs 算/使用阶梯/不共享内存/后台通道) | "isolate compute 不共享内存 消息深拷贝" |
+| 7 | 性能语料只讲"别掉帧",动画建设性维度缺失 | flutter-animation-ux(隐式/显式选型/合成层友好属性/减少动效) | "隐式动画 AnimationController Hero 转场" |
+| 8 | Flutter 被当封闭世界,原生边界决策无支撑 | flutter-platform-integration(先插件后通道/pigeon/FFI 所有权/PlatformView 红线) | "MethodChannel pigeon ffi PlatformView 原生" |
+| 9 | "提交→可发布"之间的自动化流水线无语料 | flutter-cicd-engineering(三层流水线/可复现三件套/CI 签名) | "流水线 pubspec.lock fastlane 缓存 runner" |
+| 10 | 观测只到"看崩溃率",非致命/性能/行为面缺失 | flutter-observability(四个错误出口/符号化与面包屑/告警绑定动作) | "Crashlytics onError 符号化 面包屑 慢帧" |
+
+第二批新元发现:**哈希嵌入器没有同义词泛化,检索断言的查询词必须与语料共享
+实词**——轮 6 首次断言用"主线程卡顿/消息传递"(文档实词是"卡 UI/消息深拷贝")
+即检索失败,改用文档实词后通过。推论:给本仓库向量库写语料时,应主动把用户
+可能用的常见说法写进正文(如同段并写"卡顿/掉帧"),这是无模型嵌入器下的
+召回率工程;也再次说明检索断言不是形式主义——它真的能抓住"写了但搜不到"。
