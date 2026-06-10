@@ -34,14 +34,21 @@ def main(
         ROOT / "eval" / "candidates.jsonl", "--out", "-o", help="Destination JSONL file."
     ),
     limit: int = typer.Option(100, "--limit", help="Max candidates to emit."),
+    since: int = typer.Option(0, "--since", help="Skip runs older than this epoch (seconds)."),
 ) -> None:
     store = RunStore(runs)
-    candidates = store.harvest_failures(limit=limit)
+    candidates = store.harvest_failures(limit=limit, since=since)
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w", encoding="utf-8") as f:
         for row in candidates:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    reason_counts: dict = {}
+    for row in candidates:
+        for r in row.get("reasons", []):
+            reason_counts[r] = reason_counts.get(r, 0) + 1
     typer.echo(f"[harvest] {len(candidates)} candidate(s) -> {out}")
+    for r, n in sorted(reason_counts.items(), key=lambda kv: -kv[1]):
+        typer.echo(f"[harvest]   {r}: {n}")
 
 
 if __name__ == "__main__":

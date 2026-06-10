@@ -31,6 +31,19 @@ def _write(path: Path, runs: list[dict]) -> None:
     )
 
 
+def test_since_filter_skips_older_runs(tmp_path: Path):
+    p = tmp_path / "runs.jsonl"
+    _write(
+        p,
+        [
+            _run("old", created_at=100, acceptance_gaps=["缺验收"]),
+            _run("new", created_at=2000, acceptance_gaps=["缺验收"]),
+        ],
+    )
+    rows = RunStore(p).harvest_failures(since=1500)
+    assert [r["id"] for r in rows] == ["new"]
+
+
 def test_clean_runs_yield_no_candidates(tmp_path: Path):
     p = tmp_path / "runs.jsonl"
     _write(p, [_run("ok-1"), _run("ok-2")])

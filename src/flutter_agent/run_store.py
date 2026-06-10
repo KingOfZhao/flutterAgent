@@ -157,7 +157,7 @@ class RunStore:
         }
 
 
-    def harvest_failures(self, *, limit: int = 100) -> List[dict]:
+    def harvest_failures(self, *, limit: int = 100, since: int = 0) -> List[dict]:
         """Scan all runs and return candidate regression samples.
 
         A run is a candidate when the pipeline itself recorded unresolved
@@ -165,6 +165,8 @@ class RunStore:
         acceptance gaps, failed package validations, or an invalid stage.
         Output rows carry the failure reasons so a reviewer can decide
         which candidates deserve a rubric and a place in the eval set.
+        ``since`` (epoch seconds) skips older runs so periodic harvests
+        only re-triage the new tail of the log.
         """
         if not self.path.exists():
             return []
@@ -178,6 +180,8 @@ class RunStore:
             except json.JSONDecodeError:
                 continue
             if obj.get("cached"):
+                continue
+            if since and int(obj.get("created_at", 0) or 0) < since:
                 continue
             reasons = _failure_reasons(obj)
             if reasons:
