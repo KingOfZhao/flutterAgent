@@ -838,6 +838,15 @@
 | Flutter 官方:State restoration 指南(RestorationMixin/测试方法) | <https://docs.flutter.dev/platform-integration/android/restore-state-android> | flutter-lifecycle-state-restoration §2/§3 |
 | Android 官方:进程与应用生命周期(后台进程回收规则) | <https://developer.android.com/guide/components/activities/process-lifecycle> | flutter-lifecycle-state-restoration §2 |
 
+## 29. 向量库语料·第四批七轮(knowledge/flutter-*.md 续)
+
+| 主题 | 链接 | 在本仓库何处引用 |
+|---|---|---|
+| Flutter 官方:Build a form with validation(Form/validator 机制) | <https://docs.flutter.dev/cookbook/forms/validation> | flutter-forms-input §1 |
+| Flutter API:FocusNode/焦点遍历(FocusTraversalGroup) | <https://api.flutter.dev/flutter/widgets/FocusNode-class.html> | flutter-forms-input §2 |
+| Flutter API:TextEditingValue.composing(CJK 组合输入区间) | <https://api.flutter.dev/flutter/services/TextEditingValue/composing.html> | flutter-forms-input §3 |
+| Flutter API:AutofillHints(系统自动填充集成) | <https://api.flutter.dev/flutter/services/AutofillHints-class.html> | flutter-forms-input §3 |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。

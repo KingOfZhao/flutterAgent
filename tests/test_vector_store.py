@@ -208,6 +208,7 @@ def test_flutter_corpus_docs_are_retrievable(tmp_path):
         "sliver shrinkWrap unbounded height 吸顶": "flutter-sliver-scrolling",
         "内存泄漏 heap snapshot retaining path dispose": "flutter-memory-leaks",
         "进程死亡 RestorationMixin paused 落盘": "flutter-lifecycle-state-restoration",
+        "表单 validator FocusNode 键盘遮挡 composing": "flutter-forms-input",
     }
     for query, expected in cases.items():
         hit_ids = {h.doc_id for h in store.search(query, top_k=5, kind="knowledge")}
