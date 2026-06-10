@@ -71,7 +71,9 @@
 
 ## 4. 方法谱系:这些能力站在哪些公开研究之上
 
-(内部细节未公开;以下为基于 Anthropic 公开论文/文档的谱系定位,标注【推断】处为合理外推。)
+(内部细节未公开;以下为基于 Anthropic 公开论文/文档的谱系定位,标注【推断】处为合理外推。
+逐论文精读与完整推演已展开为独立文档:`model-theory-deepdive.md`——含每条线的
+机制/贡献/天花板三段式精读,以及"为什么 Fable 5 强"的五步可证伪论证链。)
 
 - **RLHF / 偏好学习**:Christiano et al. 2017(https://arxiv.org/abs/1706.03741);InstructGPT(https://arxiv.org/abs/2203.02155)。指令遵循与"有帮助性"的底座方法。
 - **Constitutional AI / RLAIF**:Bai et al. 2022(https://arxiv.org/abs/2212.08073)。用一组明文原则让 AI 自我批评与改写,替代大量人工标注——Claude 系对齐方法的标志性路线;Fable/Mythos 的低失准行为水平是这条线持续迭代的结果【推断:具体配方未公开】。
@@ -146,6 +148,7 @@ curl https://api.anthropic.com/v1/messages \
 | 安全角色 | Fable 5 的护栏回退模型 | Mythos 5 + 分类器 |
 
 选型直觉:日常开发、生产 Agent、成本敏感 → Opus 4.8;一次性硬骨头(全库迁移、深度研究、复杂多 Agent、纯视觉自动化)→ Fable 5。
+两者差距的机制性解释(为什么是长任务而不是所有轴均匀拉开):`model-theory-deepdive.md` §8。
 
 ### 7.1 选型决策树【我的理解】
 
