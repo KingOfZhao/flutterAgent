@@ -402,6 +402,65 @@ class ErrorResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Skill ranking dry-run (POST /v1/skills/rank)
+# ---------------------------------------------------------------------------
+
+class SkillRankRequest(BaseModel):
+    """Dry-run the skill selection for a requirement — no model calls."""
+
+    requirement: str = Field(
+        ...,
+        min_length=2,
+        description="The raw user requirement to rank skills against.",
+    )
+    platforms: List[Platform] = Field(
+        default_factory=lambda: [Platform.auto],
+        description="Target platforms. Use ['auto'] for the default set.",
+    )
+    token_budget: Optional[int] = Field(
+        default=None,
+        gt=0,
+        description="Override the skill token budget (default 40000).",
+    )
+
+
+class SkillRankItem(BaseModel):
+    """One skill's standing in the ranking."""
+
+    id: str
+    name: str
+    score: float = Field(description="Relevance score from the keyword ranker.")
+    selected: bool = Field(description="Whether select_within_budget kept it.")
+    foundational: bool = Field(
+        description="Whether the skill was force-included as foundational."
+    )
+    family: Optional[str] = Field(
+        default=None,
+        description="Family root when the skill belongs to an `extends` family.",
+    )
+    estimated_tokens: int = Field(
+        description="Rough token estimate of the skill body."
+    )
+
+
+class SkillRankResponse(BaseModel):
+    """Explainable result of the skill selection dry-run."""
+
+    requirement: str
+    platforms: List[str]
+    token_budget: int
+    foundational: List[str] = Field(
+        description="Skill ids force-included for this requirement."
+    )
+    selected: List[str] = Field(
+        description="Skill ids that survive ranking + budget trimming, in order."
+    )
+    ranked: List[SkillRankItem] = Field(
+        description="All skills with score / selection / family details."
+    )
+
+
+# ---------------------------------------------------------------------------
 # Ingestion (POST /v1/ingest)
 # ---------------------------------------------------------------------------
 

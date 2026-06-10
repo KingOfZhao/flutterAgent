@@ -120,6 +120,8 @@ a{{color:#2563eb}}</style></head>
 <ul>
   <li><a href="/docs">Swagger UI</a> &middot; <a href="/redoc">ReDoc</a> &middot; <a href="/openapi.json">openapi.json</a></li>
   <li><code>POST /v1/refine</code> — full pipeline, typed JSON response</li>
+  <li><code>POST /v1/refine/stream</code> — same pipeline with live SSE progress events</li>
+  <li><code>POST /v1/skills/rank</code> — dry-run skill selection (scores, pins, budget) with zero model calls</li>
   <li><code>POST /v1/chat/completions</code> — OpenAI-compatible (supports <code>stream=true</code> SSE; use <code>model=&quot;flutter-agent&quot;</code>)</li>
   <li><code>GET  /v1/skills</code> — list loaded skill docs</li>
   <li><code>POST /v1/skills/reload</code> — hot-reload <code>SKILL.md</code> files</li>

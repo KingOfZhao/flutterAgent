@@ -12,6 +12,8 @@
   - 标准 **OpenAPI 3.x** 文档(`/docs` 与 `/openapi.json`),可被任意 OpenAPI 客户端 / Swagger Codegen 调用;
   - **OpenAI 兼容** 接口 `/v1/chat/completions`,**支持 `stream=true` SSE**,直接被 OpenAI SDK / LangChain / IDE 插件接入;
   - 运行审计 `/v1/runs` 与 `/v1/runs/{id}`,任何调用过的需求都可重读；
+  - **流式精炼** `/v1/refine/stream`:逐阶段 SSE 进度事件(开始/完成/耗时/token/成本),最后给出完整结果；
+  - **选用解释** `/v1/skills/rank`:不花一个 token,dry-run 整套 skill 选用(得分/钉住/族去重/预算),调 ranker 时不再黑盒；
   - **聚合指标** `/v1/metrics`：总运行次数、累计 token / 成本、各阶段成功率、高频 skill；
   - **结构化日志**：`LOG_FORMAT=json` 可输出 JSON Lines，便于接入 Datadog / Loki / CloudWatch。
 
@@ -335,9 +337,11 @@ requirement
 | 方法 | 路径 | 用途 |
 |---|---|---|
 | `POST` | `/v1/refine` | 强类型流水线,返回 `RefineResponse`(含 `cost` / `validations` / `cache_key`) |
+| `POST` | `/v1/refine/stream` | 同一条流水线,但以 **SSE** 推送进度:`pipeline_start` / `stage_start` / `stage_complete`(耗时/token/成本)/ `cache_hit` / `done`(完整 `RefineResponse`)/ `error`,以 `data: [DONE]` 结束 |
 | `POST` | `/v1/ingest` | 持续吸收开源:发现 HF 模型 + arXiv 论文,可选 `scaffold`/`distill`,返回 `IngestResponse` |
 | `POST` | `/v1/chat/completions` | OpenAI 兼容;agent / passthrough 双模;支持 SSE |
 | `GET` | `/v1/skills` | 列出已加载 skill |
+| `POST` | `/v1/skills/rank` | **选用 dry-run**(零模型调用):对给定需求返回每个 skill 的得分、是否入选、是否被基础 skill 钉住、族根与 token 估算,解释 ranker 为什么选了这些 |
 | `GET` | `/v1/skills/{id}` | 取单个 skill(含 markdown body) |
 | `POST` | `/v1/skills/reload` | 热重载磁盘上的 SKILL.md |
 | `GET` | `/v1/runs?limit=N` | 列出最近 N 次运行(每项带 `cost` + `bad_packages`) |

@@ -17,7 +17,7 @@ import logging
 import re
 import time
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from .cache import RunCache, make_cache_key
 from .config import Settings
@@ -50,6 +50,9 @@ from .skill_ranker import build_families, rank_skills, select_within_budget
 from .stage_schemas import validate_stage_output
 
 logger = logging.getLogger(__name__)
+
+# Async callback that receives progress events while the pipeline runs.
+ProgressCallback = Callable[[Dict[str, Any]], Awaitable[None]]
 
 
 # Foundational skills and the signals that justify force-including them.
@@ -301,6 +304,28 @@ def _try_parse_json(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def _stage_complete_event(
+    sr: StageResult, *, review_iteration: Optional[int] = None
+) -> Dict[str, Any]:
+    event: Dict[str, Any] = {
+        "type": "stage_complete",
+        "stage": sr.stage.value,
+        "elapsed_ms": sr.elapsed_ms,
+        "attempts": sr.attempts,
+        "repaired": sr.repaired,
+        "stage_valid": sr.stage_valid,
+        "usage": {
+            "prompt_tokens": sr.usage.prompt_tokens,
+            "completion_tokens": sr.usage.completion_tokens,
+            "total_tokens": sr.usage.total_tokens,
+        },
+        "cost_usd": sr.cost.total_cost_usd if sr.cost else None,
+    }
+    if review_iteration is not None:
+        event["review_iteration"] = review_iteration
+    return event
+
+
 def _platforms_to_strs(platforms: List[Platform]) -> List[str]:
     out = [p.value for p in platforms if p != Platform.auto]
     return out or ["mobile", "desktop"]  # safe default
@@ -330,7 +355,20 @@ class RefinementPipeline:
 
     # ------------------------------------------------------------------ API
 
-    async def run(self, req: RefineRequest) -> RefineResponse:
+    @staticmethod
+    async def _emit(progress: Optional[ProgressCallback], event: Dict[str, Any]) -> None:
+        if progress is None:
+            return
+        try:
+            await progress(event)
+        except Exception:  # noqa: BLE001 - progress must never break the run
+            logger.exception("progress callback failed for event %s", event.get("type"))
+
+    async def run(
+        self,
+        req: RefineRequest,
+        progress: Optional[ProgressCallback] = None,
+    ) -> RefineResponse:
         # ---- Decide which skills are in play -----------------------------
         if req.skills:
             picked = self._registry.get_many(req.skills)
@@ -364,6 +402,11 @@ class RefinementPipeline:
                     cached_response.cached = True
                     cached_response.cache_key = cache_key
                     logger.info("cache hit: %s -> %s", cache_key[:12], hit_id)
+                    await self._emit(progress, {
+                        "type": "cache_hit",
+                        "run_id": hit_id,
+                        "cache_key": cache_key,
+                    })
                     return cached_response
 
         run_id = f"run-{uuid.uuid4().hex[:16]}"
@@ -374,6 +417,13 @@ class RefinementPipeline:
             [s.value for s in req.stages],
         )
 
+        await self._emit(progress, {
+            "type": "pipeline_start",
+            "run_id": run_id,
+            "skills": selected_ids,
+            "stages": [s.value for s in req.stages],
+        })
+
         stage_results: List[StageResult] = []
         prior: Dict[Stage, Dict[str, Any]] = {}
         markdown_out: Optional[str] = None
@@ -382,6 +432,7 @@ class RefinementPipeline:
         review_history: List[ReviewPass] = []
 
         for stage in req.stages:
+            await self._emit(progress, {"type": "stage_start", "stage": stage.value})
             stage_result = await self._run_stage(
                 stage=stage,
                 req=req,
@@ -390,6 +441,7 @@ class RefinementPipeline:
             )
             stage_results.append(stage_result)
             total_usage.add(stage_result.usage)
+            await self._emit(progress, _stage_complete_event(stage_result))
 
             if stage == Stage.markdown:
                 markdown_out = stage_result.raw_output.strip()
@@ -433,6 +485,11 @@ class RefinementPipeline:
                             review_iterations + 1,
                             req.review_max_iterations,
                         )
+                        await self._emit(progress, {
+                            "type": "stage_start",
+                            "stage": Stage.implementation.value,
+                            "review_iteration": review_iterations + 1,
+                        })
                         impl_again = await self._run_stage(
                             stage=Stage.implementation,
                             req=req,
@@ -442,9 +499,20 @@ class RefinementPipeline:
                         )
                         stage_results.append(impl_again)
                         total_usage.add(impl_again.usage)
+                        await self._emit(
+                            progress,
+                            _stage_complete_event(
+                                impl_again, review_iteration=review_iterations + 1
+                            ),
+                        )
                         if impl_again.parsed is not None:
                             prior[Stage.implementation] = impl_again.parsed
 
+                        await self._emit(progress, {
+                            "type": "stage_start",
+                            "stage": Stage.review.value,
+                            "review_iteration": review_iterations + 1,
+                        })
                         review_again = await self._run_stage(
                             stage=Stage.review,
                             req=req,
@@ -453,6 +521,12 @@ class RefinementPipeline:
                         )
                         stage_results.append(review_again)
                         total_usage.add(review_again.usage)
+                        await self._emit(
+                            progress,
+                            _stage_complete_event(
+                                review_again, review_iteration=review_iterations + 1
+                            ),
+                        )
                         if review_again.parsed is not None:
                             prior[Stage.review] = review_again.parsed
                             _augment_review_with_consistency(prior)

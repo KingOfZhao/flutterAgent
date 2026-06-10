@@ -207,6 +207,66 @@
         }
       }
     },
+    "/v1/skills/rank": {
+      "post": {
+        "tags": [
+          "skills"
+        ],
+        "summary": "Dry-run the skill selection for a requirement (no model calls)",
+        "description": "Explain which skills would be injected for a requirement and why.\n\nRuns the exact same ranker the pipeline uses (keyword scores, foundational\npinning, family de-dup, token budget) and returns every skill's score and\nselection outcome — purely local, zero upstream tokens.",
+        "operationId": "rank_skills_for_requirement_v1_skills_rank_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillRankRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillRankResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/refine": {
       "post": {
         "tags": [
@@ -266,6 +326,75 @@
           },
           "502": {
             "description": "Upstream model error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/refine/stream": {
+      "post": {
+        "tags": [
+          "refine"
+        ],
+        "summary": "Refine with live SSE progress (stage-by-stage events + final result)",
+        "description": "Run the pipeline while streaming progress events over SSE.\n\nStages can take tens of seconds each against a real upstream model; this\nendpoint lets clients render live progress instead of a blank wait.",
+        "operationId": "refine_stream_v1_refine_stream_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefineRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "text/event-stream of JSON events: pipeline_start, stage_start, stage_complete (elapsed/usage/cost), cache_hit, done (full RefineResponse), error. Terminated by `data: [DONE]`.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/event-stream": {}
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1745,6 +1874,152 @@
           "body"
         ],
         "title": "SkillDetail"
+      },
+      "SkillRankItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score",
+            "description": "Relevance score from the keyword ranker."
+          },
+          "selected": {
+            "type": "boolean",
+            "title": "Selected",
+            "description": "Whether select_within_budget kept it."
+          },
+          "foundational": {
+            "type": "boolean",
+            "title": "Foundational",
+            "description": "Whether the skill was force-included as foundational."
+          },
+          "family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family",
+            "description": "Family root when the skill belongs to an `extends` family."
+          },
+          "estimated_tokens": {
+            "type": "integer",
+            "title": "Estimated Tokens",
+            "description": "Rough token estimate of the skill body."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "score",
+          "selected",
+          "foundational",
+          "estimated_tokens"
+        ],
+        "title": "SkillRankItem",
+        "description": "One skill's standing in the ranking."
+      },
+      "SkillRankRequest": {
+        "properties": {
+          "requirement": {
+            "type": "string",
+            "minLength": 2,
+            "title": "Requirement",
+            "description": "The raw user requirement to rank skills against."
+          },
+          "platforms": {
+            "items": {
+              "$ref": "#/components/schemas/Platform"
+            },
+            "type": "array",
+            "title": "Platforms",
+            "description": "Target platforms. Use ['auto'] for the default set."
+          },
+          "token_budget": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Budget",
+            "description": "Override the skill token budget (default 40000)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "requirement"
+        ],
+        "title": "SkillRankRequest",
+        "description": "Dry-run the skill selection for a requirement — no model calls."
+      },
+      "SkillRankResponse": {
+        "properties": {
+          "requirement": {
+            "type": "string",
+            "title": "Requirement"
+          },
+          "platforms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Platforms"
+          },
+          "token_budget": {
+            "type": "integer",
+            "title": "Token Budget"
+          },
+          "foundational": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Foundational",
+            "description": "Skill ids force-included for this requirement."
+          },
+          "selected": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected",
+            "description": "Skill ids that survive ranking + budget trimming, in order."
+          },
+          "ranked": {
+            "items": {
+              "$ref": "#/components/schemas/SkillRankItem"
+            },
+            "type": "array",
+            "title": "Ranked",
+            "description": "All skills with score / selection / family details."
+          }
+        },
+        "type": "object",
+        "required": [
+          "requirement",
+          "platforms",
+          "token_budget",
+          "foundational",
+          "selected",
+          "ranked"
+        ],
+        "title": "SkillRankResponse",
+        "description": "Explainable result of the skill selection dry-run."
       },
       "SkillSummary": {
         "properties": {
