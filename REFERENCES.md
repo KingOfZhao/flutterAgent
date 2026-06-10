@@ -820,6 +820,10 @@
 | Flutter 官方:理解约束("约束下行,尺寸上行,父定位") | <https://docs.flutter.dev/ui/layout/constraints> | flutter-rendering-pipeline §2 |
 | Flutter API:RepaintBoundary(独立 Layer 与缓存代价) | <https://api.flutter.dev/flutter/widgets/RepaintBoundary-class.html> | flutter-rendering-pipeline §3 |
 | Flutter 官方:UI 线程与 raster 线程分离(性能画像两轨道) | <https://docs.flutter.dev/perf/ui-performance> | flutter-rendering-pipeline §2/§4 |
+| Flutter API:Widget.canUpdate(runtimeType+key 复用判定) | <https://api.flutter.dev/flutter/widgets/Widget/canUpdate.html> | flutter-element-keys §1 |
+| Flutter API:Key/ValueKey/GlobalKey(选型与 GlobalKey 代价) | <https://api.flutter.dev/flutter/widgets/GlobalKey-class.html> | flutter-element-keys §3 |
+| Flutter 官方:When to Use Keys(状态串位机制讲解) | <https://www.youtube.com/watch?v=kn0EOS-ZiIc> | flutter-element-keys §2 |
+| Flutter API:PageStorageKey(滚动位置桶标识) | <https://api.flutter.dev/flutter/widgets/PageStorageKey-class.html> | flutter-element-keys §3 |
 
 ---
 
