@@ -811,6 +811,16 @@
 | Sentry Flutter(符号上传/面包屑/性能采集) | <https://docs.sentry.io/platforms/dart/guides/flutter/> | flutter-observability §2/§3 |
 | Firebase Performance Monitoring Flutter(冷启动/慢帧线上指标) | <https://firebase.google.com/docs/perf-mon/flutter/get-started> | flutter-observability §3 |
 
+## 28. 向量库语料·机制层深入五轮(knowledge/flutter-*.md 续)
+
+| 主题 | 链接 | 在本仓库何处引用 |
+|---|---|---|
+| Flutter 官方:架构概览(Widget/Element/RenderObject 三树与帧流水线) | <https://docs.flutter.dev/resources/architectural-overview> | flutter-rendering-pipeline §1/§2 |
+| Flutter 官方:Inside Flutter(单遍 layout/亚线性 build 的机制论证) | <https://docs.flutter.dev/resources/inside-flutter> | flutter-rendering-pipeline §2 |
+| Flutter 官方:理解约束("约束下行,尺寸上行,父定位") | <https://docs.flutter.dev/ui/layout/constraints> | flutter-rendering-pipeline §2 |
+| Flutter API:RepaintBoundary(独立 Layer 与缓存代价) | <https://api.flutter.dev/flutter/widgets/RepaintBoundary-class.html> | flutter-rendering-pipeline §3 |
+| Flutter 官方:UI 线程与 raster 线程分离(性能画像两轨道) | <https://docs.flutter.dev/perf/ui-performance> | flutter-rendering-pipeline §2/§4 |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。

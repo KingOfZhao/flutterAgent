@@ -203,6 +203,7 @@ def test_flutter_corpus_docs_are_retrievable(tmp_path):
         "MethodChannel pigeon ffi PlatformView 原生": "flutter-platform-integration",
         "流水线 pubspec.lock fastlane 缓存 runner": "flutter-cicd-engineering",
         "Crashlytics onError 符号化 面包屑 慢帧": "flutter-observability",
+        "三棵树 RenderObject 约束下行 raster 线程": "flutter-rendering-pipeline",
     }
     for query, expected in cases.items():
         hit_ids = {h.doc_id for h in store.search(query, top_k=5, kind="knowledge")}
