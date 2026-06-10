@@ -684,6 +684,10 @@
 | Reflexion(语言强化,飞轮的学术原型) | <https://arxiv.org/abs/2303.11366> | capability-fixation §8 |
 | METR 任务时长测量 | <https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/> | prediction-tracker 预测 2 |
 | 可复用 holdout(自适应数据分析) | <https://arxiv.org/abs/1411.2664> | claude-eval-methodology §5 封存集信息预算 |
+| RAG 综述(检索增强生成) | <https://arxiv.org/abs/2312.10997> | context-engineering-matrix §1/§2 |
+| Anthropic prompt caching 文档 | <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching> | context-engineering-matrix 缓存友好度行 |
+| OpenAI structured outputs(受约束解码的工程形态) | <https://platform.openai.com/docs/guides/structured-outputs> | structured-output-reliability §3 受约束解码细则 |
+| 灰度发布/金丝雀部署(Google SRE 书) | <https://sre.google/sre-book/release-engineering/> | model-migration-checklist §4 切流递进 |
 
 ---
 
