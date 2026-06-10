@@ -39,7 +39,8 @@ stage_hints: [breakdown, acceptance]
 > 调原生能力用 `flutter-platform-channels`(MethodChannel/Pigeon/FFI);
 > Android 工程层(Gradle/Manifest/权限/R8)用 `flutter-android-platform`;
 > iOS/Apple 工程层(Xcode/Info.plist/权限串/ATS/审核)用 `flutter-ios-platform`;
-> 桌面三端打包签名公证用 `flutter-desktop-platform`。
+> 桌面三端打包签名公证用 `flutter-desktop-platform`;
+> 权限判断与编译期宏/flavor 配置(dart-define/Manifest/Info.plist 三层一致)用 `flutter-permissions-and-config`。
 
 > **协议能力**(与后端/设备通信时):
 > 选通信协议(HTTP/2·3、REST、gRPC、GraphQL、WebSocket、SSE、MQTT)用 `flutter-network-protocols`;

@@ -1,9 +1,9 @@
 ---
 id: flutter-ui-from-image
-name: 从图片/设计稿还原 UI (取色 / 字号等比换算 / 渐变方向 / 关键信息提取)
-version: 1.0.0
+name: 从图片/设计稿还原 UI (取色 / 字号等比换算 / 渐变方向 / 像素级验收 / 关键信息提取)
+version: 1.1.0
 platforms: [all, mobile, desktop, web]
-tags: [ui, design, screenshot, color, gradient, typography, responsive, scaling, design-to-code, figma]
+tags: [ui, design, screenshot, color, gradient, typography, responsive, scaling, design-to-code, figma, pixel-perfect, golden-test, 还原, 设计稿]
 applies_when: 输入是一张 UI 图片/截图/设计稿,需要识别其视觉规格并还原成 Flutter 实现
 stage_hints: [spec, breakdown]
 ---
@@ -88,6 +88,25 @@ scaledValue = designValue * scale
 7. **响应式假设**:这是手机/平板/桌面哪一档?需要哪些断点(见 `flutter-cross-platform`)。
 8. **不确定项**:列出图里看不准的(精确色值、隐藏交互、滚动行为)——标注"待与设计/源文件确认",不要瞎猜填死。
 
+## 5. 深度还原与像素级验收(避免"大概像就行")
+
+浅层还原的典型特征是:整体布局对了,但细节全靠默认值。**逐项核对以下高频遗漏点**:
+
+1. **行高 ≠ 字号**:设计稿的 line-height(如 16/24)必须换算成 `TextStyle(height: 24/16 = 1.5)`;不设 `height` 用字体默认值,多行文本间距立刻偏。中文混排注意 `leadingDistribution: TextLeadingDistribution.even`。
+2. **字重精确到数值**:Medium(w500)和 SemiBold(w600)肉眼接近但不是 bold;`FontWeight.w500` 与 `FontWeight.bold`(w700)混用是最常见的偏差。
+3. **透明度叠加**:设计稿里 "黑色 8% 蒙层叠在品牌色上" 不等于直接取最终色——叠加层要用 `Color.alphaBlend` 或 Stack 蒙层还原,否则换背景就露馅。
+4. **阴影三要素**:`BoxShadow` 的 blur / offset / 透明度逐一对照设计稿(Figma 的 drop shadow 参数可直接映射),不要凭感觉给 `elevation: 4`。
+5. **圆角分边**:核对是统一圆角还是 `BorderRadius.only`(如顶部圆角卡片);描边在内侧还是外侧(`strokeAlign`)。
+6. **极端内容**:超长文本(溢出/省略)、缺图、0 数据——还原稿没画的状态也要给出行为定义,否则真机一跑就破版。
+7. **暗色模式**:若设计有暗色稿,逐 token 对照;没有则按 `flutter-design-tokens-theming` 推导,不要 hardcode 亮色值。
+
+**验收手段(写进 acceptance 标准):**
+
+- **golden test 截图比对**:关键页面/组件用 `matchesGoldenFile` 锁定渲染结果(<https://api.flutter.dev/flutter/flutter_test/matchesGoldenFile.html>),设计稿尺寸下逐像素 diff。
+- **叠图对比**:真机/模拟器截图与设计稿同尺寸半透明叠加(或左右分屏),偏差 > 2dp 的间距、错位的基线一眼可见。
+- **多设备矩阵**:至少在 小屏(320dp)/ 基准(375/390dp)/ 大屏(平板) 三档各跑一遍,确认等比与断点策略生效。
+- 验收清单按组件粒度列出:颜色、字号、字重、行高、间距、圆角、阴影、状态——每项要么"与稿一致",要么标注"近似 + 原因"。
+
 ## 反模式
 
 - ❌ 不定基准宽度就直接写死 px,换设备全错位。
@@ -97,6 +116,9 @@ scaledValue = designValue * scale
 - ❌ 用物理像素 × devicePixelRatio 去布局(Flutter 用逻辑像素)。
 - ❌ 把从有损截图取的色值当成"精确设计值"写进规范,不标注近似。
 - ❌ 只还原"正常态"一张图,漏掉空/加载/错误态。
+- ❌ 不设行高/字间距,全靠字体默认值,多行排版与稿差之千里。
+- ❌ 把叠加蒙层取成单一最终色,换背景立刻穿帮。
+- ❌ 还原完不做任何截图比对就宣称"像素级还原"。
 
 ## 参考 / References
 
@@ -109,6 +131,8 @@ scaledValue = designValue * scale
 - `ShaderMask`(文字/图形渐变):<https://api.flutter.dev/flutter/widgets/ShaderMask-class.html>
 - 文字缩放 `TextScaler`:<https://api.flutter.dev/flutter/painting/TextScaler-class.html>
 - 颜色对比度(WCAG):<https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html>
+- golden test / `matchesGoldenFile`:<https://api.flutter.dev/flutter/flutter_test/matchesGoldenFile.html>
+- `TextStyle.height` 行高语义:<https://api.flutter.dev/flutter/painting/TextStyle/height.html>
 - `flutter_screenutil`(可选等比方案):<https://pub.dev/packages/flutter_screenutil>
 - 主题落地见 `flutter-design-tokens-theming`;响应式见 `flutter-cross-platform`;对比度见 `flutter-accessibility`。
 

@@ -647,6 +647,17 @@
 | OpenTelemetry / Dart | <https://opentelemetry.io/docs/> · <https://pub.dev/packages/opentelemetry> |
 | Dart 混淆与符号 | <https://docs.flutter.dev/deployment/obfuscate> |
 
+## 20. 平台:权限与编译期配置(flutter-permissions-and-config)
+
+| 主题 | 链接 |
+|---|---|
+| permission_handler | <https://pub.dev/packages/permission_handler> |
+| Flutter flavors / dart-define | <https://docs.flutter.dev/deployment/flavors> |
+| Android 权限最佳实践 | <https://developer.android.com/training/permissions/requesting> |
+| Android 13 行为变更(细分媒体权限/通知) | <https://developer.android.com/about/versions/13/behavior-changes-13> |
+| iOS usage description(protected resources) | <https://developer.apple.com/documentation/bundleresources/information-property-list/protected-resources> |
+| macOS App Sandbox / entitlements | <https://developer.apple.com/documentation/security/app_sandbox> |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。
