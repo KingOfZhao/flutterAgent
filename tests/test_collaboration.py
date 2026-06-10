@@ -47,9 +47,15 @@ class FakeRegistry:
     def names(self) -> List[str]:
         return list(self._clients)
 
-    def resolve(self, ref: Optional[str]) -> Tuple[FakeClient, Optional[str]]:
+    def resolve_named(self, ref: Optional[str]) -> Tuple[str, FakeClient, Optional[str]]:
         key = (ref or "default").lstrip("@").split(":")[0]
-        return self._clients.get(key, self._clients["default"]), None
+        if key not in self._clients:
+            key = "default"
+        return key, self._clients[key], None
+
+    def resolve(self, ref: Optional[str]) -> Tuple[FakeClient, Optional[str]]:
+        name, client, model = self.resolve_named(ref)
+        return client, model
 
 
 def _team(clients: Dict[str, FakeClient], **settings_kwargs) -> AgentTeam:
@@ -242,6 +248,18 @@ def test_all_proposers_failed_raises_upstream() -> None:
     ]
     with pytest.raises(UpstreamError, match="all proposers failed"):
         asyncio.run(team.run("task", "committee", agents=agents))
+
+
+def test_transcript_audit_fields_and_total_usage() -> None:
+    default = FakeClient(["draft"])
+    reviewer = FakeClient(["APPROVE"])
+    team = _team({"default": default, "reviewer": reviewer})
+    result = asyncio.run(team.run("task", "debate"))
+    assert all(e.provider for e in result.transcript)
+    providers = {e.role: e.provider for e in result.transcript}
+    assert providers["proposer"] == "default"
+    # 2 calls x usage total_tokens=2 each
+    assert result.total_usage["total_tokens"] == 4
 
 
 def test_upstream_concurrency_capped() -> None:

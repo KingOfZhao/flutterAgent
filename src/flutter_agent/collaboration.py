@@ -83,6 +83,8 @@ class TranscriptEntry(BaseModel):
     role: str
     round: int
     content: str
+    provider: str = ""
+    model: str = ""
     usage: Dict[str, int] = Field(default_factory=dict)
     elapsed_ms: int = 0
 
@@ -120,7 +122,16 @@ class CollaborationResult(BaseModel):
     scoreboard: List[ScoreboardRow] = Field(default_factory=list)
     peer_scores: List[PeerScore] = Field(default_factory=list)
     failures: List[AgentFailure] = Field(default_factory=list)
+    total_usage: Dict[str, int] = Field(default_factory=dict)
     transcript: List[TranscriptEntry] = Field(default_factory=list)
+
+    def finalize_usage(self) -> "CollaborationResult":
+        totals: Dict[str, int] = {}
+        for entry in self.transcript:
+            for key, value in entry.usage.items():
+                totals[key] = totals.get(key, 0) + value
+        self.total_usage = totals
+        return self
 
 
 def _parse_score_json(text: str) -> Optional[Dict[str, Any]]:
@@ -163,7 +174,7 @@ class AgentTeam:
         messages: List[Dict[str, str]],
         round_no: int,
     ) -> TranscriptEntry:
-        client, model = self._registry.resolve(spec.provider or None)
+        provider, client, model = self._registry.resolve_named(spec.provider or None)
         system = spec.system_prompt or _default_system(spec.role)
         start = time.monotonic()
         async with self._upstream_sem:
@@ -175,6 +186,8 @@ class AgentTeam:
             role=spec.role,
             round=round_no,
             content=DeepSeekClient.extract_text(completion),
+            provider=provider,
+            model=str(completion.get("model", "") or model or ""),
             usage=DeepSeekClient.extract_usage(completion),
             elapsed_ms=int((time.monotonic() - start) * 1000),
         )
@@ -209,7 +222,7 @@ class AgentTeam:
         entry = await self._ask(agent, [{"role": "user", "content": task}], 1)
         return CollaborationResult(
             mode="solo", final_answer=entry.content, rounds_used=1, transcript=[entry]
-        )
+        ).finalize_usage()
 
     async def run_debate(
         self,
@@ -263,7 +276,7 @@ class AgentTeam:
             rounds_used=max(e.round for e in transcript),
             approved=approved,
             transcript=transcript,
-        )
+        ).finalize_usage()
 
     async def run_committee(
         self,
@@ -289,7 +302,7 @@ class AgentTeam:
             rounds_used=2,
             failures=failures,
             transcript=transcript,
-        )
+        ).finalize_usage()
 
     async def run_peer_review(
         self,
@@ -317,7 +330,7 @@ class AgentTeam:
                 scoreboard=[ScoreboardRow(agent=survivor.agent, aggregate=0.0, votes=0)],
                 failures=failures,
                 transcript=transcript,
-            )
+            ).finalize_usage()
         alive = {e.agent for e in entries}
         proposers = [p for p in proposers if p.name in alive]
         labels = [chr(ord("A") + i) for i in range(len(entries))]
@@ -402,7 +415,7 @@ class AgentTeam:
             peer_scores=peer_scores,
             failures=failures,
             transcript=transcript,
-        )
+        ).finalize_usage()
 
     # ------------------------------------------------------------- dispatch
 

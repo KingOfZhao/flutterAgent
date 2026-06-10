@@ -171,29 +171,36 @@ class ProviderRegistry:
             for c in self._configs.values()
         ]
 
-    def resolve(self, ref: Optional[str]) -> Tuple[DeepSeekClient, Optional[str]]:
-        """Map a routing reference to ``(client, model_or_None)``.
+    def resolve_named(
+        self, ref: Optional[str]
+    ) -> Tuple[str, DeepSeekClient, Optional[str]]:
+        """Map a routing reference to ``(provider_name, client, model_or_None)``.
 
         ``None`` model means "use the client's configured default".
         Unknown refs fall back to the default provider with ``ref`` as the
         raw model name, preserving pre-multi-provider behaviour.
         """
         if not ref:
-            return self._clients[DEFAULT_PROVIDER], None
+            return DEFAULT_PROVIDER, self._clients[DEFAULT_PROVIDER], None
         if ref.startswith("@"):
             role = ref[1:]
             for cfg in self._configs.values():
                 if role in cfg.roles:
-                    return self._clients[cfg.name], None
+                    return cfg.name, self._clients[cfg.name], None
             logger.warning("no provider declares role %r; using default", role)
-            return self._clients[DEFAULT_PROVIDER], None
+            return DEFAULT_PROVIDER, self._clients[DEFAULT_PROVIDER], None
         if ":" in ref:
             name, _, model = ref.partition(":")
             if name in self._clients:
-                return self._clients[name], (model or None)
+                return name, self._clients[name], (model or None)
         if ref in self._clients:
-            return self._clients[ref], None
-        return self._clients[DEFAULT_PROVIDER], ref
+            return ref, self._clients[ref], None
+        return DEFAULT_PROVIDER, self._clients[DEFAULT_PROVIDER], ref
+
+    def resolve(self, ref: Optional[str]) -> Tuple[DeepSeekClient, Optional[str]]:
+        """Like :meth:`resolve_named` without the provider name."""
+        _, client, model = self.resolve_named(ref)
+        return client, model
 
     async def aclose(self) -> None:
         for client in self._clients.values():
