@@ -2,7 +2,7 @@
 
 > 性质:对 `claude-fable5-opus48.md` 与 `model-capability-evolution.md` 的深挖待办清单,
 > 由维护者(Devin)按优先级排序维护;每条带"为什么排在这"与验收标准。
-> 状态标记:`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成。最后更新:2026-06-10(v4,新增 8.5/8.6 能力固化条目,细化第 14 条)。
+> 状态标记:`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成。最后更新:2026-06-10(v5,8.6 转进行中——评测工具链①②④步全部落码,缺真实样本)。
 >
 > 排序原则:
 > - **第一段(必要)**:直接影响"现在就能做对决策"的内容——评测、调参、止损,缺了会做错事。
@@ -85,13 +85,18 @@
   `knowledge/capability-degradation-taxonomy.md`(八种退化源的检测/处置细则)。
   飞轮第①步已落代码:`RunStore.harvest_failures` + `scripts/harvest_failures.py`。
 - **是什么**:回答"如何让系统能力只升不降"的总框架,是第 1/3/8/14 条的理论顶层。
-- **后续**:飞轮②③④步(判/修/门)的落地依赖本仓库评测集建立,见第 8.6 条。
+- **后续(v5 更新)**:飞轮①②④步已全部落码(`harvest_failures`/`triage_candidates`+`eval_store`/`eval_gate`),理论→代码映射见 capability-fixation §9;③修是人/模型协作环节,无独立代码。
 
-### [ ] 8.6 本仓库产出质量评测集(v4 新增)
+### [~] 8.6 本仓库产出质量评测集(v4 新增,v5 转进行中)
 - **是什么**:按 `claude-eval-methodology.md` 的模板,从 runs.jsonl 与收割候选
   (`eval/candidates.jsonl`)中构建本仓库 PRD 产出的评测集 + 封存集,接入 CI 作为 skill 变更门禁。
-- **为什么必要**:`capability-fixation.md` §5 诊断的缺口——代码能力有 319+ 测试守护,
+- **为什么必要**:`capability-fixation.md` §5 诊断的缺口——代码能力有 340+ 测试守护,
   产出能力零门禁;这是棘轮三组件中唯一缺失的一环。
+- **已完成(v5)**:工具链全通——`eval_store`(样本校验/草稿判读/确定性封存集切分)、
+  `eval_gate`(不劣于+噪声判平,exit 0/1 可进 CI)、`scripts/triage_candidates.py`、
+  3 条冒烟样本入库;操作纪律见 `eval-gate-operations.md`。
+- **剩余**:真实失败样本的积累与人工判读(写 rubric)——依赖真实流量,不能手编;
+  以及 judge 跑分脚本与 CI 触发规则。
 - **验收**:评测集 ≥ 30 样本(含 rubric)+ 封存集;skill/prompt 变更时可一键跑门禁并出对比报告。
 
 ---
