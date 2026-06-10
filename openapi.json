@@ -776,6 +776,163 @@
           }
         }
       }
+    },
+    "/v1/vector/search": {
+      "post": {
+        "tags": [
+          "vector"
+        ],
+        "summary": "Semantic search over skills + knowledge docs (local, offline)",
+        "operationId": "vector_search_v1_vector_search_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VectorSearchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VectorSearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/vector/rebuild": {
+      "post": {
+        "tags": [
+          "vector"
+        ],
+        "summary": "Rebuild the vector index from skills/ and knowledge/ on disk",
+        "operationId": "vector_rebuild_v1_vector_rebuild_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VectorStatsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/vector/stats": {
+      "get": {
+        "tags": [
+          "vector"
+        ],
+        "summary": "Vector index statistics",
+        "operationId": "vector_stats_v1_vector_stats_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VectorStatsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2258,6 +2415,137 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VectorHit": {
+        "properties": {
+          "doc_id": {
+            "type": "string",
+            "title": "Doc Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "chunk_index": {
+            "type": "integer",
+            "title": "Chunk Index"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "snippet": {
+            "type": "string",
+            "title": "Snippet"
+          }
+        },
+        "type": "object",
+        "required": [
+          "doc_id",
+          "kind",
+          "title",
+          "source",
+          "chunk_index",
+          "score",
+          "snippet"
+        ],
+        "title": "VectorHit"
+      },
+      "VectorSearchRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Query",
+            "description": "Natural-language query."
+          },
+          "top_k": {
+            "type": "integer",
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Top K",
+            "default": 5
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind",
+            "description": "Filter: 'skill' or 'knowledge' (default: both)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "VectorSearchRequest"
+      },
+      "VectorSearchResponse": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/VectorHit"
+            },
+            "type": "array",
+            "title": "Hits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "hits"
+        ],
+        "title": "VectorSearchResponse"
+      },
+      "VectorStatsResponse": {
+        "properties": {
+          "chunks": {
+            "type": "integer",
+            "title": "Chunks"
+          },
+          "documents": {
+            "type": "integer",
+            "title": "Documents"
+          },
+          "dim": {
+            "type": "integer",
+            "title": "Dim"
+          },
+          "embedder": {
+            "type": "string",
+            "title": "Embedder"
+          },
+          "db_path": {
+            "type": "string",
+            "title": "Db Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chunks",
+          "documents",
+          "dim",
+          "embedder",
+          "db_path"
+        ],
+        "title": "VectorStatsResponse"
       }
     }
   }

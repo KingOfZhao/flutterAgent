@@ -1,0 +1,167 @@
+"""Local vector database: embedder, chunking, store, corpus build, search, API."""
+from __future__ import annotations
+
+import math
+import os
+import sys
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(_ROOT / "src"))
+os.environ.setdefault("DEEPSEEK_API_KEY", "")
+os.environ.setdefault("LOCAL_API_KEY", "")
+
+from fastapi.testclient import TestClient
+
+from flutter_agent.vector_store import (
+    HashingEmbedder,
+    VectorDoc,
+    VectorStore,
+    build_index,
+    chunk_markdown,
+    docs_from_knowledge,
+    docs_from_skills,
+)
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+# ---------------------------------------------------------------------------
+# Embedder
+# ---------------------------------------------------------------------------
+
+def test_embedder_is_deterministic_and_normalised():
+    emb = HashingEmbedder(dim=128)
+    a = emb.embed_one("全面思考 架构判断 offline sync")
+    b = emb.embed_one("全面思考 架构判断 offline sync")
+    assert a == b
+    norm = math.sqrt(sum(v * v for v in a))
+    assert abs(norm - 1.0) < 1e-6
+
+
+def test_embedder_similar_texts_score_higher_than_unrelated():
+    emb = HashingEmbedder()
+    q = emb.embed_one("多数据源离线同步架构怎么选")
+    near = emb.embed_one("离线同步与多数据源的架构选型")
+    far = emb.embed_one("button color padding animation curve")
+    dot = lambda x, y: sum(a * b for a, b in zip(x, y))
+    assert dot(q, near) > dot(q, far)
+
+
+# ---------------------------------------------------------------------------
+# Chunking
+# ---------------------------------------------------------------------------
+
+def test_chunk_markdown_splits_on_headings_and_size():
+    text = "# A\n" + "x" * 100 + "\n## B\n" + "y" * 4000
+    chunks = chunk_markdown(text, max_chars=1600, overlap=160)
+    assert len(chunks) >= 3
+    assert chunks[0].startswith("# A")
+    assert all(len(c) <= 1600 for c in chunks)
+
+
+def test_chunk_markdown_empty():
+    assert chunk_markdown("   \n  ") == []
+
+
+# ---------------------------------------------------------------------------
+# Store + search
+# ---------------------------------------------------------------------------
+
+def test_store_roundtrip_and_search(tmp_path):
+    store = VectorStore(tmp_path / "v.sqlite3")
+    store.add(
+        [
+            VectorDoc("doc-sync", "skill", "同步", "skills/a", 0,
+                      "多数据源 离线同步 冲突解决 架构选型"),
+            VectorDoc("doc-ui", "skill", "UI", "skills/b", 0,
+                      "button padding color theme animation"),
+            VectorDoc("doc-know", "knowledge", "知识", "knowledge/k.md", 0,
+                      "模型能力演进的必要条件 蒸馏 验证闭环"),
+        ]
+    )
+    assert store.count() == 3
+    hits = store.search("离线同步架构", top_k=2)
+    assert hits[0].doc_id == "doc-sync"
+    only_knowledge = store.search("蒸馏 验证闭环", top_k=3, kind="knowledge")
+    assert {h.kind for h in only_knowledge} == {"knowledge"}
+    store.close()
+
+
+def test_store_upsert_replaces(tmp_path):
+    store = VectorStore(tmp_path / "v.sqlite3")
+    doc = VectorDoc("d", "skill", "t", "s", 0, "first text")
+    store.add([doc])
+    store.add([VectorDoc("d", "skill", "t", "s", 0, "second text")])
+    assert store.count() == 1
+    store.close()
+
+
+# ---------------------------------------------------------------------------
+# Corpus builders against the real repo
+# ---------------------------------------------------------------------------
+
+def test_docs_from_skills_covers_all_skills():
+    docs = docs_from_skills(ROOT / "skills")
+    ids = {d.doc_id for d in docs}
+    assert "comprehensive-thinking" in ids
+    assert "devin-ai-engineer-mindset" in ids
+    assert len(ids) >= 61
+
+
+def test_docs_from_knowledge_indexes_corpus():
+    docs = docs_from_knowledge(ROOT / "knowledge")
+    ids = {d.doc_id for d in docs}
+    assert "claude-fable5-opus48" in ids
+    assert "model-capability-evolution" in ids
+    assert all(d.kind == "knowledge" for d in docs)
+
+
+def test_build_index_and_semantic_search_end_to_end(tmp_path):
+    store = VectorStore(tmp_path / "v.sqlite3")
+    stats = build_index(
+        store, skills_dir=ROOT / "skills", knowledge_dir=ROOT / "knowledge"
+    )
+    assert stats["documents"] >= 63  # 61 skills + 2 knowledge docs
+    assert stats["chunks"] == store.count()
+
+    hits = store.search("请全面思考这个架构判断", top_k=5, kind="skill")
+    assert "comprehensive-thinking" in {h.doc_id for h in hits}
+
+    hits = store.search("模型能力演进的必要条件 蒸馏", top_k=5, kind="knowledge")
+    assert "model-capability-evolution" in {h.doc_id for h in hits}
+
+    hits = store.search("Claude Fable 5 adaptive thinking effort", top_k=5)
+    assert "claude-fable5-opus48" in {h.doc_id for h in hits}
+    store.close()
+
+
+# ---------------------------------------------------------------------------
+# HTTP API
+# ---------------------------------------------------------------------------
+
+def test_vector_api_search_and_stats(tmp_path):
+    from flutter_agent.main import app
+
+    store = VectorStore(tmp_path / "api.sqlite3")
+    app.state.vector_store = store
+    try:
+        with TestClient(app) as client:
+            resp = client.post(
+                "/v1/vector/search",
+                json={"query": "全面思考 架构判断", "top_k": 3, "kind": "skill"},
+            )
+            assert resp.status_code == 200
+            body = resp.json()
+            assert body["query"] == "全面思考 架构判断"
+            assert 1 <= len(body["hits"]) <= 3
+            assert all(h["kind"] == "skill" for h in body["hits"])
+
+            resp = client.get("/v1/vector/stats")
+            assert resp.status_code == 200
+            stats = resp.json()
+            assert stats["chunks"] > 0 and stats["documents"] >= 63
+    finally:
+        store.close()
+        del app.state.vector_store

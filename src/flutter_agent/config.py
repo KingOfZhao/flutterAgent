@@ -48,6 +48,16 @@ class Settings(BaseSettings):
     # ---- Skills ----
     skills_dir: str = Field(default="skills")
 
+    # ---- Vector database (local semantic search) ----
+    vector_db_path: str = Field(
+        default="data/vector_store.sqlite3",
+        description="SQLite file persisting the local vector index.",
+    )
+    knowledge_dir: str = Field(
+        default="knowledge",
+        description="Directory of markdown knowledge docs indexed alongside skills.",
+    )
+
     # ---- Run history ----
     runs_log_path: str = Field(
         default="logs/runs.jsonl",
@@ -95,6 +105,16 @@ class Settings(BaseSettings):
     @property
     def runs_log_file(self) -> Path:
         p = Path(self.runs_log_path)
+        return p if p.is_absolute() else (REPO_ROOT / p)
+
+    @property
+    def vector_db_file(self) -> Path:
+        p = Path(self.vector_db_path)
+        return p if p.is_absolute() else (REPO_ROOT / p)
+
+    @property
+    def knowledge_path(self) -> Path:
+        p = Path(self.knowledge_dir)
         return p if p.is_absolute() else (REPO_ROOT / p)
 
     @property

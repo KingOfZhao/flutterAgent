@@ -348,9 +348,31 @@ requirement
 | `GET` | `/v1/runs?limit=N` | 列出最近 N 次运行(每项带 `cost` + `bad_packages`) |
 | `GET` | `/v1/runs/{id}` | 取某次运行的完整 `RefineResponse` |
 | `GET` | `/v1/metrics` | 聚合统计(总 runs、tokens、cost、阶段成功率、高频 skill) |
+| `POST` | `/v1/vector/search` | 本地向量库语义检索(skills + knowledge,零依赖离线,详见下节) |
+| `POST` | `/v1/vector/rebuild` | 从磁盘重建向量索引 |
+| `GET` | `/v1/vector/stats` | 向量索引统计(chunks/documents/dim) |
 | `GET` | `/healthz` | 健康检查 |
 | `GET` | `/openapi.json` | OpenAPI 3.x 规范 |
 | `GET` | `/docs` / `/redoc` | Swagger UI / ReDoc |
+
+## 本地向量数据库(vector_store)
+
+把全部 skill 与 `knowledge/` 下的知识文档向量化,提供语义检索,作为 ranker 字面匹配的补充:
+
+- **零新增依赖、完全离线**:embedding 为确定性特征哈希向量(ASCII 词 + 中文字/二字组,log-TF 加权,L2 归一化),SQLite 持久化(`data/vector_store.sqlite3`,已 gitignore);无需下载模型或调用外部 API
+- **可插拔 embedder**:任何实现 `embed(texts)` + `dim` 的对象可替换默认 embedder(如 OpenAI 兼容 `/v1/embeddings`),存储层不变
+- **语料**:`skills/**/SKILL.md`(含 front-matter 词汇)+ `knowledge/*.md`(如 Claude 前沿模型调研、模型能力演进必要条件),按标题分段 + 滑窗切块
+
+```bash
+# 构建索引
+.venv/bin/python scripts/vector_cli.py build
+# 语义检索(--kind skill|knowledge 可选)
+.venv/bin/python scripts/vector_cli.py search "离线同步架构怎么选" -k 5
+# 或走 HTTP
+curl -X POST http://127.0.0.1:8765/v1/vector/search \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "模型能力演进的必要条件", "top_k": 5, "kind": "knowledge"}'
+```
 
 ## 蒸馏方法(女娲五层造 skill 法)
 
