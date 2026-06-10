@@ -688,6 +688,24 @@
 | Anthropic prompt caching 文档 | <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching> | context-engineering-matrix 缓存友好度行 |
 | OpenAI structured outputs(受约束解码的工程形态) | <https://platform.openai.com/docs/guides/structured-outputs> | structured-output-reliability §3 受约束解码细则 |
 | 灰度发布/金丝雀部署(Google SRE 书) | <https://sre.google/sre-book/release-engineering/> | model-migration-checklist §4 切流递进 |
+| RLHF 原始论文(偏好学习) | <https://arxiv.org/abs/1706.03741> | model-theory-deepdive §1 |
+| InstructGPT(SFT+RM+PPO 配方) | <https://arxiv.org/abs/2203.02155> | model-theory-deepdive §1 |
+| DPO(偏好学习的闭式简化) | <https://arxiv.org/abs/2305.18290> | model-theory-deepdive §1.1 |
+| RM 过优化的 scaling 规律 | <https://arxiv.org/abs/2210.10760> | model-theory-deepdive §1.3 |
+| Constitutional AI / RLAIF | <https://arxiv.org/abs/2212.08073> | model-theory-deepdive §2 |
+| Scaling laws(Kaplan) | <https://arxiv.org/abs/2001.08361> | model-theory-deepdive §3 |
+| Chinchilla(计算最优配比) | <https://arxiv.org/abs/2203.15556> | model-theory-deepdive §3 |
+| 知识蒸馏(soft label / 暗知识) | <https://arxiv.org/abs/1503.02531> | model-theory-deepdive §3 |
+| Model collapse(合成数据回灌风险) | <https://www.nature.com/articles/s41586-024-07566-y> | model-theory-deepdive §3.3 |
+| Let's Verify Step by Step(过程监督) | <https://arxiv.org/abs/2305.20050> | model-theory-deepdive §4 |
+| STaR(自举推理链) | <https://arxiv.org/abs/2203.14465> | model-theory-deepdive §4.1 |
+| DeepSeek-R1(RLVR 大规模实证) | <https://arxiv.org/abs/2501.12948> | model-theory-deepdive §4.1 |
+| Voyager(技能库,能力固化的学术原型) | <https://arxiv.org/abs/2305.16291> | model-theory-deepdive §5.1 |
+| ReAct(推理-行动交替回路) | <https://arxiv.org/abs/2210.03629> | model-theory-deepdive §6.1 |
+| Toolformer(工具使用可训练) | <https://arxiv.org/abs/2302.04761> | model-theory-deepdive §6.1 |
+| SWE-bench(真实软工任务评测) | <https://arxiv.org/abs/2310.06770> | model-theory-deepdive §6.1 |
+| Scaling Monosemanticity(SAE 特征字典) | <https://transformer-circuits.pub/2024/scaling-monosemanticity/> | model-theory-deepdive §7.1 |
+| Constitutional Classifiers(分类器护栏) | <https://arxiv.org/abs/2501.18837> | model-theory-deepdive §7.1 |
 
 ---
 
