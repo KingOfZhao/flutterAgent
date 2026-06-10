@@ -862,6 +862,10 @@
 | Flutter API:ThemeExtension(自定义 design token) | <https://api.flutter.dev/flutter/material/ThemeExtension-class.html> | flutter-theming-design-system §2 |
 | Flutter API:ColorScheme.fromSeed(Material 3 种子色) | <https://api.flutter.dev/flutter/material/ColorScheme/ColorScheme.fromSeed.html> | flutter-theming-design-system §1/§3 |
 | dynamic_color(Material You 动态取色) | <https://pub.dev/packages/dynamic_color> | flutter-theming-design-system §3 |
+| Dart 官方:Class modifiers(sealed/final/base/interface) | <https://dart.dev/language/class-modifiers> | dart-language-advanced §1 |
+| Dart 官方:Patterns(解构/穷尽 switch) | <https://dart.dev/language/patterns> | dart-language-advanced §2 |
+| Dart 官方:Sound null safety(健全性边界) | <https://dart.dev/null-safety/understanding-null-safety> | dart-language-advanced §3 |
+| Dart 官方:宏实验终止公告(2025-01) | <https://medium.com/dartlang/an-update-on-dart-macros-data-serialization-06d3037d4f12> | dart-language-advanced §4 |
 
 ---
 

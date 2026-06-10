@@ -213,6 +213,7 @@ def test_flutter_corpus_docs_are_retrievable(tmp_path):
         "图片 cacheWidth 降采样 blurhash ImageCache": "flutter-images-media",
         "FCM 推送 token 轮换 workmanager headless": "flutter-push-background",
         "ThemeExtension colorScheme fromSeed 暗色 token": "flutter-theming-design-system",
+        "sealed 穷尽 switch patterns late 健全性": "dart-language-advanced",
     }
     for query, expected in cases.items():
         hit_ids = {h.doc_id for h in store.search(query, top_k=5, kind="knowledge")}
