@@ -724,6 +724,9 @@
 | LLM 自我偏好偏差(评审者偏好自己/同族模型的输出) | <https://arxiv.org/abs/2404.13076> | agent-collaboration-protocol §3(禁自评、跨提供商路由) |
 | MT-Bench / LLM-as-a-judge(互评判优范式与其局限) | <https://arxiv.org/abs/2306.05685> | agent-collaboration-protocol §3(已知局限:互评≠客观正确性) |
 | Multi-agent debate 提升事实性与推理 | <https://arxiv.org/abs/2305.14325> | collaboration.py debate 模式设计依据 |
+| 间接提示注入(不可信内容回注提示词的攻击面) | <https://arxiv.org/abs/2302.12173> | collaboration.py `_fence`(候选内容围栏,轮5) |
+| OWASP LLM Top 10:Prompt Injection(界定与缓解手段,明确无根治方案) | <https://owasp.org/www-project-top-10-for-large-language-model-applications/> | agent-collaboration-protocol §2提示注入防护"缓解非根治"措辞 |
+| ChatGPT 代码生成非确定性实证(temperature=0 仍有残余非确定) | <https://arxiv.org/abs/2308.02828> | agent-collaboration-protocol §3(temperature=0 只"提高"可复现性,不承诺确定) |
 
 ---
 
