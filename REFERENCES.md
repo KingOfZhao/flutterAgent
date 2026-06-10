@@ -787,6 +787,14 @@
 | Flutter 官方:无障碍指南(语义树/对比度/点击目标/guideline 断言) | <https://docs.flutter.dev/ui/accessibility-and-internationalization/accessibility> | flutter-i18n-accessibility §2 |
 | WCAG 2.x:文本对比度最低标准(1.4.3) | <https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html> | flutter-i18n-accessibility §2 |
 
+## 27. 向量库语料·反思填充第二批五轮(knowledge/flutter-*.md 续)
+
+| 主题 | 链接 | 在本仓库何处引用 |
+|---|---|---|
+| Dart 官方:并发概述(事件循环/isolate 不共享内存/消息深拷贝) | <https://dart.dev/language/concurrency> | flutter-concurrency §1/§3 |
+| Dart 官方:Isolate.run 与长驻 isolate 模式 | <https://dart.dev/language/isolates> | flutter-concurrency §2/§3 |
+| Flutter 官方:后台 isolate 调用平台通道(BackgroundIsolateBinaryMessenger) | <https://docs.flutter.dev/perf/isolates> | flutter-concurrency §3 |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。
