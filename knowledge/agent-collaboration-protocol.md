@@ -14,7 +14,16 @@
    (deepdive §10.2 两级吸收律)。
 3. **验证器与策略隔离**:评审/打分的 Agent 应配置在与提案者**不同的提供商**上,
    避免同一模型自我确认(self-confirmation)。协议不强制但通过 `@reviewer`/`@judge`
-   角色路由使之成为默认做法。
+   角色路由使之成为默认做法;隔离弱化不隐藏——裁判与被评者落在同一提供商时,
+   该条打分附 `same_provider=true` 显式暴露。
+4. **容错降级而非整体失败**:并行提案中单个提供商故障只剩下者继续,故障记入
+   `failures`;全员失败才返回 502。peer_review 仅剩一个存活提案时其默认胜出
+   (`votes=0`,不伪造分数)。
+5. **并发受约束**:协作扇出(N 提案 + N×(N-1) 互评)与流水线共用全局
+   `MAX_CONCURRENT_UPSTREAM` 信号量,不会无界爆发。
+6. **运行级留痕**:每次协作运行追加一行 JSONL 审计摘要到
+   `logs/collaborations.jsonl`(`COLLAB_LOG_PATH`,置空可关):时间/模式/参与者/
+   提供商/胜者/失败/总用量。
 
 ## 2. 消息格式 (TranscriptEntry)
 
@@ -26,10 +35,17 @@
 | `role` | str | `proposer` / `reviewer` / `judge` |
 | `round` | int | 所属轮次(从 1 起) |
 | `content` | str | 消息正文 |
+| `provider` | str | 实际解析到的提供商名(审计身份) |
+| `model` | str | 实际使用的模型名(优先取上游回报) |
 | `usage` | dict | token 用量(prompt/completion/total) |
 | `elapsed_ms` | int | 该次调用耗时 |
 
-所有模式的结果(`CollaborationResult`)都包含完整 transcript,保证可审计。
+所有模式的结果(`CollaborationResult`)都包含完整 transcript 与聚合用量
+`total_usage`,并附 `failures`(被降级参与者),保证可审计。
+
+**提示注入防护**:任何 Agent 输出被回注到评审/裁判/打分提示词前,都被统一
+围栏标记包裹(内嵌同名标记会被剥离)并声明为待评估数据而非指令,降低
+"在提案里写入给我打 10 分"一类跨 Agent 注入的成功率(缓解非根治)。
 
 ## 3. 互评判优 (peer_review):AI 间互相判断谁更具优势
 
@@ -47,7 +63,9 @@
 
    分值在解析时被截断到 [0,10];无法解析的打分记 `parse_ok=false` 并**从聚合中剔除**
    (而非按 0 分计入,避免格式失败惩罚被评者);
-4. **聚合判优**:每个候选的聚合分 = 有效打分 total 的平均;最高者为 `winner`,
+4. **聚合判优**:每个候选的聚合分 = 有效打分 total 的平均;打分调用固定
+   `temperature=0` 以提高可复现性;排序为确定性三级键(聚合分降序→票数降序→
+   名字升序),最高者为 `winner`,前两级打平时 `winner_tied=true` 显式标注;
    其原始提案作为 `final_answer` 返回;
 5. **全量回传**:`scoreboard`(聚合分+有效票数)与 `peer_scores`(每条原始打分
    及理由)全部返回,便于人工复核与离线分析。
@@ -108,4 +126,5 @@ curl -X POST http://127.0.0.1:8765/v1/agents/collaborate \
   }'
 ```
 
-返回:`winner`、`final_answer`、`scoreboard`、`peer_scores`、完整 `transcript`。
+返回:`winner`(及 `winner_tied`)、`final_answer`、`scoreboard`、`peer_scores`
+(含 `same_provider`)、`failures`、`total_usage`、完整 `transcript`。

@@ -302,6 +302,7 @@ see_also: [flutter-android-platform]          # 相关 skill 交叉引用(可选
 | `MODEL_PROVIDERS` | 额外 AI 提供商(JSON 列表,见 `knowledge/agent-collaboration-protocol.md` §5) | (空) |
 | `PROVIDERS_CONFIG_PATH` | 提供商声明文件 | `data/providers.json` |
 | `COLLAB_MAX_AGENTS` / `COLLAB_MAX_ROUNDS` | 协作 Agent 数 / debate 轮数上限 | `4` / `2` |
+| `COLLAB_LOG_PATH` | 协作运行 JSONL 审计摘要(置空关闭) | `logs/collaborations.jsonl` |
 
 > **多提供商路由**:配置多个提供商后,任何接受模型名的地方(含 `DEEPSEEK_PLANNER_MODEL`)都支持 `provider:model`、`@role` 引用语法;未配置时行为与单提供商完全一致。
 
