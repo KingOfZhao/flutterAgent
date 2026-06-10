@@ -30,9 +30,11 @@ class FakeClient:
     def __init__(self, replies: List[str]):
         self._replies = list(replies)
         self.calls: List[List[Dict[str, str]]] = []
+        self.call_kwargs: List[dict] = []
 
     async def chat(self, messages, *, model=None, **kwargs):
         self.calls.append(messages)
+        self.call_kwargs.append(kwargs)
         text = self._replies.pop(0) if self._replies else "out-of-script"
         return _completion(text)
 
@@ -248,6 +250,41 @@ def test_all_proposers_failed_raises_upstream() -> None:
     ]
     with pytest.raises(UpstreamError, match="all proposers failed"):
         asyncio.run(team.run("task", "committee", agents=agents))
+
+
+def test_peer_review_score_calls_use_temperature_zero() -> None:
+    a = FakeClient([
+        "proposal A",
+        '{"correctness": 5, "completeness": 5, "risk_control": 5}',
+    ])
+    b = FakeClient([
+        "proposal B",
+        '{"correctness": 6, "completeness": 6, "risk_control": 6}',
+    ])
+    team = _team({"default": a, "b": b})
+    agents = [
+        AgentSpec(name="alpha", role="proposer", provider="default"),
+        AgentSpec(name="beta", role="proposer", provider="b"),
+    ]
+    asyncio.run(team.run("task", "peer_review", agents=agents))
+    # 1st call = proposal (no temperature), 2nd = score (temperature 0).
+    assert "temperature" not in a.call_kwargs[0]
+    assert a.call_kwargs[1]["temperature"] == 0.0
+    assert b.call_kwargs[1]["temperature"] == 0.0
+
+
+def test_peer_review_tie_break_deterministic() -> None:
+    same = '{"correctness": 5, "completeness": 5, "risk_control": 5}'
+    a = FakeClient(["proposal A", same])
+    b = FakeClient(["proposal B", same])
+    team = _team({"default": a, "b": b})
+    agents = [
+        AgentSpec(name="zeta", role="proposer", provider="default"),
+        AgentSpec(name="alpha", role="proposer", provider="b"),
+    ]
+    result = asyncio.run(team.run("task", "peer_review", agents=agents))
+    assert result.winner == "alpha"  # equal scores -> name ascending
+    assert result.winner_tied is True
 
 
 def test_transcript_audit_fields_and_total_usage() -> None:

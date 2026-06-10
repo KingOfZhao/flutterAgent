@@ -119,6 +119,7 @@ class CollaborationResult(BaseModel):
     rounds_used: int
     approved: Optional[bool] = None
     winner: Optional[str] = None
+    winner_tied: bool = False
     scoreboard: List[ScoreboardRow] = Field(default_factory=list)
     peer_scores: List[PeerScore] = Field(default_factory=list)
     failures: List[AgentFailure] = Field(default_factory=list)
@@ -173,13 +174,17 @@ class AgentTeam:
         spec: AgentSpec,
         messages: List[Dict[str, str]],
         round_no: int,
+        temperature: Optional[float] = None,
     ) -> TranscriptEntry:
         provider, client, model = self._registry.resolve_named(spec.provider or None)
         system = spec.system_prompt or _default_system(spec.role)
+        kwargs: Dict[str, Any] = {"model": model}
+        if temperature is not None:
+            kwargs["temperature"] = temperature
         start = time.monotonic()
         async with self._upstream_sem:
             completion = await client.chat(
-                [{"role": "system", "content": system}, *messages], model=model
+                [{"role": "system", "content": system}, *messages], **kwargs
             )
         return TranscriptEntry(
             agent=spec.name,
@@ -356,6 +361,7 @@ class AgentTeam:
                         },
                     ],
                     2,
+                    temperature=0.0,  # scoring must be as deterministic as possible
                 )
             except UpstreamError as exc:
                 return PeerScore(
@@ -402,8 +408,15 @@ class AgentTeam:
             scoreboard.append(
                 ScoreboardRow(agent=entry.agent, aggregate=aggregate, votes=len(rows))
             )
-        scoreboard.sort(key=lambda r: r.aggregate, reverse=True)
+        # Deterministic ordering: aggregate desc, then vote count desc, then
+        # agent name asc as the final stable tie-break.
+        scoreboard.sort(key=lambda r: (-r.aggregate, -r.votes, r.agent))
         winner = scoreboard[0].agent
+        tied = (
+            len(scoreboard) > 1
+            and scoreboard[1].aggregate == scoreboard[0].aggregate
+            and scoreboard[1].votes == scoreboard[0].votes
+        )
         final = next(e.content for e in entries if e.agent == winner)
 
         return CollaborationResult(
@@ -411,6 +424,7 @@ class AgentTeam:
             final_answer=final,
             rounds_used=2,
             winner=winner,
+            winner_tied=tied,
             scoreboard=scoreboard,
             peer_scores=peer_scores,
             failures=failures,
