@@ -762,6 +762,14 @@
 | Flutter 官方:iOS 发布 | <https://docs.flutter.dev/deployment/ios> | flutter-release-engineering §1 |
 | Play Console:分阶段发布(staged rollout) | <https://support.google.com/googleplay/android-developer/answer/6346149> | flutter-release-engineering §3 |
 
+## 26. 向量库语料·反思填充五轮(knowledge/flutter-*.md 续)
+
+| 主题 | 链接 | 在本仓库何处引用 |
+|---|---|---|
+| Flutter 官方:应用架构指南(MVVM、UI/Data 两层) | <https://docs.flutter.dev/app-architecture/guide> | flutter-app-architecture §1 |
+| Flutter 官方:架构设计建议(单一事实源、可选 domain 层) | <https://docs.flutter.dev/app-architecture/recommendations> | flutter-app-architecture §1/§3 |
+| Code With Andrea:feature-first vs layer-first 项目结构 | <https://codewithandrea.com/articles/flutter-project-structure/> | flutter-app-architecture §2 |
+
 ---
 
 > 任何对本仓库 skill / pipeline 的修改若引入新的「最佳实践」结论,**必须**在本文档新增一行可点击的来源。否则视为未经证据支持的主张,应回退。
