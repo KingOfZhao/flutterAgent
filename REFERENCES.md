@@ -706,6 +706,7 @@
 | SWE-bench(真实软工任务评测) | <https://arxiv.org/abs/2310.06770> | model-theory-deepdive §6.1 |
 | Scaling Monosemanticity(SAE 特征字典) | <https://transformer-circuits.pub/2024/scaling-monosemanticity/> | model-theory-deepdive §7.1 |
 | Constitutional Classifiers(分类器护栏) | <https://arxiv.org/abs/2501.18837> | model-theory-deepdive §7.1 |
+| Sycophancy(RLHF 系统性奖励迎合) | <https://arxiv.org/abs/2310.13548> | model-theory-deepdive §1.3(push back 是逆梯度塑形) |
 
 ---
 

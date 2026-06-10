@@ -148,7 +148,8 @@ curl https://api.anthropic.com/v1/messages \
 | 安全角色 | Fable 5 的护栏回退模型 | Mythos 5 + 分类器 |
 
 选型直觉:日常开发、生产 Agent、成本敏感 → Opus 4.8;一次性硬骨头(全库迁移、深度研究、复杂多 Agent、纯视觉自动化)→ Fable 5。
-两者差距的机制性解释(为什么是长任务而不是所有轴均匀拉开):`model-theory-deepdive.md` §8。
+两者差距的机制性解释(为什么是长任务而不是所有轴均匀拉开):`model-theory-deepdive.md` §8;
+注意该解释与"纯 scaling 说"的判别尚未完成(deepdive §8.0),当前为偏好假设而非已证结论。
 
 ### 7.1 选型决策树【我的理解】
 
