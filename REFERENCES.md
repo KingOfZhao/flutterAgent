@@ -802,6 +802,10 @@
 | pigeon(类型安全的双端通道代码生成) | <https://pub.dev/packages/pigeon> | flutter-platform-integration §2 |
 | Dart 官方:dart:ffi C 互操作(ffigen/NativeFinalizer) | <https://dart.dev/interop/c-interop> | flutter-platform-integration §3 |
 | Flutter 官方:在 Android 嵌入原生视图(PlatformView 合成模式与代价) | <https://docs.flutter.dev/platform-integration/android/platform-views> | flutter-platform-integration §4 |
+| Flutter 官方:CI/CD 指南(流水线组成与托管 CI 选型) | <https://docs.flutter.dev/deployment/cd> | flutter-cicd-engineering §1/§4 |
+| dart.dev:pubspec.lock 入库准则(应用入库/库不入) | <https://dart.dev/guides/libraries/private-files#pubspeclock> | flutter-cicd-engineering §2 |
+| FVM(Flutter SDK 版本钉死) | <https://fvm.app/documentation> | flutter-cicd-engineering §2 |
+| fastlane match(iOS 证书集中管理) | <https://docs.fastlane.tools/actions/match/> | flutter-cicd-engineering §3 |
 
 ---
 
