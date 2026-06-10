@@ -196,6 +196,7 @@ def test_flutter_corpus_docs_are_retrievable(tmp_path):
         "项目结构分层 repository 单一事实源": "flutter-app-architecture",
         "go_router 深链 redirect 守卫": "flutter-navigation-deeplink",
         "dio 超时重试 幂等 json_serializable": "flutter-networking-api",
+        "secure storage 证书锁定 混淆 keystore": "flutter-mobile-security",
     }
     for query, expected in cases.items():
         hit_ids = {h.doc_id for h in store.search(query, top_k=5, kind="knowledge")}

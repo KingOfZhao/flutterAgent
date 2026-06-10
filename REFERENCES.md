@@ -778,6 +778,10 @@
 | RFC 9110:幂等方法与重试语义 | <https://www.rfc-editor.org/rfc/rfc9110#name-idempotent-methods> | flutter-networking-api §2 |
 | Flutter 官方:JSON 序列化(无反射,代码生成 json_serializable) | <https://docs.flutter.dev/data-and-backend/serialization/json> | flutter-networking-api §3 |
 | freezed(不可变模型与 sealed 类错误建模) | <https://pub.dev/packages/freezed> | flutter-networking-api §3 |
+| OWASP Mobile Application Security(MAS 威胁分类与验证标准) | <https://mas.owasp.org/> | flutter-mobile-security §1 |
+| flutter_secure_storage(Keychain/Keystore 加密存储) | <https://pub.dev/packages/flutter_secure_storage> | flutter-mobile-security §2 |
+| OWASP:证书锁定的收益与风险(pin 轮换/自拒绝服务) | <https://cheatsheetseries.owasp.org/cheatsheets/Pinning_Cheat_Sheet.html> | flutter-mobile-security §3 |
+| Flutter 官方:Dart 代码混淆(--obfuscate 能力与边界) | <https://docs.flutter.dev/deployment/obfuscate> | flutter-mobile-security §4 |
 
 ---
 
