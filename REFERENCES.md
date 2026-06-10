@@ -683,6 +683,7 @@
 | 长上下文中部信息丢失(lost in the middle) | <https://arxiv.org/abs/2307.03172> | taxonomy D4 |
 | Reflexion(语言强化,飞轮的学术原型) | <https://arxiv.org/abs/2303.11366> | capability-fixation §8 |
 | METR 任务时长测量 | <https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/> | prediction-tracker 预测 2 |
+| 可复用 holdout(自适应数据分析) | <https://arxiv.org/abs/1411.2664> | claude-eval-methodology §5 封存集信息预算 |
 
 ---
 
