@@ -846,6 +846,10 @@
 | Flutter API:FocusNode/焦点遍历(FocusTraversalGroup) | <https://api.flutter.dev/flutter/widgets/FocusNode-class.html> | flutter-forms-input §2 |
 | Flutter API:TextEditingValue.composing(CJK 组合输入区间) | <https://api.flutter.dev/flutter/services/TextEditingValue/composing.html> | flutter-forms-input §3 |
 | Flutter API:AutofillHints(系统自动填充集成) | <https://api.flutter.dev/flutter/services/AutofillHints-class.html> | flutter-forms-input §3 |
+| Flutter 官方:Adaptive & responsive design 总览 | <https://docs.flutter.dev/ui/adaptive-responsive> | flutter-web-desktop-adaptive §1 |
+| Material 3:Window size classes(compact/medium/expanded 断点) | <https://m3.material.io/foundations/layout/applying-layout/window-size-classes> | flutter-web-desktop-adaptive §1 |
+| Flutter 官方:Web renderers(CanvasKit/wasm 路线) | <https://docs.flutter.dev/platform-integration/web/renderers> | flutter-web-desktop-adaptive §3 |
+| Flutter API:Shortcuts/Actions(Intent 快捷键体系) | <https://api.flutter.dev/flutter/widgets/Shortcuts-class.html> | flutter-web-desktop-adaptive §2 |
 
 ---
 
