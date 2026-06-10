@@ -157,3 +157,22 @@
    **独有**实词,而非领域共享词。这说明检索回归断言的另一重价值:
    它能在语料增长时自动暴露"旧文档被新文档遮蔽"的召回退化,
    这是没有断言的向量库静默发生的问题。
+
+## 附:向量库语料·第四批七轮(2026-06-10)
+
+| 轮 | 反思出的缺口 | 填充 | 检索断言 |
+|---|---|---|---|
+| 16 | 业务最高频界面形态(表单/焦点/IME)零覆盖 | flutter-forms-input(validator 同步边界/FocusNode 树/CJK composing/键盘遮挡) | "表单 validator FocusNode 键盘遮挡 composing" |
+| 17 | 全部语料默认移动端,Web/桌面输入与渲染差异零覆盖 | flutter-web-desktop-adaptive(窗口断点/鼠标键盘模型/CanvasKit 选型边界) | "CanvasKit 断点 NavigationRail 悬停 桌面" |
+| 18 | 内存与流量最大头的媒体管线无系统语料 | flutter-images-media(解码后尺寸决定内存/三层缓存/占位防跳动/原生句柄) | "图片 cacheWidth 降采样 blurhash ImageCache" |
+| 19 | "被杀后还要干活"(推送/后台任务)平台差异零覆盖 | flutter-push-background(notification vs data/token 轮换/headless 引擎/幂等补偿) | "FCM 推送 token 轮换 workmanager headless" |
+| 20 | design token 工程化(主题集中声明)零覆盖 | flutter-theming-design-system(fromSeed/ThemeExtension/静态常量反模式) | "ThemeExtension colorScheme fromSeed 暗色 token" |
+| 21 | 语言层(sealed/patterns/null safety 边界)零覆盖 | dart-language-advanced(穷尽 switch/三处健全性边界/宏终止) | "sealed 穷尽 switch patterns late 健全性" |
+| 22 | "钉死版本之后如何安全地动"零覆盖 | flutter-upgrades-dependency-governance(小步不跳级/dart fix/依赖健康度三问) | "pub outdated dependency_overrides dart fix 升级" |
+
+第四批元发现:**语料网络效应开始显现**——本批每篇平均交叉引用 4+ 篇
+已有语料(如轮19 同时衔接深链矩阵/headless isolate/补偿队列/错误出口),
+新语料的反思缺口越来越多来自"已有两篇语料的接缝处"(深链×恢复栈×推送
+的初始路由竞争即三篇接缝),而非孤立空白主题。推论:语料库成熟后,
+反思方法应从"找空白领域"转向"审计交叉引用指向的章节是否真的回答了
+被引用的问题",即从覆盖率反思转向一致性反思。

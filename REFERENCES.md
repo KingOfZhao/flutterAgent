@@ -866,6 +866,10 @@
 | Dart 官方:Patterns(解构/穷尽 switch) | <https://dart.dev/language/patterns> | dart-language-advanced §2 |
 | Dart 官方:Sound null safety(健全性边界) | <https://dart.dev/null-safety/understanding-null-safety> | dart-language-advanced §3 |
 | Dart 官方:宏实验终止公告(2025-01) | <https://medium.com/dartlang/an-update-on-dart-macros-data-serialization-06d3037d4f12> | dart-language-advanced §4 |
+| Dart 官方:Package versioning(语义化版本与约束求解) | <https://dart.dev/tools/pub/versioning> | flutter-upgrades-dependency-governance §1 |
+| Dart 官方:dart pub outdated(升级前体检) | <https://dart.dev/tools/pub/cmd/pub-outdated> | flutter-upgrades-dependency-governance §1 |
+| Flutter 官方:Deprecation policy(弃用保留期) | <https://docs.flutter.dev/release/compatibility-policy> | flutter-upgrades-dependency-governance §2 |
+| Dart 官方:dart fix(API 迁移自动修复) | <https://dart.dev/tools/dart-fix> | flutter-upgrades-dependency-governance §2 |
 
 ---
 
