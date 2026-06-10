@@ -16,6 +16,26 @@
 | D7 | 任务分布漂移 | 分布 | 高 |
 | D8 | 检索/记忆位污染 | 语料 | 高 |
 
+## 自动化检测落码总表(2026-06-10 更新)
+
+"检测"一栏从口头纪律变成可跑代码,才算进入棘轮。本仓库当前落码状态:
+
+| 退化源 | 自动化检测 | 入口 | 状态 |
+|---|---|---|---|
+| D1 | stage.model 字符串变更转移点检测 | `degradation.detect_model_change` | 已落码 |
+| D1/D2 症状 | 失败率窗口对比(近 N 单 vs 前 N 单,阈值 0.10) | `degradation.detect_failure_rate_shift` | 已落码 |
+| D2 显式信号 | 上游告知字段解析 | — | 待上游字段确认(诚实边界) |
+| D3 | skill 语料快照哈希 diff + 静默增长比阈值(0.10) | `degradation.snapshot_corpus`/`diff_corpus`,CLI `scripts/corpus_drift.py` | 已落码 |
+| D4 | 组装后上下文长度/位置监控 | — | 未落码 |
+| D5(代理) | 缓存命中占比 > 0.8 告警 | `degradation.detect_cache_staleness` | 已落码(代理信号) |
+| D6 | 封存集 vs working 集分差趋势 | `eval_store.split_sealed` + `eval_gate` 双跑 | 半落码(机制在,缺真样本) |
+| D7 | 任务类型分层占比监控 | — | 未落码(需类型标注) |
+| D8 | 检索来源审计 | — | 未落码 |
+
+一键巡检:`python scripts/degradation_report.py`(任一告警 exit 1)。
+未落码项不是遗忘而是依赖缺口:D4 需在 pipeline 组装点埋点(改主路径,需先有产出门禁);
+D7/D8 需要任务类型与来源标注先存在。
+
 ## D1 上游模型版本更新
 
 - **症状**:未做任何变更,质量/风格/成本突变;此前稳定的边缘行为(格式遵循、拒答边界)翻转。
