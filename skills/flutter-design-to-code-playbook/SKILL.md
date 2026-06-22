@@ -6,6 +6,7 @@ platforms: [all, mobile, desktop, web]
 tags: [playbook, design-to-code, workflow, ui, theming, end-to-end, figma, screenshot]
 applies_when: 拿到一张/一组设计稿或截图,要端到端落成可运行、可验收的 Flutter UI
 stage_hints: [spec, breakdown, implementation, acceptance]
+see_also: [flutter-ui-from-image, flutter-figma-mcp, flutter-design-tokens-theming, flutter-ui-component-recipes]
 ---
 
 # 设计稿 → Flutter 代码 端到端 playbook
@@ -25,7 +26,7 @@ S0 对齐    → S1 读图成规格 → S2 建主题 token → S3 搭骨架 → 
 ## S0. 对齐与基准(别跳过)
 
 - 输入:设计稿/截图 + 目标平台(手机/平板/桌面/Web)+ 是否有设计源文件(Figma/Sketch)。
-- 动作:确认设计稿**基准宽度**(375/390/360/1440)、是否要亮暗双主题、字体来源与授权。
+- 动作:确认设计稿**基准宽度**(375/390/360/1440)、是否要亮暗双主题、字体来源与授权。**有 Figma 源文件 → S1 改走 `flutter-figma-mcp` 精确取数,不目测**。
 - 产物:一页"基准与约束"备忘。
 - 验收:基准宽度、目标平台、主题模式三者明确。
 - 出处:`flutter-ui-from-image` §0。

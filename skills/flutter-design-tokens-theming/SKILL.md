@@ -6,6 +6,7 @@ platforms: [all, mobile, desktop, web]
 tags: [theme, design-tokens, colorscheme, texttheme, material3, dark-mode, theme-extension, styling]
 applies_when: 把提取/约定好的设计 token(色/字/间距/圆角/阴影)落成可维护的 Flutter 主题
 stage_hints: [architecture, breakdown, implementation]
+see_also: [flutter-ui-from-image, flutter-figma-mcp, flutter-design-to-code-playbook]
 ---
 
 # 设计 token 工程化主题

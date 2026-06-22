@@ -53,7 +53,7 @@ see_also: [flutter-performance]
 - [ ] 按瓶颈定向优化,改完重录对比同一场景。
 
 **Conditional Logic:**
-- **若瓶颈在 UI 线程**:多为 `build()` 太重/重建过频/同步大计算。→ 拆 widget、加 `const`、把重计算移到 isolate(见 `flutter-handling-concurrency` 思路 / `compute`)。
+- **若瓶颈在 UI 线程**:多为 `build()` 太重/重建过频/同步大计算。→ 拆 widget、加 `const`、把重计算移到 isolate(见 `flutter-concurrency-isolates` 思路 / `compute`)。
 - **若瓶颈在 Raster 线程**:多为复杂裁剪/阴影/`Opacity`/`saveLayer`/大图。→ 减少 `saveLayer`、用 `RepaintBoundary` 隔离重绘、降图层复杂度。
 - **若仅首次出现卡顿(shader jank)**:确认 Impeller 是否启用;必要时做 shader 预热。
 

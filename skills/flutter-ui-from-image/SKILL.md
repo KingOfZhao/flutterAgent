@@ -6,6 +6,7 @@ platforms: [all, mobile, desktop, web]
 tags: [ui, design, screenshot, color, gradient, typography, responsive, scaling, design-to-code, figma]
 applies_when: 输入是一张 UI 图片/截图/设计稿,需要识别其视觉规格并还原成 Flutter 实现
 stage_hints: [spec, breakdown]
+see_also: [flutter-figma-mcp, flutter-design-to-code-playbook, flutter-design-tokens-theming]
 ---
 
 # 从图片/设计稿还原 UI
@@ -14,6 +15,9 @@ stage_hints: [spec, breakdown]
 渐变、布局、组件、状态——让实现阶段能"照着规格写 Flutter",而不是凭感觉描红。
 本 skill 管"**怎么读图、怎么换算**";把规格落成工程化主题见 `flutter-design-tokens-theming`,
 动画/转场见 `flutter-animation`,自适应布局见 `flutter-cross-platform`。
+
+> **先判断信源**:若有 Figma 源文件/链接,优先走 `flutter-figma-mcp` 通过 MCP/API 取**精确**节点数据;
+> 本 skill 的目测方法用于只有截图、或用来与取数结果交叉校验。
 
 ## 0. 先定基准(一切换算的前提)
 

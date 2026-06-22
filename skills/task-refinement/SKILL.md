@@ -6,6 +6,7 @@ platforms: [all]
 tags: [process, prd, task, breakdown]
 applies_when: 任何阶段都启用
 stage_hints: [classify, spec, breakdown, acceptance]
+see_also: [scope-and-impact-analysis]
 ---
 
 # 需求精炼 SOP
